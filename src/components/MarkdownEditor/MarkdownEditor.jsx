@@ -65,12 +65,33 @@ function MarkdownEditor() {
 
   const renderPreview = () => (
     <div className="preview-container">
-      <ReactMarkdown 
-        remarkPlugins={[remarkGfm]}
-        className="markdown-preview"
-      >
-        {markdown}
-      </ReactMarkdown>
+      <div className="markdown-preview">
+        <ReactMarkdown 
+          remarkPlugins={[remarkGfm]}
+          components={{
+            // 自定义组件样式
+            h1: ({node, ...props}) => <h1 {...props} />,
+            h2: ({node, ...props}) => <h2 {...props} />,
+            h3: ({node, ...props}) => <h3 {...props} />,
+            p: ({node, ...props}) => <p {...props} />,
+            ul: ({node, ...props}) => <ul {...props} />,
+            ol: ({node, ...props}) => <ol {...props} />,
+            li: ({node, ...props}) => <li {...props} />,
+            code: ({node, inline, ...props}) => 
+              inline ? <code {...props} /> : <pre><code {...props} /></pre>,
+            blockquote: ({node, ...props}) => <blockquote {...props} />,
+            img: ({node, ...props}) => <img {...props} />,
+            table: ({node, ...props}) => <table {...props} />,
+            thead: ({node, ...props}) => <thead {...props} />,
+            tbody: ({node, ...props}) => <tbody {...props} />,
+            tr: ({node, ...props}) => <tr {...props} />,
+            th: ({node, ...props}) => <th {...props} />,
+            td: ({node, ...props}) => <td {...props} />
+          }}
+        >
+          {markdown}
+        </ReactMarkdown>
+      </div>
     </div>
   );
 
