@@ -81,6 +81,7 @@ const handleResponse = async (response) => {
 export const tokenManager = {
   setToken: (tokenData) => {
     if (tokenData.token) {
+      console.log(tokenData);
       secureStorage.setItem('authToken', tokenData.token);
       secureStorage.setItem('tokenType', tokenData.type || 'Bearer');
       secureStorage.setItem('tokenExpiresAt', tokenData.expiresAt);
