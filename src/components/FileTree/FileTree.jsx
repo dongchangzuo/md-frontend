@@ -23,13 +23,13 @@ function FileTree({ onFileSelect }) {
     const name = prompt(`Enter ${type} name:`);
     if (!name) return;
 
-    if (type === 'folder') {
-      try {
-        const token = tokenManager.getToken();
-        if (!token) {
-          throw new Error('No authentication token found');
-        }
+    try {
+      const token = tokenManager.getToken();
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
 
+      if (type === 'folder') {
         const response = await fetch('http://localhost:8080/api/filesystem/directories', {
           method: 'POST',
           headers: {
@@ -60,29 +60,49 @@ function FileTree({ onFileSelect }) {
 
         const updatedFiles = [...files, newItem];
         saveFiles(updatedFiles);
-      } catch (error) {
-        console.error('Error creating directory:', error);
-        if (error.message === 'No authentication token found') {
-          alert('Please login first');
-        } else if (error.message === 'Authentication failed') {
-          alert('Authentication failed. Please login again');
-        } else {
-          alert('Failed to create directory');
-        }
-      }
-    } else {
-      // Handle file creation (keeping existing logic for files)
-      const newItem = {
-        id: Date.now().toString(),
-        name,
-        type,
-        path: `${parentPath}${name}${type === 'file' ? '.md' : '/'}`,
-        content: type === 'file' ? '' : null,
-        parentPath
-      };
+      } else {
+        // Handle file creation using API
+        const response = await fetch('http://localhost:8080/api/filesystem/files', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            name: name,
+            path: parentPath,
+            content: ''
+          })
+        });
 
-      const updatedFiles = [...files, newItem];
-      saveFiles(updatedFiles);
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Authentication failed');
+          }
+          throw new Error('Failed to create file');
+        }
+
+        const newItem = {
+          id: Date.now().toString(),
+          name,
+          type,
+          path: `${parentPath}${name}.md`,
+          content: '',
+          parentPath
+        };
+
+        const updatedFiles = [...files, newItem];
+        saveFiles(updatedFiles);
+      }
+    } catch (error) {
+      console.error(`Error creating ${type}:`, error);
+      if (error.message === 'No authentication token found') {
+        alert('Please login first');
+      } else if (error.message === 'Authentication failed') {
+        alert('Authentication failed. Please login again');
+      } else {
+        alert(`Failed to create ${type}`);
+      }
     }
   };
 
