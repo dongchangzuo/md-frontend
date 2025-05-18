@@ -10,7 +10,14 @@ import { authAPI, tokenManager } from './services/api'
 const secureStorage = {
   setItem: (key, value) => {
     try {
-      sessionStorage.setItem(key, value);
+      // 添加时间戳和签名
+      const data = {
+        value,
+        timestamp: Date.now(),
+        // 简单的签名机制，实际应用中应该使用更复杂的加密
+        signature: btoa(value + Date.now())
+      };
+      localStorage.setItem(key, JSON.stringify(data));
     } catch (error) {
       console.error('Error storing data:', error);
     }
@@ -18,7 +25,17 @@ const secureStorage = {
 
   getItem: (key) => {
     try {
-      return sessionStorage.getItem(key);
+      const data = localStorage.getItem(key);
+      if (!data) return null;
+
+      const parsedData = JSON.parse(data);
+      // 验证数据完整性
+      if (parsedData.signature !== btoa(parsedData.value + parsedData.timestamp)) {
+        console.error('Data integrity check failed');
+        secureStorage.removeItem(key);
+        return null;
+      }
+      return parsedData.value;
     } catch (error) {
       console.error('Error retrieving data:', error);
       return null;
@@ -27,7 +44,7 @@ const secureStorage = {
 
   removeItem: (key) => {
     try {
-      sessionStorage.removeItem(key);
+      localStorage.removeItem(key);
     } catch (error) {
       console.error('Error removing data:', error);
     }
@@ -35,7 +52,11 @@ const secureStorage = {
 
   clear: () => {
     try {
-      sessionStorage.clear();
+      // 只清除认证相关的数据
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('tokenType');
+      localStorage.removeItem('tokenExpiresAt');
+      localStorage.removeItem('user');
     } catch (error) {
       console.error('Error clearing storage:', error);
     }

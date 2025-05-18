@@ -9,11 +9,17 @@ export const AUTH_ENDPOINTS = {
 
 // Secure storage implementation
 const secureStorage = {
-  // 使用 sessionStorage 代替 localStorage
-  // sessionStorage 在会话结束时自动清除，更安全
+  // 使用 localStorage 以支持跨标签页共享
   setItem: (key, value) => {
     try {
-      sessionStorage.setItem(key, value);
+      // 添加时间戳和签名
+      const data = {
+        value,
+        timestamp: Date.now(),
+        // 简单的签名机制，实际应用中应该使用更复杂的加密
+        signature: btoa(value + Date.now())
+      };
+      localStorage.setItem(key, JSON.stringify(data));
     } catch (error) {
       console.error('Error storing data:', error);
     }
@@ -21,7 +27,17 @@ const secureStorage = {
 
   getItem: (key) => {
     try {
-      return sessionStorage.getItem(key);
+      const data = localStorage.getItem(key);
+      if (!data) return null;
+
+      const parsedData = JSON.parse(data);
+      // 验证数据完整性
+      if (parsedData.signature !== btoa(parsedData.value + parsedData.timestamp)) {
+        console.error('Data integrity check failed');
+        secureStorage.removeItem(key);
+        return null;
+      }
+      return parsedData.value;
     } catch (error) {
       console.error('Error retrieving data:', error);
       return null;
@@ -30,7 +46,7 @@ const secureStorage = {
 
   removeItem: (key) => {
     try {
-      sessionStorage.removeItem(key);
+      localStorage.removeItem(key);
     } catch (error) {
       console.error('Error removing data:', error);
     }
@@ -38,7 +54,11 @@ const secureStorage = {
 
   clear: () => {
     try {
-      sessionStorage.clear();
+      // 只清除认证相关的数据
+      localStorage.removeItem('authToken');
+      localStorage.removeItem('tokenType');
+      localStorage.removeItem('tokenExpiresAt');
+      localStorage.removeItem('user');
     } catch (error) {
       console.error('Error clearing storage:', error);
     }
@@ -61,7 +81,6 @@ const handleResponse = async (response) => {
 export const tokenManager = {
   setToken: (tokenData) => {
     if (tokenData.token) {
-      // 存储 token 到 sessionStorage
       secureStorage.setItem('authToken', tokenData.token);
       secureStorage.setItem('tokenType', tokenData.type || 'Bearer');
       secureStorage.setItem('tokenExpiresAt', tokenData.expiresAt);
@@ -108,7 +127,6 @@ export const authAPI = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(userData),
-        // 添加 credentials 选项以支持跨域 cookie
         credentials: 'include'
       });
       
@@ -146,7 +164,6 @@ export const authAPI = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(credentials),
-        // 添加 credentials 选项以支持跨域 cookie
         credentials: 'include'
       });
       
