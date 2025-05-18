@@ -5,6 +5,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
 import FileTree from '../FileTree/FileTree';
+import { tokenManager } from '../../services/api';
 import './MarkdownEditor.css';
 
 // 布局类型
@@ -19,6 +20,8 @@ function MarkdownEditor() {
   const [markdown, setMarkdown] = useState('');
   const [layout, setLayout] = useState(LAYOUT_TYPES.SPLIT_HORIZONTAL);
   const [currentFile, setCurrentFile] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveError, setSaveError] = useState(null);
 
   const handleFileSelect = (file) => {
     setCurrentFile(file);
@@ -28,16 +31,56 @@ function MarkdownEditor() {
   const handleMarkdownChange = (e) => {
     const newContent = e.target.value;
     setMarkdown(newContent);
-    
-    // Update file content in localStorage
-    if (currentFile) {
-      const savedFiles = JSON.parse(localStorage.getItem('markdownFiles') || '[]');
-      const updatedFiles = savedFiles.map(file => 
-        file.id === currentFile.id ? { ...file, content: newContent } : file
-      );
-      localStorage.setItem('markdownFiles', JSON.stringify(updatedFiles));
+  };
+
+  // 保存文件内容
+  const saveFileContent = async () => {
+    if (!currentFile) return;
+
+    try {
+      setIsSaving(true);
+      setSaveError(null);
+      
+      const response = await fetch(`http://localhost:8080/api/filesystem/files?path=${encodeURIComponent(currentFile.path)}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${tokenManager.getToken()}`
+        },
+        body: JSON.stringify({
+          content: markdown
+        })
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed');
+        }
+        throw new Error('Failed to save file');
+      }
+    } catch (error) {
+      console.error('Error saving file:', error);
+      setSaveError(error.message);
+      if (error.message === 'Authentication failed') {
+        alert('Authentication failed. Please login again');
+      } else {
+        alert('Failed to save file');
+      }
+    } finally {
+      setIsSaving(false);
     }
   };
+
+  // 自动保存
+  useEffect(() => {
+    if (!currentFile) return;
+
+    const saveTimeout = setTimeout(() => {
+      saveFileContent();
+    }, 1000); // 1秒后自动保存
+
+    return () => clearTimeout(saveTimeout);
+  }, [markdown, currentFile]);
 
   const renderLayoutControls = () => (
     <div className="layout-controls">
@@ -147,7 +190,11 @@ function MarkdownEditor() {
         <div className="editor-main">
           <div className="editor-header">
             <h2>{currentFile ? currentFile.name : 'Markdown Editor'}</h2>
-            {renderLayoutControls()}
+            <div className="editor-header-actions">
+              {isSaving && <span className="saving-indicator">Saving...</span>}
+              {saveError && <span className="save-error">{saveError}</span>}
+              {renderLayoutControls()}
+            </div>
           </div>
           <div className="editor-content">
             {renderContent()}

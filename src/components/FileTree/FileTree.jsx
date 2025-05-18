@@ -8,6 +8,80 @@ function FileTree({ onFileSelect }) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  // 保存文件内容
+  const saveFile = async (path, content) => {
+    try {
+      const token = tokenManager.getToken();
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch(`http://localhost:8080/api/filesystem/files?path=${encodeURIComponent(path)}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          content: content
+        })
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed');
+        }
+        throw new Error('Failed to save file');
+      }
+    } catch (error) {
+      console.error('Error saving file:', error);
+      if (error.message === 'No authentication token found') {
+        alert('Please login first');
+      } else if (error.message === 'Authentication failed') {
+        alert('Authentication failed. Please login again');
+      } else {
+        alert('Failed to save file');
+      }
+      throw error;
+    }
+  };
+
+  // 构建文件树结构
+  const buildFileTree = (items) => {
+    const tree = [];
+    const itemMap = new Map();
+
+    // 首先创建所有项目的映射
+    items.forEach(item => {
+      itemMap.set(item.path, {
+        ...item,
+        type: item.directory ? 'folder' : 'file',
+        children: []
+      });
+    });
+
+    // 构建树结构
+    items.forEach(item => {
+      const pathParts = item.path.split('/').filter(Boolean);
+      const currentPath = item.path;
+      const node = itemMap.get(currentPath);
+
+      if (pathParts.length === 1) {
+        // 根级项目
+        tree.push(node);
+      } else {
+        // 子项目，找到父项目并添加到其children中
+        const parentPath = '/' + pathParts.slice(0, -1).join('/');
+        const parent = itemMap.get(parentPath);
+        if (parent) {
+          parent.children.push(node);
+        }
+      }
+    });
+
+    return tree;
+  };
+
   const fetchFiles = async () => {
     try {
       setIsLoading(true);
@@ -32,7 +106,8 @@ function FileTree({ onFileSelect }) {
       }
 
       const data = await response.json();
-      setFiles(data);
+      const tree = buildFileTree(data);
+      setFiles(tree);
     } catch (error) {
       console.error('Error fetching files:', error);
       setError(error.message);
@@ -63,6 +138,8 @@ function FileTree({ onFileSelect }) {
       }
 
       if (type === 'folder') {
+        const fullPath = parentPath === '/' ? `/${name}` : `${parentPath}/${name}`;
+        
         const response = await fetch('http://localhost:8080/api/filesystem/directories', {
           method: 'POST',
           headers: {
@@ -71,7 +148,7 @@ function FileTree({ onFileSelect }) {
           },
           body: JSON.stringify({
             name: name,
-            path: parentPath
+            path: fullPath
           })
         });
 
@@ -82,10 +159,10 @@ function FileTree({ onFileSelect }) {
           throw new Error('Failed to create directory');
         }
 
-        // Refresh the file list after creating a directory
         await fetchFiles();
       } else {
-        // Handle file creation using API
+        const fullPath = parentPath === '/' ? `/${name}.md` : `${parentPath}/${name}.md`;
+        
         const response = await fetch('http://localhost:8080/api/filesystem/files', {
           method: 'POST',
           headers: {
@@ -94,7 +171,7 @@ function FileTree({ onFileSelect }) {
           },
           body: JSON.stringify({
             name: name,
-            path: parentPath,
+            path: fullPath,
             content: ''
           })
         });
@@ -106,7 +183,6 @@ function FileTree({ onFileSelect }) {
           throw new Error('Failed to create file');
         }
 
-        // Refresh the file list after creating a file
         await fetchFiles();
       }
     } catch (error) {
@@ -135,7 +211,6 @@ function FileTree({ onFileSelect }) {
 
   const renderTreeItem = (item) => {
     const isExpanded = expandedFolders.has(item.path);
-    const children = files.filter(f => f.parentPath === item.path);
 
     return (
       <div key={item.id} className="tree-item">
@@ -156,7 +231,7 @@ function FileTree({ onFileSelect }) {
         </div>
         {item.type === 'folder' && isExpanded && (
           <div className="tree-item-children">
-            {children.map(child => renderTreeItem(child))}
+            {item.children.map(child => renderTreeItem(child))}
             <div className="tree-item-actions">
               <button onClick={() => handleCreateItem('file', item.path)}>+ File</button>
               <button onClick={() => handleCreateItem('folder', item.path)}>+ Folder</button>
@@ -166,8 +241,6 @@ function FileTree({ onFileSelect }) {
       </div>
     );
   };
-
-  const rootItems = files.filter(f => f.parentPath === '/');
 
   if (isLoading) {
     return <div className="file-tree">Loading...</div>;
@@ -187,8 +260,8 @@ function FileTree({ onFileSelect }) {
         </div>
       </div>
       <div className="tree-items">
-        {rootItems.map(item => renderTreeItem(item))}
-        {rootItems.length === 0 && (
+        {files.map(item => renderTreeItem(item))}
+        {files.length === 0 && (
           <div className="tree-item-actions">
             <button onClick={() => handleCreateItem('file')}>+ File</button>
             <button onClick={() => handleCreateItem('folder')}>+ Folder</button>

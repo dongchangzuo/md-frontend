@@ -325,4 +325,27 @@
   padding: 0.2em 0.4em;
   border-radius: 3px;
   font-size: 0.9em;
+}
+
+.editor-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.saving-indicator {
+  color: #666;
+  font-size: 0.9rem;
+  animation: fadeInOut 1.5s infinite;
+}
+
+.save-error {
+  color: #dc3545;
+  font-size: 0.9rem;
+}
+
+@keyframes fadeInOut {
+  0% { opacity: 0.5; }
+  50% { opacity: 1; }
+  100% { opacity: 0.5; }
 } 
