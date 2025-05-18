@@ -2,6 +2,11 @@ import React from 'react';
 import './Home.css';
 
 const Home = ({ user, onLogout, onNavigate }) => {
+  const handleMarkdownClick = () => {
+    console.log('Markdown button clicked');
+    onNavigate('markdown');
+  };
+
   return (
     <div className="home-container">
       <div className="home-header">
@@ -9,7 +14,7 @@ const Home = ({ user, onLogout, onNavigate }) => {
         <div className="header-actions">
           <button 
             className="nav-button"
-            onClick={() => onNavigate('markdown')}
+            onClick={handleMarkdownClick}
           >
             Markdown Editor
           </button>

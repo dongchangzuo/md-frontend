@@ -132,11 +132,15 @@ function App() {
   };
 
   const navigateTo = (page) => {
+    console.log('Navigating to:', page);
     setCurrentPage(page);
   };
 
   // Render the appropriate component based on authentication and current page
   const renderContent = () => {
+    console.log('Current page:', currentPage);
+    console.log('User:', user);
+    
     if (isLoading) {
       return <div className="loading">Loading...</div>;
     }
@@ -152,9 +156,11 @@ function App() {
     // User is authenticated, show the appropriate page
     switch (currentPage) {
       case 'markdown':
+        console.log('Rendering MarkdownEditor');
         return <MarkdownEditor />;
       case 'home':
       default:
+        console.log('Rendering Home');
         return (
           <Home 
             user={user} 
