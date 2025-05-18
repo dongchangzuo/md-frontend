@@ -70,11 +70,24 @@
 .split-horizontal {
   display: flex;
   height: 100%;
+  position: relative;
 }
 
 .split-horizontal .editor-container,
 .split-horizontal .preview-container {
   width: 50%;
+  position: relative;
+}
+
+.split-horizontal .editor-container::after {
+  content: '';
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background-color: #ddd;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
 }
 
 /* 上下布局 */
@@ -82,11 +95,24 @@
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
 }
 
 .split-vertical .editor-container,
 .split-vertical .preview-container {
   height: 50%;
+  position: relative;
+}
+
+.split-vertical .editor-container::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background-color: #ddd;
+  box-shadow: 0 0 8px rgba(0, 0, 0, 0.1);
 }
 
 /* 仅编辑器或仅预览模式 */
