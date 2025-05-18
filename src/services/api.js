@@ -19,6 +19,40 @@ const handleResponse = async (response) => {
   return response.json();
 };
 
+// Token management
+export const tokenManager = {
+  setToken: (tokenData) => {
+    if (tokenData.token) {
+      localStorage.setItem('authToken', tokenData.token);
+      localStorage.setItem('tokenType', tokenData.type || 'Bearer');
+      localStorage.setItem('tokenExpiresAt', tokenData.expiresAt);
+    }
+  },
+
+  clearToken: () => {
+    localStorage.removeItem('authToken');
+    localStorage.removeItem('tokenType');
+    localStorage.removeItem('tokenExpiresAt');
+  },
+
+  isTokenExpired: () => {
+    const expiresAt = localStorage.getItem('tokenExpiresAt');
+    if (!expiresAt) return true;
+    
+    // Convert to milliseconds and check if expired
+    const expirationTime = parseInt(expiresAt);
+    return Date.now() >= expirationTime;
+  },
+
+  getToken: () => {
+    if (tokenManager.isTokenExpired()) {
+      tokenManager.clearToken();
+      return null;
+    }
+    return localStorage.getItem('authToken');
+  }
+};
+
 // Auth API services
 export const authAPI = {
   /**
@@ -39,7 +73,9 @@ export const authAPI = {
         body: JSON.stringify(userData),
       });
       
-      return handleResponse(response);
+      const data = await handleResponse(response);
+      tokenManager.setToken(data);
+      return data;
     } catch (error) {
       if (error.status === 409) {
         throw new Error('Email or username already exists');
@@ -61,6 +97,7 @@ export const authAPI = {
    * @returns {string} response.username - Username
    * @returns {string} response.email - User email
    * @returns {Array<string>} response.roles - User roles
+   * @returns {number} response.expiresAt - Token expiration timestamp
    */
   login: async (credentials) => {
     try {
@@ -73,12 +110,7 @@ export const authAPI = {
       });
       
       const data = await handleResponse(response);
-      
-      if (data.token) {
-        localStorage.setItem('authToken', data.token);
-        localStorage.setItem('tokenType', data.tokenType || 'Bearer');
-      }
-      
+      tokenManager.setToken(data);
       return data;
     } catch (error) {
       if (error.status === 401) {

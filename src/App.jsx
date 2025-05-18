@@ -4,7 +4,7 @@ import Login from './components/Login/Login'
 import Signup from './components/Signup/Signup'
 import Home from './components/Home/Home'
 import MarkdownEditor from './components/MarkdownEditor/MarkdownEditor'
-import { authAPI } from './services/api'
+import { authAPI, tokenManager } from './services/api'
 
 function App() {
   const [user, setUser] = useState(null);
@@ -16,55 +16,57 @@ function App() {
   // Check for existing authentication on component mount
   useEffect(() => {
     const checkAuth = async () => {
-      const storedToken = localStorage.getItem('authToken');
-      if (storedToken) {
-        try {
-          // 这里可以添加一个验证token的API调用
-          // 暂时使用存储的用户信息
+      try {
+        const token = tokenManager.getToken();
+        if (token) {
           const storedUser = localStorage.getItem('user');
           if (storedUser) {
             setUser(JSON.parse(storedUser));
-            setAuthToken(storedToken);
+            setAuthToken(token);
           }
-        } catch (error) {
-          console.error('Auth check failed:', error);
-          // 如果验证失败，清除存储的信息
+        } else {
           handleLogout();
         }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        handleLogout();
+      } finally {
+        setIsLoading(false);
       }
-      setIsLoading(false);
     };
 
     checkAuth();
+
+    // Set up token expiration check interval
+    const checkInterval = setInterval(() => {
+      if (tokenManager.isTokenExpired()) {
+        handleLogout();
+      }
+    }, 60000); // Check every minute
+
+    return () => clearInterval(checkInterval);
   }, []);
 
   const handleLogin = (userData) => {
     console.log('User logged in:', userData);
-    if (userData.token) {
-      setAuthToken(userData.token);
-    }
     const userInfo = userData.user || userData;
     setUser(userInfo);
-    // 存储用户信息到localStorage
+    setAuthToken(userData.token);
     localStorage.setItem('user', JSON.stringify(userInfo));
   };
 
   const handleSignup = (userData) => {
     console.log('User signed up:', userData);
-    if (userData.token) {
-      setAuthToken(userData.token);
-    }
     const userInfo = userData.user || userData;
     setUser(userInfo);
-    // 存储用户信息到localStorage
+    setAuthToken(userData.token);
     localStorage.setItem('user', JSON.stringify(userInfo));
   };
 
   const handleLogout = () => {
     setUser(null);
     setAuthToken(null);
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('tokenType');
+    tokenManager.clearToken();
     localStorage.removeItem('user');
   };
 
