@@ -3,42 +3,67 @@ import './Login.css';
 import { authAPI } from '../../services/api';
 
 function Login({ onLogin, onSwitchToSignup }) {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [formData, setFormData] = useState({
+    email: '',
+    password: '',
+  });
+  const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState('');
+
+  const validateForm = () => {
+    const newErrors = {};
+    
+    if (!formData.email) {
+      newErrors.email = 'Email is required';
+    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
+      newErrors.email = 'Please enter a valid email address';
+    }
+    
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else if (formData.password.length < 6) {
+      newErrors.password = 'Password must be at least 6 characters';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+    // Clear error when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({
+        ...prev,
+        [name]: ''
+      }));
+    }
+    // Clear login error when user makes any change
+    if (loginError) {
+      setLoginError('');
+    }
+  };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Reset previous error
-    setError('');
-    
-    // Basic validation
-    if (!email || !password) {
-      setError('Please enter both email and password');
+    if (!validateForm()) {
       return;
     }
     
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address');
-      return;
-    }
+    setIsLoading(true);
+    setLoginError('');
     
     try {
-      setIsLoading(true);
-      // Call the login API
-      const response = await authAPI.login({ 
-        email: email, // API expects email key in the payload
-        password
-      });
-      // Handle successful login
+      const response = await authAPI.login(formData);
       onLogin(response);
-    } catch (err) {
-      // Handle login error
-      setError(err.message || 'Login failed. Please check your credentials.');
+    } catch (error) {
+      setLoginError(error.message || 'Login failed. Please try again.');
     } finally {
       setIsLoading(false);
     }
@@ -46,34 +71,42 @@ function Login({ onLogin, onSwitchToSignup }) {
 
   return (
     <div className="login-container">
-      <div className="login-form-container">
+      <div className="login-box">
         <h2>Login</h2>
-        {error && <div className="error-message">{error}</div>}
-        <form onSubmit={handleSubmit} className="login-form">
+        {loginError && (
+          <div className="error-message">
+            {loginError}
+          </div>
+        )}
+        <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="email">Email</label>
             <input
               type="email"
               id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              name="email"
+              value={formData.email}
+              onChange={handleChange}
+              className={errors.email ? 'error' : ''}
               placeholder="Enter your email"
-              disabled={isLoading}
-              required
             />
+            {errors.email && <span className="error-text">{errors.email}</span>}
           </div>
+          
           <div className="form-group">
             <label htmlFor="password">Password</label>
             <input
               type="password"
               id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              name="password"
+              value={formData.password}
+              onChange={handleChange}
+              className={errors.password ? 'error' : ''}
               placeholder="Enter your password"
-              disabled={isLoading}
-              required
             />
+            {errors.password && <span className="error-text">{errors.password}</span>}
           </div>
+          
           <button 
             type="submit" 
             className="login-button"
@@ -82,8 +115,16 @@ function Login({ onLogin, onSwitchToSignup }) {
             {isLoading ? 'Logging in...' : 'Login'}
           </button>
         </form>
+        
         <div className="signup-link">
-          Don't have an account? <span onClick={onSwitchToSignup}>Sign up</span>
+          Don't have an account?{' '}
+          <button 
+            type="button" 
+            className="link-button"
+            onClick={onSwitchToSignup}
+          >
+            Sign up
+          </button>
         </div>
       </div>
     </div>

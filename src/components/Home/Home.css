@@ -1,63 +1,89 @@
 .home-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.home-header {
   display: flex;
-  justify-content: center;
+  justify-content: space-between;
   align-items: center;
-  min-height: 100vh;
-  background-color: #f5f5f5;
-}
-
-.home-content {
-  width: 100%;
-  max-width: 800px;
-  padding: 2.5rem;
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  text-align: center;
-}
-
-.home-content h1 {
   margin-bottom: 2rem;
-  color: #333;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e0e0e0;
 }
 
-.user-info {
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background-color: #f0f7ff;
-  border-radius: 8px;
-  text-align: left;
-}
-
-.user-info h3 {
-  margin-bottom: 1rem;
-  color: #333;
-  border-bottom: 1px solid #ccc;
-  padding-bottom: 0.5rem;
-}
-
-.user-detail {
-  display: grid;
-  gap: 0.75rem;
-}
-
-.user-detail p {
+.home-header h1 {
   margin: 0;
+  color: #333;
+  font-size: 2rem;
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.nav-button,
+.logout-button {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
   font-size: 1rem;
+  transition: background-color 0.2s;
+}
+
+.nav-button {
+  background-color: #4a90e2;
+  color: white;
+}
+
+.nav-button:hover {
+  background-color: #357abd;
 }
 
 .logout-button {
-  padding: 0.75rem 1.5rem;
-  background-color: #ff6464;
+  background-color: #dc3545;
   color: white;
-  border: none;
-  border-radius: 4px;
-  font-size: 1rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: background-color 0.3s;
 }
 
 .logout-button:hover {
-  background-color: #e05555;
+  background-color: #c82333;
+}
+
+.user-info-panel {
+  background-color: white;
+  border-radius: 8px;
+  padding: 2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.user-info-panel h2 {
+  margin: 0 0 1.5rem 0;
+  color: #333;
+  font-size: 1.5rem;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1.5rem;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.info-item label {
+  font-weight: 600;
+  color: #666;
+  font-size: 0.9rem;
+}
+
+.info-item span {
+  color: #333;
+  font-size: 1.1rem;
 } 
