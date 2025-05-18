@@ -1,9 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
+import FileTree from '../FileTree/FileTree';
 import './MarkdownEditor.css';
 
 // 布局类型
@@ -15,40 +16,27 @@ const LAYOUT_TYPES = {
 };
 
 function MarkdownEditor() {
-  const [markdown, setMarkdown] = useState(`# Hello World
-
-Start writing your markdown here...
-
-## LaTeX Examples
-
-Inline math: $E = mc^2$
-
-Block math:
-
-$$
-\\frac{n!}{k!(n-k)!} = \\binom{n}{k}
-$$
-
-Matrix:
-
-$$
-\\begin{pmatrix}
-a & b \\\\
-c & d
-\\end{pmatrix}
-$$
-
-Integral:
-
-$$
-\\int_{a}^{b} f(x) \\, dx
-$$
-
-`);
+  const [markdown, setMarkdown] = useState('');
   const [layout, setLayout] = useState(LAYOUT_TYPES.SPLIT_HORIZONTAL);
+  const [currentFile, setCurrentFile] = useState(null);
+
+  const handleFileSelect = (file) => {
+    setCurrentFile(file);
+    setMarkdown(file.content || '');
+  };
 
   const handleMarkdownChange = (e) => {
-    setMarkdown(e.target.value);
+    const newContent = e.target.value;
+    setMarkdown(newContent);
+    
+    // Update file content in localStorage
+    if (currentFile) {
+      const savedFiles = JSON.parse(localStorage.getItem('markdownFiles') || '[]');
+      const updatedFiles = savedFiles.map(file => 
+        file.id === currentFile.id ? { ...file, content: newContent } : file
+      );
+      localStorage.setItem('markdownFiles', JSON.stringify(updatedFiles));
+    }
   };
 
   const renderLayoutControls = () => (
@@ -102,7 +90,6 @@ $$
           remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeKatex]}
           components={{
-            // 自定义组件样式
             h1: ({node, ...props}) => <h1 {...props} />,
             h2: ({node, ...props}) => <h2 {...props} />,
             h3: ({node, ...props}) => <h3 {...props} />,
@@ -155,13 +142,17 @@ $$
 
   return (
     <div className="markdown-editor-container">
-      <div className="editor-header">
-        <h2>Markdown Editor</h2>
-        {renderLayoutControls()}
-      </div>
-      
-      <div className="editor-content">
-        {renderContent()}
+      <div className="editor-layout">
+        <FileTree onFileSelect={handleFileSelect} />
+        <div className="editor-main">
+          <div className="editor-header">
+            <h2>{currentFile ? currentFile.name : 'Markdown Editor'}</h2>
+            {renderLayoutControls()}
+          </div>
+          <div className="editor-content">
+            {renderContent()}
+          </div>
+        </div>
       </div>
     </div>
   );
