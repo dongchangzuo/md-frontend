@@ -5,19 +5,52 @@ import './FileTree.css';
 function FileTree({ onFileSelect }) {
   const [files, setFiles] = useState([]);
   const [expandedFolders, setExpandedFolders] = useState(new Set());
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState(null);
+
+  const fetchFiles = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const token = tokenManager.getToken();
+      if (!token) {
+        throw new Error('No authentication token found');
+      }
+
+      const response = await fetch('http://localhost:8080/api/filesystem/items', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed');
+        }
+        throw new Error('Failed to fetch files');
+      }
+
+      const data = await response.json();
+      setFiles(data);
+    } catch (error) {
+      console.error('Error fetching files:', error);
+      setError(error.message);
+      if (error.message === 'No authentication token found') {
+        alert('Please login first');
+      } else if (error.message === 'Authentication failed') {
+        alert('Authentication failed. Please login again');
+      } else {
+        alert('Failed to fetch files');
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Load files from localStorage on component mount
-    const savedFiles = localStorage.getItem('markdownFiles');
-    if (savedFiles) {
-      setFiles(JSON.parse(savedFiles));
-    }
+    fetchFiles();
   }, []);
-
-  const saveFiles = (updatedFiles) => {
-    setFiles(updatedFiles);
-    localStorage.setItem('markdownFiles', JSON.stringify(updatedFiles));
-  };
 
   const handleCreateItem = async (type, parentPath = '/') => {
     const name = prompt(`Enter ${type} name:`);
@@ -49,17 +82,8 @@ function FileTree({ onFileSelect }) {
           throw new Error('Failed to create directory');
         }
 
-        const newItem = {
-          id: Date.now().toString(),
-          name,
-          type,
-          path: `${parentPath}${name}/`,
-          content: null,
-          parentPath
-        };
-
-        const updatedFiles = [...files, newItem];
-        saveFiles(updatedFiles);
+        // Refresh the file list after creating a directory
+        await fetchFiles();
       } else {
         // Handle file creation using API
         const response = await fetch('http://localhost:8080/api/filesystem/files', {
@@ -82,17 +106,8 @@ function FileTree({ onFileSelect }) {
           throw new Error('Failed to create file');
         }
 
-        const newItem = {
-          id: Date.now().toString(),
-          name,
-          type,
-          path: `${parentPath}${name}.md`,
-          content: '',
-          parentPath
-        };
-
-        const updatedFiles = [...files, newItem];
-        saveFiles(updatedFiles);
+        // Refresh the file list after creating a file
+        await fetchFiles();
       }
     } catch (error) {
       console.error(`Error creating ${type}:`, error);
@@ -153,6 +168,14 @@ function FileTree({ onFileSelect }) {
   };
 
   const rootItems = files.filter(f => f.parentPath === '/');
+
+  if (isLoading) {
+    return <div className="file-tree">Loading...</div>;
+  }
+
+  if (error) {
+    return <div className="file-tree">Error: {error}</div>;
+  }
 
   return (
     <div className="file-tree">
