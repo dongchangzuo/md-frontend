@@ -1,10 +1,10 @@
 .markdown-editor-container {
   display: flex;
   flex-direction: column;
-  min-height: 100vh;
-  width: 100%;
+  height: 100%;
   background-color: #ffffff;
-  position: relative;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .editor-header {
@@ -14,15 +14,13 @@
   padding: 1rem;
   background-color: #f8f9fa;
   border-bottom: 1px solid #e9ecef;
-  position: sticky;
-  top: 0;
-  z-index: 10;
+  border-radius: 8px 8px 0 0;
 }
 
 .editor-header h2 {
   margin: 0;
-  color: #333;
   font-size: 1.5rem;
+  color: #333;
 }
 
 /* 布局控制按钮样式 */
@@ -32,11 +30,7 @@
 }
 
 .layout-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 40px;
-  height: 40px;
+  padding: 0.5rem;
   border: 1px solid #dee2e6;
   border-radius: 4px;
   background-color: #fff;
@@ -46,12 +40,11 @@
 
 .layout-button:hover {
   background-color: #f8f9fa;
-  border-color: #adb5bd;
 }
 
 .layout-button.active {
   background-color: #e9ecef;
-  border-color: #6c757d;
+  border-color: #ced4da;
 }
 
 .layout-icon {
@@ -62,47 +55,29 @@
   flex: 1;
   overflow: hidden;
   position: relative;
-  display: flex;
-  flex-direction: column;
 }
 
 /* 左右布局 */
 .split-horizontal {
   display: flex;
-  flex: 1;
-  min-height: 0;
+  height: 100%;
 }
 
 .split-horizontal .editor-container,
 .split-horizontal .preview-container {
-  flex: 1;
-  overflow: auto;
-  padding: 1rem;
-  min-height: 0;
-}
-
-.split-horizontal .editor-container {
-  border-right: 1px solid #dee2e6;
+  width: 50%;
 }
 
 /* 上下布局 */
 .split-vertical {
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-height: 0;
+  height: 100%;
 }
 
 .split-vertical .editor-container,
 .split-vertical .preview-container {
-  flex: 1;
-  overflow: auto;
-  padding: 1rem;
-  min-height: 0;
-}
-
-.split-vertical .editor-container {
-  border-bottom: 1px solid #dee2e6;
+  height: 50%;
 }
 
 /* 仅编辑器或仅预览模式 */
@@ -111,7 +86,6 @@
   flex: 1;
   overflow: auto;
   padding: 1rem;
-  min-height: 0;
 }
 
 .markdown-textarea {
@@ -133,7 +107,8 @@
 
 .markdown-preview {
   padding: 1rem;
-  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-size: 16px;
   line-height: 1.6;
   color: #333;
 }
@@ -148,6 +123,7 @@
 
 .markdown-preview h2 {
   font-size: 1.5em;
+  margin-top: 1.5em;
   margin-bottom: 0.5em;
   padding-bottom: 0.3em;
   border-bottom: 1px solid #eaecef;
@@ -155,46 +131,48 @@
 
 .markdown-preview h3 {
   font-size: 1.25em;
+  margin-top: 1.25em;
   margin-bottom: 0.5em;
 }
 
 .markdown-preview p {
+  margin-top: 0;
   margin-bottom: 1em;
 }
 
 .markdown-preview ul,
 .markdown-preview ol {
-  margin-bottom: 1em;
   padding-left: 2em;
+  margin-top: 0;
+  margin-bottom: 1em;
 }
 
 .markdown-preview li {
-  margin-bottom: 0.5em;
+  margin-bottom: 0.25em;
 }
 
 .markdown-preview code {
   font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'source-code-pro', monospace;
-  background-color: #f6f8fa;
-  padding: 0.2em 0.4em;
-  border-radius: 3px;
   font-size: 0.9em;
+  padding: 0.2em 0.4em;
+  background-color: #f6f8fa;
+  border-radius: 3px;
 }
 
 .markdown-preview pre {
   background-color: #f6f8fa;
-  padding: 1em;
-  border-radius: 3px;
-  overflow-x: auto;
-  margin-bottom: 1em;
+  border-radius: 6px;
+  padding: 16px;
+  overflow: auto;
 }
 
 .markdown-preview pre code {
-  background-color: transparent;
   padding: 0;
+  background-color: transparent;
 }
 
 .markdown-preview blockquote {
-  margin: 0 0 1em 0;
+  margin: 0;
   padding: 0 1em;
   color: #6a737d;
   border-left: 0.25em solid #dfe2e5;
@@ -202,7 +180,7 @@
 
 .markdown-preview img {
   max-width: 100%;
-  height: auto;
+  box-sizing: border-box;
 }
 
 .markdown-preview table {
@@ -213,13 +191,63 @@
 
 .markdown-preview th,
 .markdown-preview td {
-  padding: 0.5em;
+  padding: 6px 13px;
   border: 1px solid #dfe2e5;
 }
 
-.markdown-preview th {
+.markdown-preview tr {
+  background-color: #fff;
+  border-top: 1px solid #c6cbd1;
+}
+
+.markdown-preview tr:nth-child(2n) {
   background-color: #f6f8fa;
-  font-weight: 600;
+}
+
+/* LaTeX 样式 */
+.markdown-preview .math {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.markdown-preview .math-inline {
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.markdown-preview .math-display {
+  display: block;
+  margin: 1em 0;
+  text-align: center;
+}
+
+/* KaTeX 自定义样式 */
+.katex {
+  font-size: 1.1em;
+}
+
+.katex-display {
+  margin: 1em 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0.5em 0;
+}
+
+.katex-display > .katex {
+  display: inline-block;
+  text-align: center;
+}
+
+.katex-display > .katex > .katex-html {
+  display: block;
+  position: relative;
+  overflow-x: auto;
+  text-align: center;
+}
+
+.katex-display > .katex > .katex-html > .tag {
+  position: absolute;
+  right: 0;
 }
 
 .editor-footer {

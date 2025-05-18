@@ -1,6 +1,9 @@
 import { useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
 import './MarkdownEditor.css';
 
 // 布局类型
@@ -12,7 +15,36 @@ const LAYOUT_TYPES = {
 };
 
 function MarkdownEditor() {
-  const [markdown, setMarkdown] = useState('# Hello World\n\nStart writing your markdown here...');
+  const [markdown, setMarkdown] = useState(`# Hello World
+
+Start writing your markdown here...
+
+## LaTeX Examples
+
+Inline math: $E = mc^2$
+
+Block math:
+
+$$
+\\frac{n!}{k!(n-k)!} = \\binom{n}{k}
+$$
+
+Matrix:
+
+$$
+\\begin{pmatrix}
+a & b \\\\
+c & d
+\\end{pmatrix}
+$$
+
+Integral:
+
+$$
+\\int_{a}^{b} f(x) \\, dx
+$$
+
+`);
   const [layout, setLayout] = useState(LAYOUT_TYPES.SPLIT_HORIZONTAL);
 
   const handleMarkdownChange = (e) => {
@@ -67,7 +99,8 @@ function MarkdownEditor() {
     <div className="preview-container">
       <div className="markdown-preview">
         <ReactMarkdown 
-          remarkPlugins={[remarkGfm]}
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex]}
           components={{
             // 自定义组件样式
             h1: ({node, ...props}) => <h1 {...props} />,
