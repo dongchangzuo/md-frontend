@@ -7,6 +7,44 @@ export const AUTH_ENDPOINTS = {
   LOGIN: `${API_HOST}/api/auth/signin`,
 };
 
+// Secure storage implementation
+const secureStorage = {
+  // 使用 sessionStorage 代替 localStorage
+  // sessionStorage 在会话结束时自动清除，更安全
+  setItem: (key, value) => {
+    try {
+      sessionStorage.setItem(key, value);
+    } catch (error) {
+      console.error('Error storing data:', error);
+    }
+  },
+
+  getItem: (key) => {
+    try {
+      return sessionStorage.getItem(key);
+    } catch (error) {
+      console.error('Error retrieving data:', error);
+      return null;
+    }
+  },
+
+  removeItem: (key) => {
+    try {
+      sessionStorage.removeItem(key);
+    } catch (error) {
+      console.error('Error removing data:', error);
+    }
+  },
+
+  clear: () => {
+    try {
+      sessionStorage.clear();
+    } catch (error) {
+      console.error('Error clearing storage:', error);
+    }
+  }
+};
+
 const handleResponse = async (response) => {
   if (!response.ok) {
     const error = await response.json().catch(() => ({}));
@@ -23,20 +61,19 @@ const handleResponse = async (response) => {
 export const tokenManager = {
   setToken: (tokenData) => {
     if (tokenData.token) {
-      localStorage.setItem('authToken', tokenData.token);
-      localStorage.setItem('tokenType', tokenData.type || 'Bearer');
-      localStorage.setItem('tokenExpiresAt', tokenData.expiresAt);
+      // 存储 token 到 sessionStorage
+      secureStorage.setItem('authToken', tokenData.token);
+      secureStorage.setItem('tokenType', tokenData.type || 'Bearer');
+      secureStorage.setItem('tokenExpiresAt', tokenData.expiresAt);
     }
   },
 
   clearToken: () => {
-    localStorage.removeItem('authToken');
-    localStorage.removeItem('tokenType');
-    localStorage.removeItem('tokenExpiresAt');
+    secureStorage.clear();
   },
 
   isTokenExpired: () => {
-    const expiresAt = localStorage.getItem('tokenExpiresAt');
+    const expiresAt = secureStorage.getItem('tokenExpiresAt');
     if (!expiresAt) return true;
     
     // Convert to milliseconds and check if expired
@@ -49,7 +86,7 @@ export const tokenManager = {
       tokenManager.clearToken();
       return null;
     }
-    return localStorage.getItem('authToken');
+    return secureStorage.getItem('authToken');
   }
 };
 
@@ -71,6 +108,8 @@ export const authAPI = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(userData),
+        // 添加 credentials 选项以支持跨域 cookie
+        credentials: 'include'
       });
       
       const data = await handleResponse(response);
@@ -107,6 +146,8 @@ export const authAPI = {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify(credentials),
+        // 添加 credentials 选项以支持跨域 cookie
+        credentials: 'include'
       });
       
       const data = await handleResponse(response);

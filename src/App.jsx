@@ -6,6 +6,42 @@ import Home from './components/Home/Home'
 import MarkdownEditor from './components/MarkdownEditor/MarkdownEditor'
 import { authAPI, tokenManager } from './services/api'
 
+// 安全存储实现
+const secureStorage = {
+  setItem: (key, value) => {
+    try {
+      sessionStorage.setItem(key, value);
+    } catch (error) {
+      console.error('Error storing data:', error);
+    }
+  },
+
+  getItem: (key) => {
+    try {
+      return sessionStorage.getItem(key);
+    } catch (error) {
+      console.error('Error retrieving data:', error);
+      return null;
+    }
+  },
+
+  removeItem: (key) => {
+    try {
+      sessionStorage.removeItem(key);
+    } catch (error) {
+      console.error('Error removing data:', error);
+    }
+  },
+
+  clear: () => {
+    try {
+      sessionStorage.clear();
+    } catch (error) {
+      console.error('Error clearing storage:', error);
+    }
+  }
+};
+
 function App() {
   const [user, setUser] = useState(null);
   const [showSignup, setShowSignup] = useState(false);
@@ -19,7 +55,7 @@ function App() {
       try {
         const token = tokenManager.getToken();
         if (token) {
-          const storedUser = localStorage.getItem('user');
+          const storedUser = secureStorage.getItem('user');
           if (storedUser) {
             setUser(JSON.parse(storedUser));
             setAuthToken(token);
@@ -52,7 +88,7 @@ function App() {
     const userInfo = userData.user || userData;
     setUser(userInfo);
     setAuthToken(userData.token);
-    localStorage.setItem('user', JSON.stringify(userInfo));
+    secureStorage.setItem('user', JSON.stringify(userInfo));
   };
 
   const handleSignup = (userData) => {
@@ -60,14 +96,14 @@ function App() {
     const userInfo = userData.user || userData;
     setUser(userInfo);
     setAuthToken(userData.token);
-    localStorage.setItem('user', JSON.stringify(userInfo));
+    secureStorage.setItem('user', JSON.stringify(userInfo));
   };
 
   const handleLogout = () => {
     setUser(null);
     setAuthToken(null);
     tokenManager.clearToken();
-    localStorage.removeItem('user');
+    secureStorage.removeItem('user');
   };
 
   const toggleAuthMode = () => {
