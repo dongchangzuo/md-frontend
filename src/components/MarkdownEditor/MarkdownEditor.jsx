@@ -130,22 +130,6 @@ function MarkdownEditor() {
       <div className="editor-content">
         {renderContent()}
       </div>
-      
-      <div className="editor-footer">
-        <div className="markdown-tips">
-          <h4>Markdown Tips:</h4>
-          <ul>
-            <li><code># Heading 1</code></li>
-            <li><code>## Heading 2</code></li>
-            <li><code>*italic*</code> or <code>_italic_</code></li>
-            <li><code>**bold**</code> or <code>__bold__</code></li>
-            <li><code>- List item</code></li>
-            <li><code>[Link text](URL)</code></li>
-            <li><code>![Alt text](image URL)</code></li>
-            <li><code>`code`</code> or <code>```code block```</code></li>
-          </ul>
-        </div>
-      </div>
     </div>
   );
 }
