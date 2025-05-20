@@ -4,6 +4,7 @@ import Login from './components/Login/Login'
 import Signup from './components/Signup/Signup'
 import Home from './components/Home/Home'
 import MarkdownEditor from './components/MarkdownEditor/MarkdownEditor'
+import OCR from './components/OCR/OCR'
 import { authAPI, tokenManager } from './services/api'
 
 // 安全存储实现
@@ -158,6 +159,9 @@ function App() {
       case 'markdown':
         console.log('Rendering MarkdownEditor');
         return <MarkdownEditor />;
+      case 'ocr':
+        console.log('Rendering OCR');
+        return <OCR />;
       case 'home':
       default:
         console.log('Rendering Home');

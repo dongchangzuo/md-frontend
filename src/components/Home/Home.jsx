@@ -7,6 +7,11 @@ const Home = ({ user, onLogout, onNavigate }) => {
     onNavigate('markdown');
   };
 
+  const handleOCRClick = () => {
+    console.log('OCR button clicked');
+    onNavigate('ocr');
+  };
+
   return (
     <div className="home-container">
       <div className="home-header">
@@ -17,6 +22,12 @@ const Home = ({ user, onLogout, onNavigate }) => {
             onClick={handleMarkdownClick}
           >
             Markdown Editor
+          </button>
+          <button 
+            className="nav-button"
+            onClick={handleOCRClick}
+          >
+            OCR Recognition
           </button>
           <button 
             className="logout-button"
