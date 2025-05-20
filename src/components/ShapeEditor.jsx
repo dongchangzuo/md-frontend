@@ -53,6 +53,11 @@ const DraggableShape = styled.div`
   width: ${props => props.width}px;
   height: ${props => props.height}px;
   transform: rotate(${props => props.rotation}deg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 14px;
 `;
 
 const ColorPickerContainer = styled.div`
@@ -64,17 +69,55 @@ const ColorPickerContainer = styled.div`
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
 `;
 
+const ArrayEditorContainer = styled.div`
+  position: absolute;
+  z-index: 1000;
+  background: #fff;
+  padding: 20px;
+  border-radius: 4px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+  min-width: 300px;
+`;
+
+const ArrayInput = styled.textarea`
+  width: 100%;
+  height: 100px;
+  margin: 10px 0;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  resize: vertical;
+`;
+
+const Button = styled.button`
+  padding: 8px 16px;
+  margin: 5px;
+  border: none;
+  border-radius: 4px;
+  background-color: #4a90e2;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #357abd;
+  }
+`;
+
 const basicShapes = [
   { type: 'rectangle', width: 100, height: 60, color: '#000000' },
   { type: 'square', width: 80, height: 80, color: '#000000' },
   { type: 'triangle', width: 0, height: 0, color: '#000000' },
   { type: 'arrow', width: 100, height: 40, color: '#000000' },
+  { type: 'array', width: 200, height: 60, color: '#4a90e2' },
 ];
 
 const ShapeEditor = () => {
   const [shapes, setShapes] = useState([]);
   const [selectedShape, setSelectedShape] = useState(null);
   const [colorPickerPosition, setColorPickerPosition] = useState(null);
+  const [arrayEditorPosition, setArrayEditorPosition] = useState(null);
+  const [arrayInput, setArrayInput] = useState('');
   const [draggedShape, setDraggedShape] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const canvasRef = useRef(null);
@@ -95,7 +138,8 @@ const ShapeEditor = () => {
       id: Date.now(),
       x,
       y,
-      rotation: 0
+      rotation: 0,
+      arrayData: shape.type === 'array' ? [] : undefined
     }]);
   };
 
@@ -136,7 +180,13 @@ const ShapeEditor = () => {
   const handleContextMenu = (e, shape) => {
     e.preventDefault();
     setSelectedShape(shape);
-    setColorPickerPosition({ x: e.clientX, y: e.clientY });
+    
+    if (shape.type === 'array') {
+      setArrayEditorPosition({ x: e.clientX, y: e.clientY });
+      setArrayInput(shape.arrayData ? shape.arrayData.join(', ') : '');
+    } else {
+      setColorPickerPosition({ x: e.clientX, y: e.clientY });
+    }
   };
 
   const handleColorChange = (color) => {
@@ -149,9 +199,24 @@ const ShapeEditor = () => {
     }
   };
 
+  const handleArraySubmit = () => {
+    if (selectedShape) {
+      const arrayData = arrayInput.split(',').map(item => item.trim()).filter(Boolean);
+      setShapes(shapes.map(shape => 
+        shape.id === selectedShape.id 
+          ? { ...shape, arrayData }
+          : shape
+      ));
+      setArrayEditorPosition(null);
+    }
+  };
+
   const handleClickOutside = (e) => {
     if (colorPickerPosition && !e.target.closest('.color-picker')) {
       setColorPickerPosition(null);
+    }
+    if (arrayEditorPosition && !e.target.closest('.array-editor')) {
+      setArrayEditorPosition(null);
     }
   };
 
@@ -165,7 +230,7 @@ const ShapeEditor = () => {
       document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('click', handleClickOutside);
     };
-  }, [draggedShape, dragOffset, shapes, colorPickerPosition]);
+  }, [draggedShape, dragOffset, shapes, colorPickerPosition, arrayEditorPosition]);
 
   const renderShape = (shape) => {
     switch (shape.type) {
@@ -236,6 +301,50 @@ const ShapeEditor = () => {
             onContextMenu={(e) => handleContextMenu(e, shape)}
           />
         );
+      case 'array':
+        return (
+          <div
+            key={shape.id}
+            style={{
+              position: 'absolute',
+              left: shape.x,
+              top: shape.y,
+              transform: `rotate(${shape.rotation}deg)`,
+              display: 'flex',
+              flexWrap: 'wrap',
+              gap: '12px',
+              padding: '12px',
+              cursor: 'move',
+              backgroundColor: '#e8f4ff',
+              borderRadius: '8px',
+              boxShadow: '0 2px 8px rgba(74, 144, 226, 0.2)'
+            }}
+            onMouseDown={(e) => handleShapeMouseDown(e, shape)}
+            onContextMenu={(e) => handleContextMenu(e, shape)}
+          >
+            {shape.arrayData && shape.arrayData.map((item, index) => (
+              <div
+                key={index}
+                style={{
+                  width: '45px',
+                  height: '45px',
+                  backgroundColor: '#4a90e2',
+                  border: '2px solid #357abd',
+                  borderRadius: '6px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '16px',
+                  fontWeight: '500',
+                  color: '#ffffff',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                }}
+              >
+                {item}
+              </div>
+            ))}
+          </div>
+        );
       default:
         return null;
     }
@@ -274,6 +383,27 @@ const ShapeEditor = () => {
               onChange={handleColorChange}
             />
           </ColorPickerContainer>
+        )}
+        {arrayEditorPosition && (
+          <ArrayEditorContainer
+            className="array-editor"
+            style={{
+              left: arrayEditorPosition.x,
+              top: arrayEditorPosition.y
+            }}
+          >
+            <h4>Edit Array</h4>
+            <p>Enter numbers separated by commas:</p>
+            <ArrayInput
+              value={arrayInput}
+              onChange={(e) => setArrayInput(e.target.value)}
+              placeholder="e.g., 1, 2, 3, 4, 5"
+            />
+            <div>
+              <Button onClick={handleArraySubmit}>Apply</Button>
+              <Button onClick={() => setArrayEditorPosition(null)}>Cancel</Button>
+            </div>
+          </ArrayEditorContainer>
         )}
       </Canvas>
     </Container>
