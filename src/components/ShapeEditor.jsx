@@ -115,6 +115,7 @@ const basicShapes = [
 const ShapeEditor = () => {
   const [shapes, setShapes] = useState([]);
   const [selectedShape, setSelectedShape] = useState(null);
+  const [selectedBoxIndex, setSelectedBoxIndex] = useState(null);
   const [colorPickerPosition, setColorPickerPosition] = useState(null);
   const [arrayEditorPosition, setArrayEditorPosition] = useState(null);
   const [arrayInput, setArrayInput] = useState('');
@@ -177,25 +178,47 @@ const ShapeEditor = () => {
     setDraggedShape(null);
   };
 
-  const handleContextMenu = (e, shape) => {
+  const handleContextMenu = (e, shape, boxIndex = null) => {
     e.preventDefault();
+    e.stopPropagation();
     setSelectedShape(shape);
+    setSelectedBoxIndex(boxIndex);
     
     if (shape.type === 'array') {
-      setArrayEditorPosition({ x: e.clientX, y: e.clientY });
-      setArrayInput(shape.arrayData ? shape.arrayData.join(', ') : '');
+      if (boxIndex !== null) {
+        setColorPickerPosition({ x: e.clientX, y: e.clientY });
+        setArrayEditorPosition(null);
+      } else {
+        setArrayEditorPosition({ x: e.clientX, y: e.clientY });
+        setColorPickerPosition(null);
+        setArrayInput(shape.arrayData ? shape.arrayData.join(', ') : '');
+      }
     } else {
       setColorPickerPosition({ x: e.clientX, y: e.clientY });
+      setArrayEditorPosition(null);
     }
   };
 
   const handleColorChange = (color) => {
     if (selectedShape) {
-      setShapes(shapes.map(shape => 
-        shape.id === selectedShape.id 
-          ? { ...shape, color: color.hex }
-          : shape
-      ));
+      if (selectedShape.type === 'array' && selectedBoxIndex !== null) {
+        // Update color for specific box in array
+        setShapes(shapes.map(shape => {
+          if (shape.id === selectedShape.id) {
+            const newBoxColors = [...(shape.boxColors || [])];
+            newBoxColors[selectedBoxIndex] = color.hex;
+            return { ...shape, boxColors: newBoxColors };
+          }
+          return shape;
+        }));
+      } else {
+        // Update color for entire shape
+        setShapes(shapes.map(shape => 
+          shape.id === selectedShape.id 
+            ? { ...shape, color: color.hex }
+            : shape
+        ));
+      }
     }
   };
 
@@ -214,6 +237,7 @@ const ShapeEditor = () => {
   const handleClickOutside = (e) => {
     if (colorPickerPosition && !e.target.closest('.color-picker')) {
       setColorPickerPosition(null);
+      setSelectedBoxIndex(null);
     }
     if (arrayEditorPosition && !e.target.closest('.array-editor')) {
       setArrayEditorPosition(null);
@@ -302,49 +326,100 @@ const ShapeEditor = () => {
           />
         );
       case 'array':
-        return (
-          <div
-            key={shape.id}
-            style={{
-              position: 'absolute',
-              left: shape.x,
-              top: shape.y,
-              transform: `rotate(${shape.rotation}deg)`,
-              display: 'flex',
-              flexWrap: 'wrap',
-              gap: '12px',
-              padding: '12px',
-              cursor: 'move',
-              backgroundColor: '#e8f4ff',
-              borderRadius: '8px',
-              boxShadow: '0 2px 8px rgba(74, 144, 226, 0.2)'
-            }}
-            onMouseDown={(e) => handleShapeMouseDown(e, shape)}
-            onContextMenu={(e) => handleContextMenu(e, shape)}
-          >
-            {shape.arrayData && shape.arrayData.map((item, index) => (
-              <div
-                key={index}
-                style={{
-                  width: '45px',
-                  height: '45px',
-                  backgroundColor: '#4a90e2',
-                  border: '2px solid #357abd',
-                  borderRadius: '6px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '16px',
-                  fontWeight: '500',
-                  color: '#ffffff',
-                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                }}
-              >
-                {item}
-              </div>
-            ))}
-          </div>
-        );
+        if (shape.id) { // If it's a shape on canvas
+          return (
+            <div
+              key={shape.id}
+              style={{
+                position: 'absolute',
+                left: shape.x,
+                top: shape.y,
+                transform: `rotate(${shape.rotation}deg)`,
+                display: 'flex',
+                flexWrap: 'wrap',
+                gap: '12px',
+                padding: '12px',
+                cursor: 'move',
+                backgroundColor: '#e8f4ff',
+                borderRadius: '8px',
+                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.2)'
+              }}
+              onMouseDown={(e) => handleShapeMouseDown(e, shape)}
+              onContextMenu={(e) => handleContextMenu(e, shape)}
+            >
+              {shape.arrayData && shape.arrayData.map((item, index) => (
+                <div
+                  key={index}
+                  style={{
+                    width: '45px',
+                    height: '45px',
+                    backgroundColor: shape.boxColors?.[index] || '#4a90e2',
+                    border: '2px solid #357abd',
+                    borderRadius: '6px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontSize: '16px',
+                    fontWeight: '500',
+                    color: '#ffffff',
+                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
+                    cursor: 'pointer'
+                  }}
+                  onContextMenu={(e) => handleContextMenu(e, shape, index)}
+                >
+                  {item}
+                </div>
+              ))}
+            </div>
+          );
+        } else { // If it's the icon in sidebar
+          return (
+            <>
+              <div style={{
+                width: '20px',
+                height: '20px',
+                backgroundColor: '#4a90e2',
+                border: '2px solid #357abd',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+              }}>1</div>
+              <div style={{
+                width: '20px',
+                height: '20px',
+                backgroundColor: '#4a90e2',
+                border: '2px solid #357abd',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+              }}>2</div>
+              <div style={{
+                width: '20px',
+                height: '20px',
+                backgroundColor: '#4a90e2',
+                border: '2px solid #357abd',
+                borderRadius: '4px',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                color: 'white',
+                fontSize: '12px',
+                fontWeight: 'bold',
+                boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+              }}>3</div>
+            </>
+          );
+        }
       default:
         return null;
     }
@@ -362,50 +437,7 @@ const ShapeEditor = () => {
             onDragStart={(e) => handleDragStart(e, shape)}
           >
             {shape.type === 'array' ? (
-              <>
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  backgroundColor: '#4a90e2',
-                  border: '2px solid #357abd',
-                  borderRadius: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                }}>1</div>
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  backgroundColor: '#4a90e2',
-                  border: '2px solid #357abd',
-                  borderRadius: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                }}>2</div>
-                <div style={{
-                  width: '20px',
-                  height: '20px',
-                  backgroundColor: '#4a90e2',
-                  border: '2px solid #357abd',
-                  borderRadius: '4px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  color: 'white',
-                  fontSize: '12px',
-                  fontWeight: 'bold',
-                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
-                }}>3</div>
-              </>
+              renderShape(shape)
             ) : (
               renderShape(shape)
             )}
