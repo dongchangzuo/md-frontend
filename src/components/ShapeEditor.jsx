@@ -34,14 +34,14 @@ const ShapeItem = styled.div`
   align-items: center;
   justify-content: center;
   cursor: move;
-  background: #fff;
-  border: 1px solid #ddd;
+  background: ${props => props.type === 'array' ? 'transparent' : '#fff'};
+  border: ${props => props.type === 'array' ? 'none' : '1px solid #ddd'};
   border-radius: 4px;
   transition: all 0.2s;
 
   &:hover {
-    transform: scale(1.05);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    transform: ${props => props.type === 'array' ? 'none' : 'scale(1.05)'};
+    box-shadow: ${props => props.type === 'array' ? 'none' : '0 2px 5px rgba(0, 0, 0, 0.1)'};
   }
 `;
 
@@ -357,10 +357,58 @@ const ShapeEditor = () => {
         {basicShapes.map((shape, index) => (
           <ShapeItem
             key={index}
+            type={shape.type}
             draggable
             onDragStart={(e) => handleDragStart(e, shape)}
           >
-            {renderShape(shape)}
+            {shape.type === 'array' ? (
+              <>
+                <div style={{
+                  width: '20px',
+                  height: '20px',
+                  backgroundColor: '#4a90e2',
+                  border: '2px solid #357abd',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                }}>1</div>
+                <div style={{
+                  width: '20px',
+                  height: '20px',
+                  backgroundColor: '#4a90e2',
+                  border: '2px solid #357abd',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                }}>2</div>
+                <div style={{
+                  width: '20px',
+                  height: '20px',
+                  backgroundColor: '#4a90e2',
+                  border: '2px solid #357abd',
+                  borderRadius: '4px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  color: 'white',
+                  fontSize: '12px',
+                  fontWeight: 'bold',
+                  boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
+                }}>3</div>
+              </>
+            ) : (
+              renderShape(shape)
+            )}
           </ShapeItem>
         ))}
       </Sidebar>
