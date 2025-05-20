@@ -1,5 +1,25 @@
 import React from 'react';
+import styled from 'styled-components';
 import './Home.css';
+
+const Container = styled.div`
+  padding: 20px;
+`;
+
+const Button = styled.button`
+  padding: 10px 20px;
+  margin: 10px;
+  border: none;
+  border-radius: 4px;
+  background-color: #4a90e2;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #357abd;
+  }
+`;
 
 const Home = ({ user, onLogout, onNavigate }) => {
   const handleMarkdownClick = () => {
@@ -12,30 +32,19 @@ const Home = ({ user, onLogout, onNavigate }) => {
     onNavigate('ocr');
   };
 
+  const handleShapeEditorClick = () => {
+    console.log('Shape Editor button clicked');
+    onNavigate('shapes');
+  };
+
   return (
-    <div className="home-container">
-      <div className="home-header">
-        <h1>Welcome, {user.username}!</h1>
-        <div className="header-actions">
-          <button 
-            className="nav-button"
-            onClick={handleMarkdownClick}
-          >
-            Markdown Editor
-          </button>
-          <button 
-            className="nav-button"
-            onClick={handleOCRClick}
-          >
-            OCR Recognition
-          </button>
-          <button 
-            className="logout-button"
-            onClick={onLogout}
-          >
-            Logout
-          </button>
-        </div>
+    <Container>
+      <h1>Welcome, {user?.username || 'User'}!</h1>
+      <div>
+        <Button onClick={handleMarkdownClick}>Markdown Editor</Button>
+        <Button onClick={handleOCRClick}>OCR</Button>
+        <Button onClick={handleShapeEditorClick}>Shape Editor</Button>
+        <Button onClick={onLogout}>Logout</Button>
       </div>
       
       <div className="user-info-panel">
@@ -59,7 +68,7 @@ const Home = ({ user, onLogout, onNavigate }) => {
           </div>
         </div>
       </div>
-    </div>
+    </Container>
   );
 };
 

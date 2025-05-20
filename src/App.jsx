@@ -1,10 +1,12 @@
-import { useState, useEffect } from 'react'
+import React, { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import './App.css'
 import Login from './components/Login/Login'
 import Signup from './components/Signup/Signup'
 import Home from './components/Home/Home'
 import MarkdownEditor from './components/MarkdownEditor/MarkdownEditor'
 import OCR from './components/OCR/OCR'
+import ShapeEditor from './components/ShapeEditor.jsx'
 import { authAPI, tokenManager } from './services/api'
 
 // 安全存储实现
@@ -126,6 +128,7 @@ function App() {
     setAuthToken(null);
     tokenManager.clearToken();
     secureStorage.removeItem('user');
+    setCurrentPage('home');
   };
 
   const toggleAuthMode = () => {
@@ -162,6 +165,9 @@ function App() {
       case 'ocr':
         console.log('Rendering OCR');
         return <OCR />;
+      case 'shapes':
+        console.log('Rendering ShapeEditor');
+        return <ShapeEditor />;
       case 'home':
       default:
         console.log('Rendering Home');
@@ -176,9 +182,15 @@ function App() {
   };
 
   return (
-    <div className="app">
-      {renderContent()}
-    </div>
+    <Router>
+      <div className="app">
+        <Routes>
+          <Route path="/login" element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/" />} />
+          <Route path="/signup" element={!user ? <Signup onSignup={handleSignup} /> : <Navigate to="/" />} />
+          <Route path="/" element={user ? renderContent() : <Navigate to="/login" />} />
+        </Routes>
+      </div>
+    </Router>
   );
 }
 
