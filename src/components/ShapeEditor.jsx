@@ -244,6 +244,27 @@ const ShapeEditor = () => {
     }
   };
 
+  const handleAddArrow = (position) => {
+    if (selectedShape && selectedShape.type === 'array' && selectedBoxIndex !== null) {
+      setShapes(shapes.map(shape => {
+        if (shape.id === selectedShape.id) {
+          const arrows = { ...(shape.arrows || {}) };
+          if (!arrows[selectedBoxIndex]) {
+            arrows[selectedBoxIndex] = {};
+          }
+          arrows[selectedBoxIndex][position] = !arrows[selectedBoxIndex][position];
+          if (!arrows[selectedBoxIndex].up && !arrows[selectedBoxIndex].down) {
+            delete arrows[selectedBoxIndex];
+          }
+          return { ...shape, arrows };
+        }
+        return shape;
+      }));
+      setColorPickerPosition(null);
+      setSelectedBoxIndex(null);
+    }
+  };
+
   useEffect(() => {
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
@@ -355,26 +376,69 @@ const ShapeEditor = () => {
               onContextMenu={(e) => handleContextMenu(e, shape)}
             >
               {shape.arrayData?.map((item, index) => (
-                <div
-                  key={index}
-                  style={{
-                    width: '45px',
-                    height: '45px',
-                    backgroundColor: shape.boxColors?.[index] || '#4a90e2',
-                    border: '2px solid #357abd',
-                    borderRadius: '6px',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    fontSize: '16px',
-                    fontWeight: '500',
-                    color: '#ffffff',
-                    boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-                    cursor: 'pointer'
-                  }}
-                  onContextMenu={(e) => handleContextMenu(e, shape, index)}
-                >
-                  {item}
+                <div key={index} style={{ position: 'relative' }}>
+                  {/* 上方箭头 - 指向下方 */}
+                  {shape.arrows?.[index]?.up && (
+                    <div style={{
+                      position: 'absolute',
+                      top: '-30px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: '16px',
+                      height: '30px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      zIndex: 1
+                    }}>
+                      <svg width="16" height="30" viewBox="0 0 24 48" fill="none" stroke="#1a73e8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="4" x2="12" y2="44" />
+                        <polyline points="4 36 12 44 20 36" />
+                      </svg>
+                    </div>
+                  )}
+                  {/* 框框 */}
+                  <div
+                    style={{
+                      width: '45px',
+                      height: '45px',
+                      backgroundColor: shape.boxColors?.[index] || '#4a90e2',
+                      border: '2px solid #357abd',
+                      borderRadius: '6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '16px',
+                      fontWeight: '500',
+                      color: '#ffffff',
+                      boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
+                      cursor: 'pointer',
+                      position: 'relative'
+                    }}
+                    onContextMenu={(e) => handleContextMenu(e, shape, index)}
+                  >
+                    {item}
+                  </div>
+                  {/* 下方箭头 - 指向上方 */}
+                  {shape.arrows?.[index]?.down && (
+                    <div style={{
+                      position: 'absolute',
+                      bottom: '-30px',
+                      left: '50%',
+                      transform: 'translateX(-50%)',
+                      width: '16px',
+                      height: '30px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      zIndex: 1
+                    }}>
+                      <svg width="16" height="30" viewBox="0 0 24 48" fill="none" stroke="#1a73e8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="12" y1="44" x2="12" y2="4" />
+                        <polyline points="4 12 12 4 20 12" />
+                      </svg>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -469,6 +533,16 @@ const ShapeEditor = () => {
               color={selectedShape?.color}
               onChange={handleColorChange}
             />
+            {selectedShape?.type === 'array' && selectedBoxIndex !== null && (
+              <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                <Button onClick={() => handleAddArrow('up')}>
+                  {selectedShape.arrows?.[selectedBoxIndex]?.up ? '删除上方箭头' : '添加上方箭头'}
+                </Button>
+                <Button onClick={() => handleAddArrow('down')}>
+                  {selectedShape.arrows?.[selectedBoxIndex]?.down ? '删除下方箭头' : '添加下方箭头'}
+                </Button>
+              </div>
+            )}
           </ColorPickerContainer>
         )}
         {arrayEditorPosition && (
