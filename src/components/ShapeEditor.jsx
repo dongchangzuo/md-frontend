@@ -121,6 +121,7 @@ const ShapeEditor = () => {
   const [arrayInput, setArrayInput] = useState('');
   const [draggedShape, setDraggedShape] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [editingLabel, setEditingLabel] = useState(null);
   const canvasRef = useRef(null);
 
   const handleDragStart = (e, shape) => {
@@ -265,6 +266,22 @@ const ShapeEditor = () => {
     }
   };
 
+  const handleArrowLabelChange = (position, value) => {
+    if (selectedShape && selectedShape.type === 'array' && selectedBoxIndex !== null) {
+      setShapes(shapes.map(shape => {
+        if (shape.id === selectedShape.id) {
+          const arrowLabels = { ...(shape.arrowLabels || {}) };
+          if (!arrowLabels[selectedBoxIndex]) {
+            arrowLabels[selectedBoxIndex] = {};
+          }
+          arrowLabels[selectedBoxIndex][position] = value;
+          return { ...shape, arrowLabels };
+        }
+        return shape;
+      }));
+    }
+  };
+
   useEffect(() => {
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
@@ -381,20 +398,91 @@ const ShapeEditor = () => {
                   {shape.arrows?.[index]?.up && (
                     <div style={{
                       position: 'absolute',
-                      top: '-30px',
+                      top: '-40px',
                       left: '50%',
                       transform: 'translateX(-50%)',
-                      width: '16px',
-                      height: '30px',
                       display: 'flex',
+                      flexDirection: 'column',
                       alignItems: 'center',
-                      justifyContent: 'center',
+                      gap: '4px',
                       zIndex: 1
                     }}>
-                      <svg width="16" height="30" viewBox="0 0 24 48" fill="none" stroke="#1a73e8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="4" x2="12" y2="44" />
-                        <polyline points="4 36 12 44 20 36" />
-                      </svg>
+                      <div 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedShape(shape);
+                          setSelectedBoxIndex(index);
+                          setEditingLabel('up');
+                        }}
+                        style={{
+                          fontSize: '12px',
+                          color: '#1a73e8',
+                          fontWeight: '500',
+                          textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+                          cursor: 'pointer',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                          border: '1px solid #1a73e8',
+                          transition: 'all 0.2s',
+                          ':hover': {
+                            backgroundColor: '#f0f0f0'
+                          }
+                        }}
+                      >
+                        {editingLabel === 'up' && selectedShape?.id === shape.id && selectedBoxIndex === index ? (
+                          <input
+                            type="text"
+                            value={shape.arrowLabels?.[index]?.up || ''}
+                            onChange={(e) => handleArrowLabelChange('up', e.target.value)}
+                            onBlur={() => setEditingLabel(null)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                setEditingLabel(null);
+                              }
+                            }}
+                            autoFocus
+                            style={{
+                              width: '80px',
+                              border: 'none',
+                              outline: 'none',
+                              fontSize: '12px',
+                              textAlign: 'center',
+                              backgroundColor: 'transparent',
+                              color: '#1a73e8',
+                              fontWeight: '500',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              wordBreak: 'keep-all',
+                              wordWrap: 'normal'
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            wordBreak: 'keep-all',
+                            wordWrap: 'normal',
+                            maxWidth: '80px'
+                          }}>
+                            {shape.arrowLabels?.[index]?.up || 'start'}
+                          </div>
+                        )}
+                      </div>
+                      <div style={{
+                        width: '16px',
+                        height: '30px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <svg width="16" height="30" viewBox="0 0 24 48" fill="none" stroke="#1a73e8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="12" y1="4" x2="12" y2="44" />
+                          <polyline points="4 36 12 44 20 36" />
+                        </svg>
+                      </div>
                     </div>
                   )}
                   {/* 框框 */}
@@ -423,20 +511,91 @@ const ShapeEditor = () => {
                   {shape.arrows?.[index]?.down && (
                     <div style={{
                       position: 'absolute',
-                      bottom: '-30px',
+                      bottom: '-40px',
                       left: '50%',
                       transform: 'translateX(-50%)',
-                      width: '16px',
-                      height: '30px',
                       display: 'flex',
+                      flexDirection: 'column',
                       alignItems: 'center',
-                      justifyContent: 'center',
+                      gap: '4px',
                       zIndex: 1
                     }}>
-                      <svg width="16" height="30" viewBox="0 0 24 48" fill="none" stroke="#1a73e8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="12" y1="44" x2="12" y2="4" />
-                        <polyline points="4 12 12 4 20 12" />
-                      </svg>
+                      <div style={{
+                        width: '16px',
+                        height: '30px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center'
+                      }}>
+                        <svg width="16" height="30" viewBox="0 0 24 48" fill="none" stroke="#1a73e8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                          <line x1="12" y1="44" x2="12" y2="4" />
+                          <polyline points="4 12 12 4 20 12" />
+                        </svg>
+                      </div>
+                      <div 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedShape(shape);
+                          setSelectedBoxIndex(index);
+                          setEditingLabel('down');
+                        }}
+                        style={{
+                          fontSize: '12px',
+                          color: '#1a73e8',
+                          fontWeight: '500',
+                          textShadow: '0 1px 2px rgba(0, 0, 0, 0.1)',
+                          cursor: 'pointer',
+                          padding: '2px 6px',
+                          borderRadius: '4px',
+                          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                          border: '1px solid #1a73e8',
+                          transition: 'all 0.2s',
+                          ':hover': {
+                            backgroundColor: '#f0f0f0'
+                          }
+                        }}
+                      >
+                        {editingLabel === 'down' && selectedShape?.id === shape.id && selectedBoxIndex === index ? (
+                          <input
+                            type="text"
+                            value={shape.arrowLabels?.[index]?.down || ''}
+                            onChange={(e) => handleArrowLabelChange('down', e.target.value)}
+                            onBlur={() => setEditingLabel(null)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                setEditingLabel(null);
+                              }
+                            }}
+                            autoFocus
+                            style={{
+                              width: '80px',
+                              border: 'none',
+                              outline: 'none',
+                              fontSize: '12px',
+                              textAlign: 'center',
+                              backgroundColor: 'transparent',
+                              color: '#1a73e8',
+                              fontWeight: '500',
+                              whiteSpace: 'nowrap',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              wordBreak: 'keep-all',
+                              wordWrap: 'normal'
+                            }}
+                          />
+                        ) : (
+                          <div style={{
+                            whiteSpace: 'nowrap',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            wordBreak: 'keep-all',
+                            wordWrap: 'normal',
+                            maxWidth: '80px'
+                          }}>
+                            {shape.arrowLabels?.[index]?.down || 'end'}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   )}
                 </div>
