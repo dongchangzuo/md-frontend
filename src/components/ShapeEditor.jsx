@@ -20,7 +20,7 @@ const Canvas = styled.div`
   flex: 1;
   padding: 20px;
   position: relative;
-  background: #fff;
+  background: #f0f0f0;
   margin: 20px;
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
@@ -105,11 +105,11 @@ const Button = styled.button`
 `;
 
 const basicShapes = [
-  { type: 'rectangle', width: 100, height: 60, color: '#000000' },
-  { type: 'square', width: 80, height: 80, color: '#000000' },
-  { type: 'triangle', width: 0, height: 0, color: '#000000' },
-  { type: 'arrow', width: 100, height: 40, color: '#000000' },
-  { type: 'array', width: 200, height: 60, color: '#4a90e2' },
+  { type: 'rectangle', width: 100, height: 60, color: '#1a73e8' },
+  { type: 'square', width: 80, height: 80, color: '#1a73e8' },
+  { type: 'triangle', width: 0, height: 0, color: '#1a73e8' },
+  { type: 'arrow', width: 100, height: 40, color: '#1a73e8' },
+  { type: 'array', width: 200, height: 60, color: '#1a73e8' },
 ];
 
 const ShapeEditor = () => {
@@ -268,7 +268,9 @@ const ShapeEditor = () => {
               backgroundColor: shape.color,
               width: shape.width,
               height: shape.height,
-              transform: `rotate(${shape.rotation}deg)`
+              transform: `rotate(${shape.rotation}deg)`,
+              border: '2px solid #000',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
             }}
             onMouseDown={(e) => handleShapeMouseDown(e, shape)}
             onContextMenu={(e) => handleContextMenu(e, shape)}
@@ -284,7 +286,9 @@ const ShapeEditor = () => {
               backgroundColor: shape.color,
               width: shape.width,
               height: shape.height,
-              transform: `rotate(${shape.rotation}deg)`
+              transform: `rotate(${shape.rotation}deg)`,
+              border: '2px solid #000',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
             }}
             onMouseDown={(e) => handleShapeMouseDown(e, shape)}
             onContextMenu={(e) => handleContextMenu(e, shape)}
@@ -302,7 +306,8 @@ const ShapeEditor = () => {
               borderLeft: '50px solid transparent',
               borderRight: '50px solid transparent',
               borderBottom: '86px solid ' + shape.color,
-              transform: `rotate(${shape.rotation}deg)`
+              transform: `rotate(${shape.rotation}deg)`,
+              filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2))'
             }}
             onMouseDown={(e) => handleShapeMouseDown(e, shape)}
             onContextMenu={(e) => handleContextMenu(e, shape)}
@@ -319,7 +324,9 @@ const ShapeEditor = () => {
               height: shape.height,
               backgroundColor: shape.color,
               clipPath: 'polygon(0% 50%, 80% 0%, 80% 30%, 100% 30%, 100% 70%, 80% 70%, 80% 100%)',
-              transform: `rotate(${shape.rotation}deg)`
+              transform: `rotate(${shape.rotation}deg)`,
+              border: '2px solid #000',
+              boxShadow: '0 2px 4px rgba(0, 0, 0, 0.2)'
             }}
             onMouseDown={(e) => handleShapeMouseDown(e, shape)}
             onContextMenu={(e) => handleContextMenu(e, shape)}
@@ -340,14 +347,14 @@ const ShapeEditor = () => {
                 gap: '12px',
                 padding: '12px',
                 cursor: 'move',
-                backgroundColor: '#e8f4ff',
+                backgroundColor: 'red',
                 borderRadius: '8px',
-                boxShadow: '0 2px 8px rgba(74, 144, 226, 0.2)'
+                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
               }}
               onMouseDown={(e) => handleShapeMouseDown(e, shape)}
               onContextMenu={(e) => handleContextMenu(e, shape)}
             >
-              {shape.arrayData && shape.arrayData.map((item, index) => (
+              {shape.arrayData?.map((item, index) => (
                 <div
                   key={index}
                   style={{
@@ -374,7 +381,7 @@ const ShapeEditor = () => {
           );
         } else { // If it's the icon in sidebar
           return (
-            <>
+            <div style={{ display: 'flex', gap: '4px' }}>
               <div style={{
                 width: '20px',
                 height: '20px',
@@ -417,7 +424,7 @@ const ShapeEditor = () => {
                 fontWeight: 'bold',
                 boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)'
               }}>3</div>
-            </>
+            </div>
           );
         }
       default:
