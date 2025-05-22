@@ -391,7 +391,7 @@ const ShapeEditor = () => {
                       justifyContent: 'center',
                       zIndex: 1
                     }}>
-                      <svg width="16" height="30" viewBox="0 0 24 48" fill="none" stroke="#1a73e8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="16" height="30" viewBox="0 0 24 48" fill="none" stroke="#1a73e8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="12" y1="4" x2="12" y2="44" />
                         <polyline points="4 36 12 44 20 36" />
                       </svg>
@@ -433,7 +433,7 @@ const ShapeEditor = () => {
                       justifyContent: 'center',
                       zIndex: 1
                     }}>
-                      <svg width="16" height="30" viewBox="0 0 24 48" fill="none" stroke="#1a73e8" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <svg width="16" height="30" viewBox="0 0 24 48" fill="none" stroke="#1a73e8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
                         <line x1="12" y1="44" x2="12" y2="4" />
                         <polyline points="4 12 12 4 20 12" />
                       </svg>
