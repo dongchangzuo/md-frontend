@@ -398,13 +398,13 @@ const ShapeEditor = () => {
                   {shape.arrows?.[index]?.up && (
                     <div style={{
                       position: 'absolute',
-                      top: '-40px',
+                      top: '-70px',
                       left: '50%',
                       transform: 'translateX(-50%)',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      gap: '4px',
+                      gap: '8px',
                       zIndex: 1
                     }}>
                       <div 
@@ -425,9 +425,7 @@ const ShapeEditor = () => {
                           backgroundColor: 'rgba(255, 255, 255, 0.9)',
                           border: '1px solid #1a73e8',
                           transition: 'all 0.2s',
-                          ':hover': {
-                            backgroundColor: '#f0f0f0'
-                          }
+                          marginBottom: '4px'
                         }}
                       >
                         {editingLabel === 'up' && selectedShape?.id === shape.id && selectedBoxIndex === index ? (
@@ -511,13 +509,13 @@ const ShapeEditor = () => {
                   {shape.arrows?.[index]?.down && (
                     <div style={{
                       position: 'absolute',
-                      bottom: '-40px',
+                      bottom: '-70px',
                       left: '50%',
                       transform: 'translateX(-50%)',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      gap: '4px',
+                      gap: '8px',
                       zIndex: 1
                     }}>
                       <div style={{
@@ -550,9 +548,7 @@ const ShapeEditor = () => {
                           backgroundColor: 'rgba(255, 255, 255, 0.9)',
                           border: '1px solid #1a73e8',
                           transition: 'all 0.2s',
-                          ':hover': {
-                            backgroundColor: '#f0f0f0'
-                          }
+                          marginTop: '4px'
                         }}
                       >
                         {editingLabel === 'down' && selectedShape?.id === shape.id && selectedBoxIndex === index ? (
