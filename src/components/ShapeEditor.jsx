@@ -24,6 +24,10 @@ const Canvas = styled.div`
   margin: 20px;
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  background-image: 
+    linear-gradient(to right, rgba(0, 0, 0, 0.1) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+  background-size: 20px 20px;
 `;
 
 const ShapeItem = styled.div`
@@ -132,8 +136,9 @@ const ShapeEditor = () => {
     e.preventDefault();
     const shape = JSON.parse(e.dataTransfer.getData('shape'));
     const rect = canvasRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const gridSize = 20; // 网格大小
+    const x = Math.round((e.clientX - rect.left) / gridSize) * gridSize;
+    const y = Math.round((e.clientY - rect.top) / gridSize) * gridSize;
 
     setShapes([...shapes, {
       ...shape,
@@ -164,8 +169,9 @@ const ShapeEditor = () => {
   const handleMouseMove = (e) => {
     if (draggedShape) {
       const rect = canvasRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left - dragOffset.x;
-      const y = e.clientY - rect.top - dragOffset.y;
+      const gridSize = 20; // 网格大小
+      const x = Math.round((e.clientX - rect.left - dragOffset.x) / gridSize) * gridSize;
+      const y = Math.round((e.clientY - rect.top - dragOffset.y) / gridSize) * gridSize;
 
       setShapes(shapes.map(shape => 
         shape.id === draggedShape.id
@@ -398,13 +404,13 @@ const ShapeEditor = () => {
                   {shape.arrows?.[index]?.up && (
                     <div style={{
                       position: 'absolute',
-                      top: '-70px',
+                      top: '-55px',
                       left: '50%',
                       transform: 'translateX(-50%)',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      gap: '8px',
+                      gap: '6px',
                       zIndex: 1
                     }}>
                       <div 
@@ -509,13 +515,13 @@ const ShapeEditor = () => {
                   {shape.arrows?.[index]?.down && (
                     <div style={{
                       position: 'absolute',
-                      bottom: '-70px',
+                      bottom: '-55px',
                       left: '50%',
                       transform: 'translateX(-50%)',
                       display: 'flex',
                       flexDirection: 'column',
                       alignItems: 'center',
-                      gap: '8px',
+                      gap: '6px',
                       zIndex: 1
                     }}>
                       <div style={{
