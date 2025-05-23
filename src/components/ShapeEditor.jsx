@@ -134,12 +134,93 @@ const CopyButton = styled.button`
   }
 `;
 
+const TemplateButton = styled.button`
+  padding: 8px 16px;
+  margin: 5px;
+  border: none;
+  border-radius: 4px;
+  background-color: #4a90e2;
+  color: white;
+  cursor: pointer;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #357abd;
+  }
+`;
+
+const TemplateSelector = styled.div`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: white;
+  padding: 10px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+`;
+
+const GroupContainer = styled.div`
+  position: absolute;
+  border: 2px dashed #4a90e2;
+  background: rgba(74, 144, 226, 0.05);
+  pointer-events: none;
+  transition: all 0.2s;
+`;
+
+const FileInput = styled.input`
+  display: none;
+`;
+
+const FileInputLabel = styled.label`
+  padding: 8px 16px;
+  margin: 5px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: inline-block;
+  transition: background-color 0.2s;
+
+  &:hover {
+    background-color: #357abd;
+  }
+`;
+
 const basicShapes = [
   { type: 'rectangle', width: 100, height: 60, color: '#1a73e8' },
   { type: 'square', width: 80, height: 80, color: '#1a73e8' },
   { type: 'triangle', width: 0, height: 0, color: '#1a73e8' },
   { type: 'arrow', width: 100, height: 40, color: '#1a73e8' },
   { type: 'array', width: 200, height: 60, color: '#1a73e8' },
+];
+
+const templates = [
+  {
+    name: '基础流程图',
+    shapes: [
+      { type: 'rectangle', width: 100, height: 60, color: '#1a73e8', x: 100, y: 100 },
+      { type: 'arrow', width: 100, height: 40, color: '#1a73e8', x: 100, y: 180 },
+      { type: 'rectangle', width: 100, height: 60, color: '#1a73e8', x: 100, y: 240 }
+    ]
+  },
+  {
+    name: '数组示例',
+    shapes: [
+      { 
+        type: 'array', 
+        width: 200, 
+        height: 60, 
+        color: '#1a73e8', 
+        x: 100, 
+        y: 100,
+        arrayData: ['1', '2', '3'],
+        boxColors: ['#4a90e2', '#357abd', '#2c5282']
+      }
+    ]
+  }
 ];
 
 const ShapeEditor = () => {
@@ -153,7 +234,14 @@ const ShapeEditor = () => {
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [editingLabel, setEditingLabel] = useState(null);
   const [copiedShape, setCopiedShape] = useState(null);
+  const [showTemplates, setShowTemplates] = useState(false);
+  const [groups, setGroups] = useState([]);
+  const [selectedGroup, setSelectedGroup] = useState(null);
+  const [isSelectingGroup, setIsSelectingGroup] = useState(false);
+  const [selectionStart, setSelectionStart] = useState(null);
+  const [selectionEnd, setSelectionEnd] = useState(null);
   const canvasRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const handleDragStart = (e, shape) => {
     e.dataTransfer.setData('shape', JSON.stringify(shape));
@@ -181,35 +269,131 @@ const ShapeEditor = () => {
     e.preventDefault();
   };
 
+  const handleCanvasMouseDown = (e) => {
+    if (e.button === 0 && e.ctrlKey) { // 按住 Ctrl 键左键点击开始选择
+      setIsSelectingGroup(true);
+      const rect = canvasRef.current.getBoundingClientRect();
+      setSelectionStart({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+      setSelectionEnd({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+    }
+  };
+
+  const handleCanvasMouseMove = (e) => {
+    if (isSelectingGroup) {
+      const rect = canvasRef.current.getBoundingClientRect();
+      setSelectionEnd({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+    }
+  };
+
+  const handleCanvasMouseUp = () => {
+    if (isSelectingGroup && selectionStart && selectionEnd) {
+      // 计算选择框的范围
+      const left = Math.min(selectionStart.x, selectionEnd.x);
+      const top = Math.min(selectionStart.y, selectionEnd.y);
+      const right = Math.max(selectionStart.x, selectionEnd.x);
+      const bottom = Math.max(selectionStart.y, selectionEnd.y);
+
+      // 找出在选择框内的图形
+      const selectedShapes = shapes.filter(shape => {
+        const shapeRight = shape.x + shape.width;
+        const shapeBottom = shape.y + shape.height;
+        return shape.x >= left && shapeRight <= right &&
+               shape.y >= top && shapeBottom <= bottom;
+      });
+
+      if (selectedShapes.length > 0) {
+        // 创建新的 group
+        const newGroup = {
+          id: Date.now(),
+          shapes: selectedShapes.map(shape => shape.id),
+          x: left,
+          y: top,
+          width: right - left,
+          height: bottom - top
+        };
+        setGroups([...groups, newGroup]);
+      }
+
+      setIsSelectingGroup(false);
+      setSelectionStart(null);
+      setSelectionEnd(null);
+    }
+  };
+
   const handleShapeMouseDown = (e, shape) => {
     e.stopPropagation();
-    setSelectedShape(shape);
-    setDraggedShape(shape);
     
-    const rect = e.target.getBoundingClientRect();
-    setDragOffset({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top
-    });
+    // 检查是否点击了 group
+    const clickedGroup = groups.find(group => 
+      group.shapes.includes(shape.id)
+    );
+
+    if (clickedGroup) {
+      setSelectedGroup(clickedGroup);
+      setDraggedShape(clickedGroup);
+      
+      const rect = e.target.getBoundingClientRect();
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+    } else {
+      setSelectedShape(shape);
+      setDraggedShape(shape);
+      
+      const rect = e.target.getBoundingClientRect();
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+    }
   };
 
   const handleMouseMove = (e) => {
     if (draggedShape) {
       const rect = canvasRef.current.getBoundingClientRect();
-      const gridSize = 20; // 网格大小
+      const gridSize = 20;
       const x = Math.round((e.clientX - rect.left - dragOffset.x) / gridSize) * gridSize;
       const y = Math.round((e.clientY - rect.top - dragOffset.y) / gridSize) * gridSize;
 
-      setShapes(shapes.map(shape => 
-        shape.id === draggedShape.id
-          ? { ...shape, x, y }
-          : shape
-      ));
+      if (selectedGroup) {
+        // 移动 group 中的所有图形
+        const dx = x - selectedGroup.x;
+        const dy = y - selectedGroup.y;
+        
+        setShapes(shapes.map(shape => 
+          selectedGroup.shapes.includes(shape.id)
+            ? { ...shape, x: shape.x + dx, y: shape.y + dy }
+            : shape
+        ));
+        
+        setGroups(groups.map(group =>
+          group.id === selectedGroup.id
+            ? { ...group, x, y }
+            : group
+        ));
+      } else {
+        setShapes(shapes.map(shape => 
+          shape.id === draggedShape.id
+            ? { ...shape, x, y }
+            : shape
+        ));
+      }
     }
   };
 
   const handleMouseUp = () => {
     setDraggedShape(null);
+    setSelectedGroup(null);
   };
 
   const handleCopy = () => {
@@ -325,6 +509,181 @@ const ShapeEditor = () => {
         }
         return shape;
       }));
+    }
+  };
+
+  const applyTemplate = (template) => {
+    const newShapes = template.shapes.map(shape => ({
+      ...shape,
+      id: Date.now() + Math.random(),
+      rotation: 0
+    }));
+    setShapes([...shapes, ...newShapes]);
+    setShowTemplates(false);
+  };
+
+  const handleDeleteGroup = (groupId) => {
+    setGroups(groups.filter(group => group.id !== groupId));
+  };
+
+  const handleFileInput = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      // 先清除画布上的所有内容
+      setShapes([]);
+      setGroups([]);
+      setSelectedShape(null);
+      setSelectedGroup(null);
+      setColorPickerPosition(null);
+      setArrayEditorPosition(null);
+      setCopiedShape(null);
+      setEditingLabel(null);
+
+      console.log('Reading file:', file.name);
+      const reader = new FileReader();
+      
+      reader.onload = (event) => {
+        try {
+          const yamlContent = event.target.result;
+          console.log('File content:', yamlContent);
+          
+          const shapes = parseYamlToShapes(yamlContent);
+          console.log('Parsed shapes:', shapes);
+          
+          if (shapes.length === 0) {
+            alert('No shapes found in the YAML file.');
+            return;
+          }
+
+          // 添加新图形
+          setShapes(shapes);
+        } catch (error) {
+          console.error('Error parsing YAML:', error);
+          alert('Error parsing YAML file. Please check the format.');
+        }
+      };
+
+      reader.onerror = (error) => {
+        console.error('Error reading file:', error);
+        alert('Error reading file. Please try again.');
+      };
+
+      reader.readAsText(file);
+    }
+  };
+
+  const parseYamlToShapes = (yamlContent) => {
+    console.log('Parsing YAML content:', yamlContent);
+    
+    try {
+      // 解析 YAML 内容
+      const data = yamlContent.split('\n').reduce((acc, line) => {
+        const trimmedLine = line.trim();
+        if (!trimmedLine) return acc;
+
+        // 解析标题
+        if (trimmedLine.startsWith('title:')) {
+          acc.title = trimmedLine.split(':')[1].trim();
+          return acc;
+        }
+
+        // 解析图像
+        if (trimmedLine.startsWith('images:')) {
+          acc.images = [];
+          return acc;
+        }
+
+        // 解析单个图像
+        if (trimmedLine.startsWith('- image:')) {
+          acc.images.push({ type: '', arrayData: [] });
+          return acc;
+        }
+
+        // 解析类型
+        if (trimmedLine.startsWith('type:')) {
+          if (acc.images && acc.images.length > 0) {
+            acc.images[acc.images.length - 1].type = trimmedLine.split(':')[1].trim();
+          }
+          return acc;
+        }
+
+        // 解析数组数据
+        if (trimmedLine.startsWith('arrayData:')) {
+          return acc;
+        }
+
+        // 解析数组项
+        if (trimmedLine.startsWith('- value:')) {
+          const currentImage = acc.images[acc.images.length - 1];
+          if (currentImage) {
+            currentImage.arrayData.push({
+              value: trimmedLine.split(':')[1].trim(),
+              color: '#000000',
+              arrow: 'none'
+            });
+          }
+          return acc;
+        }
+
+        // 解析颜色
+        if (trimmedLine.startsWith('color:')) {
+          const currentImage = acc.images[acc.images.length - 1];
+          if (currentImage && currentImage.arrayData.length > 0) {
+            currentImage.arrayData[currentImage.arrayData.length - 1].color = 
+              trimmedLine.split(':')[1].trim();
+          }
+          return acc;
+        }
+
+        // 解析箭头
+        if (trimmedLine.startsWith('arrow:')) {
+          const currentImage = acc.images[acc.images.length - 1];
+          if (currentImage && currentImage.arrayData.length > 0) {
+            currentImage.arrayData[currentImage.arrayData.length - 1].arrow = 
+              trimmedLine.split(':')[1].trim();
+          }
+          return acc;
+        }
+
+        return acc;
+      }, { title: '', images: [] });
+
+      console.log('Parsed data:', data);
+
+      // 转换为图形数组
+      const shapes = data.images.map((image, index) => {
+        const shape = {
+          type: image.type,
+          id: Date.now() + index,
+          x: 100 + index * 300, // 水平排列
+          y: 100,
+          rotation: 0,
+          width: 200,
+          height: 60,
+          color: '#1a73e8',
+          arrayData: image.arrayData.map(item => item.value),
+          boxColors: image.arrayData.map(item => item.color),
+          arrows: {}
+        };
+
+        // 处理箭头
+        image.arrayData.forEach((item, i) => {
+          if (item.arrow !== 'none') {
+            if (!shape.arrows[i]) {
+              shape.arrows[i] = {};
+            }
+            shape.arrows[i][item.arrow] = true;
+          }
+        });
+
+        return shape;
+      });
+
+      console.log('Final shapes:', shapes);
+      return shapes;
+    } catch (error) {
+      console.error('Error parsing YAML:', error);
+      throw error;
     }
   };
 
@@ -715,13 +1074,81 @@ const ShapeEditor = () => {
             )}
           </ShapeItem>
         ))}
+        <div style={{ marginTop: '20px' }}>
+          <h3>File Input</h3>
+          <FileInput
+            type="file"
+            accept=".yaml,.yml"
+            onChange={handleFileInput}
+            ref={fileInputRef}
+          />
+          <FileInputLabel onClick={() => fileInputRef.current?.click()}>
+            加载 YAML 文件
+          </FileInputLabel>
+        </div>
+        <div style={{ marginTop: '20px' }}>
+          <h3>Templates</h3>
+          <TemplateButton onClick={() => setShowTemplates(!showTemplates)}>
+            选择模板
+          </TemplateButton>
+        </div>
+        <div style={{ marginTop: '20px' }}>
+          <h3>Group 操作</h3>
+          <p style={{ fontSize: '12px', color: '#666' }}>
+            按住 Ctrl 键并拖动鼠标来选择图形创建 group
+          </p>
+        </div>
       </Sidebar>
       <Canvas
         ref={canvasRef}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
+        onMouseDown={handleCanvasMouseDown}
+        onMouseMove={handleCanvasMouseMove}
+        onMouseUp={handleCanvasMouseUp}
       >
         {shapes.map(shape => renderShape(shape))}
+        
+        {/* 渲染 group 选择框 */}
+        {isSelectingGroup && selectionStart && selectionEnd && (
+          <GroupContainer
+            style={{
+              left: Math.min(selectionStart.x, selectionEnd.x),
+              top: Math.min(selectionStart.y, selectionEnd.y),
+              width: Math.abs(selectionEnd.x - selectionStart.x),
+              height: Math.abs(selectionEnd.y - selectionStart.y)
+            }}
+          />
+        )}
+
+        {/* 渲染已创建的 groups */}
+        {groups.map(group => (
+          <GroupContainer
+            key={group.id}
+            style={{
+              left: group.x,
+              top: group.y,
+              width: group.width,
+              height: group.height,
+              borderColor: selectedGroup?.id === group.id ? '#ff4081' : '#4a90e2'
+            }}
+          />
+        ))}
+
+        {showTemplates && (
+          <TemplateSelector>
+            <h4>选择模板</h4>
+            {templates.map((template, index) => (
+              <TemplateButton
+                key={index}
+                onClick={() => applyTemplate(template)}
+                style={{ display: 'block', width: '100%', marginBottom: '8px' }}
+              >
+                {template.name}
+              </TemplateButton>
+            ))}
+          </TemplateSelector>
+        )}
         {colorPickerPosition && (
           <ColorPickerContainer
             className="color-picker"

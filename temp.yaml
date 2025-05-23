@@ -1,0 +1,28 @@
+title: Two sum
+
+images:
+  - image:
+    type: array
+    arrayData:
+      - value: 1
+        color: #000000
+        arrow: left
+      - value: 2
+        color: #000000
+        arrow: right
+      - value: 3
+        color: #000000
+        arrow: left
+  - image:
+    type: array
+    arrayData:
+      - value: 3
+        color: #000000
+        arrow: left
+      - value: 444
+        color: #000000
+        arrow: right
+      - value: 3
+        color: #000000
+        arrow: left
+        
