@@ -6,7 +6,7 @@ import Signup from './components/Signup/Signup'
 import Home from './components/Home/Home'
 import MarkdownEditor from './components/MarkdownEditor/MarkdownEditor'
 import OCR from './components/OCR/OCR'
-import ShapeEditor from './components/ShapeEditor.jsx'
+import ShapeEditor from './components/ShapeEditor'
 import { authAPI, tokenManager } from './services/api'
 
 // 安全存储实现
