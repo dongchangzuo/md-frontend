@@ -639,8 +639,9 @@ const ShapeEditor = () => {
         if (trimmedLine.startsWith('arrow:')) {
           const currentImage = acc.images[acc.images.length - 1];
           if (currentImage && currentImage.arrayData.length > 0) {
-            currentImage.arrayData[currentImage.arrayData.length - 1].arrow = 
-              trimmedLine.split(':')[1].trim();
+            const arrowValue = trimmedLine.split(':')[1].trim();
+            currentImage.arrayData[currentImage.arrayData.length - 1].arrow = arrowValue;
+            console.log('Parsed arrow value:', arrowValue); // 添加日志
           }
           return acc;
         }
@@ -668,14 +669,22 @@ const ShapeEditor = () => {
 
         // 处理箭头
         image.arrayData.forEach((item, i) => {
-          if (item.arrow !== 'none') {
+          if (item.arrow && item.arrow !== 'none') {
             if (!shape.arrows[i]) {
               shape.arrows[i] = {};
             }
-            shape.arrows[i][item.arrow] = true;
+            // 根据箭头值设置上下箭头
+            if (item.arrow.includes('up')) {
+              shape.arrows[i].up = true;
+            }
+            if (item.arrow.includes('down')) {
+              shape.arrows[i].down = true;
+            }
+            console.log(`Setting arrows for index ${i}:`, shape.arrows[i]); // 添加日志
           }
         });
 
+        console.log('Final shape:', shape); // 添加日志
         return shape;
       });
 
