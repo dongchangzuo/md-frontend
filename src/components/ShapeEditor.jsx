@@ -108,6 +108,32 @@ const Button = styled.button`
   }
 `;
 
+const CopyButton = styled.button`
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 8px 16px;
+  background-color: #4a90e2;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.2s;
+
+  &:hover {
+    background-color: #357abd;
+  }
+
+  &:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+`;
+
 const basicShapes = [
   { type: 'rectangle', width: 100, height: 60, color: '#1a73e8' },
   { type: 'square', width: 80, height: 80, color: '#1a73e8' },
@@ -126,6 +152,7 @@ const ShapeEditor = () => {
   const [draggedShape, setDraggedShape] = useState(null);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const [editingLabel, setEditingLabel] = useState(null);
+  const [copiedShape, setCopiedShape] = useState(null);
   const canvasRef = useRef(null);
 
   const handleDragStart = (e, shape) => {
@@ -183,6 +210,19 @@ const ShapeEditor = () => {
 
   const handleMouseUp = () => {
     setDraggedShape(null);
+  };
+
+  const handleCopy = () => {
+    if (selectedShape) {
+      const newShape = {
+        ...selectedShape,
+        id: Date.now(),
+        x: selectedShape.x + 20, // 向右偏移一点
+        y: selectedShape.y + 20  // 向下偏移一点
+      };
+      setShapes([...shapes, newShape]);
+      setCopiedShape(newShape);
+    }
   };
 
   const handleContextMenu = (e, shape, boxIndex = null) => {
@@ -694,13 +734,19 @@ const ShapeEditor = () => {
               color={selectedShape?.color}
               onChange={handleColorChange}
             />
-            {selectedShape?.type === 'array' && selectedBoxIndex !== null && (
+            {selectedShape?.type === 'array' && selectedBoxIndex !== null ? (
               <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <Button onClick={() => handleAddArrow('up')}>
                   {selectedShape.arrows?.[selectedBoxIndex]?.up ? '删除上方箭头' : '添加上方箭头'}
                 </Button>
                 <Button onClick={() => handleAddArrow('down')}>
                   {selectedShape.arrows?.[selectedBoxIndex]?.down ? '删除下方箭头' : '添加下方箭头'}
+                </Button>
+              </div>
+            ) : (
+              <div style={{ marginTop: 10 }}>
+                <Button onClick={handleCopy}>
+                  复制图形
                 </Button>
               </div>
             )}
