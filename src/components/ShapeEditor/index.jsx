@@ -232,13 +232,10 @@ const CloseBtn = styled.button`
 `;
 
 const basicShapes = [
-  { type: 'rectangle', width: 100, height: 60, color: '#1a73e8' },
-  { type: 'square', width: 80, height: 80, color: '#1a73e8' },
-  { type: 'triangle', width: 0, height: 0, color: '#1a73e8' },
-  { type: 'arrow', width: 100, height: 40, color: '#1a73e8' },
   { type: 'array', width: 200, height: 60, color: '#1a73e8' },
   { type: 'stack', width: 60, height: 200, color: '#1a73e8' },
   { type: 'map', width: 120, height: 60, color: '#ffd54f' },
+  { type: 'tree', width: 200, height: 200, color: '#c8e6c9' }
 ];
 
 const templates = [
