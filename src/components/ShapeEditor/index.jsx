@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ChromePicker } from 'react-color';
 import styled from 'styled-components';
+import EditorGuide from './EditorGuide';
 
 const Container = styled.div`
   display: flex;
@@ -189,6 +190,44 @@ const FileInputLabel = styled.label`
   }
 `;
 
+const ModalOverlay = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  background: rgba(0,0,0,0.3);
+  z-index: 2000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const ModalContent = styled.div`
+  background: #fff;
+  border-radius: 8px;
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 4px 32px rgba(0,0,0,0.18);
+  padding: 32px 24px 24px 24px;
+  position: relative;
+`;
+
+const CloseBtn = styled.button`
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: #f5f5f5;
+  border: none;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  font-size: 20px;
+  cursor: pointer;
+  &:hover { background: #eee; }
+`;
+
 const basicShapes = [
   { type: 'rectangle', width: 100, height: 60, color: '#1a73e8' },
   { type: 'square', width: 80, height: 80, color: '#1a73e8' },
@@ -240,6 +279,7 @@ const ShapeEditor = () => {
   const [isSelectingGroup, setIsSelectingGroup] = useState(false);
   const [selectionStart, setSelectionStart] = useState(null);
   const [selectionEnd, setSelectionEnd] = useState(null);
+  const [showGuide, setShowGuide] = useState(false);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -1107,6 +1147,12 @@ const ShapeEditor = () => {
             按住 Ctrl 键并拖动鼠标来选择图形创建 group
           </p>
         </div>
+        <div style={{ marginTop: '20px' }}>
+          <h3>帮助</h3>
+          <Button onClick={() => setShowGuide(true)}>
+            YAML 文件指南
+          </Button>
+        </div>
       </Sidebar>
       <Canvas
         ref={canvasRef}
@@ -1210,6 +1256,14 @@ const ShapeEditor = () => {
           </ArrayEditorContainer>
         )}
       </Canvas>
+      {showGuide && (
+        <ModalOverlay onClick={() => setShowGuide(false)}>
+          <ModalContent onClick={e => e.stopPropagation()}>
+            <CloseBtn onClick={() => setShowGuide(false)}>&times;</CloseBtn>
+            <EditorGuide />
+          </ModalContent>
+        </ModalOverlay>
+      )}
     </Container>
   );
 };
