@@ -75,7 +75,7 @@ function App() {
   const [authToken, setAuthToken] = useState(null);
   const [currentPage, setCurrentPage] = useState('home');
   const [isLoading, setIsLoading] = useState(true);
-  const [themeMode] = useState('light'); // 默认明亮
+  const [themeMode, setThemeMode] = useState('light'); // 默认明亮
   const theme = themes[themeMode];
   
   // Check for existing authentication on component mount
@@ -166,13 +166,13 @@ function App() {
     switch (currentPage) {
       case 'markdown':
         console.log('Rendering MarkdownEditor');
-        return <MarkdownEditor />;
+        return <MarkdownEditor themeMode={themeMode} setThemeMode={setThemeMode} />;
       case 'ocr':
         console.log('Rendering OCR');
-        return <OCR />;
+        return <OCR themeMode={themeMode} setThemeMode={setThemeMode} />;
       case 'shapes':
         console.log('Rendering ShapeEditor');
-        return <ShapeEditor />;
+        return <ShapeEditor themeMode={themeMode} setThemeMode={setThemeMode} />;
       case 'home':
       default:
         console.log('Rendering Home');
@@ -181,6 +181,8 @@ function App() {
             user={user} 
             onLogout={handleLogout} 
             onNavigate={navigateTo}
+            themeMode={themeMode}
+            setThemeMode={setThemeMode}
           />
         );
     }
@@ -195,12 +197,12 @@ function App() {
             <Route path="/login" element={<Login onLogin={handleLogin} />} />
             <Route path="/signup" element={<Signup onSignup={handleSignup} />} />
             <Route path="/" element={renderContent()} />
-            <Route path="/editor" element={<ShapeEditor />} />
-            <Route path="/editor/map" element={<ShapeEditor defaultTab="map" />} />
-            <Route path="/editor/tree" element={<ShapeEditor defaultTab="tree" />} />
-            <Route path="/markdown" element={<MarkdownEditor />} />
-            <Route path="/ocr" element={<OCR />} />
-            <Route path="/home" element={<Home user={user} onLogout={handleLogout} onNavigate={navigateTo} />} />
+            <Route path="/editor" element={<ShapeEditor themeMode={themeMode} setThemeMode={setThemeMode} />} />
+            <Route path="/editor/map" element={<ShapeEditor defaultTab="map" themeMode={themeMode} setThemeMode={setThemeMode} />} />
+            <Route path="/editor/tree" element={<ShapeEditor defaultTab="tree" themeMode={themeMode} setThemeMode={setThemeMode} />} />
+            <Route path="/markdown" element={<MarkdownEditor themeMode={themeMode} setThemeMode={setThemeMode} />} />
+            <Route path="/ocr" element={<OCR themeMode={themeMode} setThemeMode={setThemeMode} />} />
+            <Route path="/home" element={<Home user={user} onLogout={handleLogout} onNavigate={navigateTo} themeMode={themeMode} setThemeMode={setThemeMode} />} />
           </Routes>
         </div>
       </Router>

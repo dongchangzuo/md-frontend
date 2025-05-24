@@ -9,6 +9,16 @@ export const themes = {
     card: '#fff',
     accent: '#4a90e2',
     gradient: 'linear-gradient(90deg, #4a90e2 0%, #81d4fa 100%)',
+    // markdown 专属
+    markdownBg: '#fff',
+    markdownText: '#222',
+    markdownCodeBg: '#f6f8fa',
+    markdownCodeText: '#c7254e',
+    markdownBlockquoteBg: '#f9f9f9',
+    markdownBlockquoteBorder: '#d0d7de',
+    markdownTableBorder: '#e0e0e0',
+    markdownLink: '#1976d2',
+    markdownHr: '#e0e0e0',
   },
   dark: {
     bg: '#181c24',
@@ -20,5 +30,15 @@ export const themes = {
     card: '#232733',
     accent: '#90caf9',
     gradient: 'linear-gradient(90deg, #90caf9 0%, #4a90e2 100%)',
+    // markdown 专属
+    markdownBg: '#232733',
+    markdownText: '#f5f5f5',
+    markdownCodeBg: '#232b36',
+    markdownCodeText: '#ffb86c',
+    markdownBlockquoteBg: '#232b36',
+    markdownBlockquoteBorder: '#3a4252',
+    markdownTableBorder: '#3a4252',
+    markdownLink: '#90caf9',
+    markdownHr: '#3a4252',
   }
 }; 
