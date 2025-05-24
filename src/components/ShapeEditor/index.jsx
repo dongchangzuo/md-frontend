@@ -558,23 +558,43 @@ const ShapeEditor = () => {
   };
 
   const handleAddArrow = (position) => {
-    if (selectedShape && selectedShape.type === 'array' && selectedBoxIndex !== null) {
-      setShapes(shapes.map(shape => {
-        if (shape.id === selectedShape.id) {
-          const arrows = { ...(shape.arrows || {}) };
-          if (!arrows[selectedBoxIndex]) {
-            arrows[selectedBoxIndex] = {};
+    if (selectedShape && selectedBoxIndex !== null) {
+      if (selectedShape.type === 'array') {
+        setShapes(shapes.map(shape => {
+          if (shape.id === selectedShape.id) {
+            const arrows = { ...(shape.arrows || {}) };
+            if (!arrows[selectedBoxIndex]) {
+              arrows[selectedBoxIndex] = {};
+            }
+            arrows[selectedBoxIndex][position] = !arrows[selectedBoxIndex][position];
+            if (!arrows[selectedBoxIndex].up && !arrows[selectedBoxIndex].down) {
+              delete arrows[selectedBoxIndex];
+            }
+            return { ...shape, arrows };
           }
-          arrows[selectedBoxIndex][position] = !arrows[selectedBoxIndex][position];
-          if (!arrows[selectedBoxIndex].up && !arrows[selectedBoxIndex].down) {
-            delete arrows[selectedBoxIndex];
+          return shape;
+        }));
+        setColorPickerPosition(null);
+        setSelectedBoxIndex(null);
+      } else if (selectedShape.type === 'stack') {
+        setShapes(shapes.map(shape => {
+          if (shape.id === selectedShape.id) {
+            const arrows = { ...(shape.arrows || {}) };
+            const idx = (shape.stackData?.length || 0) - 1 - selectedBoxIndex;
+            if (!arrows[idx]) {
+              arrows[idx] = {};
+            }
+            arrows[idx][position] = !arrows[idx][position];
+            if (!arrows[idx].left && !arrows[idx].right) {
+              delete arrows[idx];
+            }
+            return { ...shape, arrows };
           }
-          return { ...shape, arrows };
-        }
-        return shape;
-      }));
-      setColorPickerPosition(null);
-      setSelectedBoxIndex(null);
+          return shape;
+        }));
+        setColorPickerPosition(null);
+        setSelectedBoxIndex(null);
+      }
     }
   };
 
@@ -1144,7 +1164,11 @@ const ShapeEditor = () => {
           );
         }
       case 'stack':
-        if (shape.id) { // 画布上的 stack
+        if (shape.id) {
+          const stackData = (shape.stackData || []).slice().reverse();
+          const boxColors = (shape.boxColors || []).slice().reverse();
+          const arrows = shape.arrows ? Object.values(shape.arrows).length ? Object.assign([], ...Object.entries(shape.arrows).map(([i, v]) => ({[stackData.length-1-i]: v}))) : [] : [];
+          const arrowLabels = shape.arrowLabels ? Object.values(shape.arrowLabels).length ? Object.assign([], ...Object.entries(shape.arrowLabels).map(([i, v]) => ({[stackData.length-1-i]: v}))) : [] : [];
           return (
             <div
               key={shape.id}
@@ -1165,14 +1189,14 @@ const ShapeEditor = () => {
               onMouseDown={(e) => handleShapeMouseDown(e, shape)}
               onContextMenu={(e) => handleContextMenu(e, shape)}
             >
-              {shape.stackData?.map((item, index) => (
+              {stackData.map((item, index) => (
                 <div key={index} style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
-                  {/* 左箭头 */}
-                  {shape.arrows?.[index]?.left && (
+                  {/* 左箭头（→） */}
+                  {arrows?.[index]?.left && (
                     <div style={{ position: 'absolute', left: '-40px', top: '50%', transform: 'translateY(-50%)', zIndex: 1 }}>
                       <svg width="30" height="16" viewBox="0 0 48 24" fill="none" stroke="#1a73e8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="44" y1="12" x2="4" y2="12" />
-                        <polyline points="12 4 4 12 12 20" />
+                        <line x1="4" y1="12" x2="44" y2="12" />
+                        <polyline points="36 4 44 12 36 20" />
                       </svg>
                       <div 
                         onClick={(e) => { e.stopPropagation(); setSelectedShape(shape); setSelectedBoxIndex(index); setEditingLabel('left'); }}
@@ -1181,7 +1205,7 @@ const ShapeEditor = () => {
                         {editingLabel === 'left' && selectedShape?.id === shape.id && selectedBoxIndex === index ? (
                           <input
                             type="text"
-                            value={shape.arrowLabels?.[index]?.left || ''}
+                            value={arrowLabels?.[index]?.left || ''}
                             onChange={(e) => handleArrowLabelChange('left', e.target.value)}
                             onBlur={() => setEditingLabel(null)}
                             onKeyDown={(e) => { if (e.key === 'Enter') setEditingLabel(null); }}
@@ -1189,7 +1213,7 @@ const ShapeEditor = () => {
                             style={{ width: '60px', border: 'none', outline: 'none', fontSize: '12px', backgroundColor: 'transparent', color: '#1a73e8' }}
                           />
                         ) : (
-                          <span>{shape.arrowLabels?.[index]?.left || 'left'}</span>
+                          <span>{arrowLabels?.[index]?.left || '→'}</span>
                         )}
                       </div>
                     </div>
@@ -1199,7 +1223,7 @@ const ShapeEditor = () => {
                     style={{
                       width: '45px',
                       height: '45px',
-                      backgroundColor: shape.boxColors?.[index] || '#4a90e2',
+                      backgroundColor: boxColors?.[index] || '#4a90e2',
                       border: '2px solid #357abd',
                       borderRadius: '6px',
                       display: 'flex',
@@ -1217,12 +1241,12 @@ const ShapeEditor = () => {
                   >
                     {item}
                   </div>
-                  {/* 右箭头 */}
-                  {shape.arrows?.[index]?.right && (
+                  {/* 右箭头（←） */}
+                  {arrows?.[index]?.right && (
                     <div style={{ position: 'absolute', right: '-40px', top: '50%', transform: 'translateY(-50%)', zIndex: 1 }}>
                       <svg width="30" height="16" viewBox="0 0 48 24" fill="none" stroke="#1a73e8" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
-                        <line x1="4" y1="12" x2="44" y2="12" />
-                        <polyline points="36 4 44 12 36 20" />
+                        <line x1="44" y1="12" x2="4" y2="12" />
+                        <polyline points="12 4 4 12 12 20" />
                       </svg>
                       <div 
                         onClick={(e) => { e.stopPropagation(); setSelectedShape(shape); setSelectedBoxIndex(index); setEditingLabel('right'); }}
@@ -1231,7 +1255,7 @@ const ShapeEditor = () => {
                         {editingLabel === 'right' && selectedShape?.id === shape.id && selectedBoxIndex === index ? (
                           <input
                             type="text"
-                            value={shape.arrowLabels?.[index]?.right || ''}
+                            value={arrowLabels?.[index]?.right || ''}
                             onChange={(e) => handleArrowLabelChange('right', e.target.value)}
                             onBlur={() => setEditingLabel(null)}
                             onKeyDown={(e) => { if (e.key === 'Enter') setEditingLabel(null); }}
@@ -1239,7 +1263,7 @@ const ShapeEditor = () => {
                             style={{ width: '60px', border: 'none', outline: 'none', fontSize: '12px', backgroundColor: 'transparent', color: '#1a73e8' }}
                           />
                         ) : (
-                          <span>{shape.arrowLabels?.[index]?.right || 'right'}</span>
+                          <span>{arrowLabels?.[index]?.right || '←'}</span>
                         )}
                       </div>
                     </div>
@@ -1382,6 +1406,20 @@ const ShapeEditor = () => {
                   {selectedShape.arrows?.[selectedBoxIndex]?.down ? '删除下方箭头' : '添加下方箭头'}
                 </Button>
               </div>
+            ) : selectedShape?.type === 'stack' && selectedBoxIndex !== null ? (
+              (() => {
+                const idx = selectedShape.stackData ? selectedShape.stackData.length - 1 - selectedBoxIndex : 0;
+                return (
+                  <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <Button onClick={() => handleAddArrow('left')}>
+                      {selectedShape.arrows?.[idx]?.left ? '删除左箭头' : '添加左箭头'}
+                    </Button>
+                    <Button onClick={() => handleAddArrow('right')}>
+                      {selectedShape.arrows?.[idx]?.right ? '删除右箭头' : '添加右箭头'}
+                    </Button>
+                  </div>
+                );
+              })()
             ) : (
               <div style={{ marginTop: 10 }}>
                 <Button onClick={handleCopy}>
