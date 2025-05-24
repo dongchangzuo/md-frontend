@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { ChromePicker } from 'react-color';
 import styled from 'styled-components';
 import EditorGuide from './EditorGuide';
+import MapShape from './MapShape';
 
 const Container = styled.div`
   display: flex;
@@ -235,6 +236,7 @@ const basicShapes = [
   { type: 'arrow', width: 100, height: 40, color: '#1a73e8' },
   { type: 'array', width: 200, height: 60, color: '#1a73e8' },
   { type: 'stack', width: 60, height: 200, color: '#1a73e8' },
+  { type: 'map', width: 120, height: 60, color: '#ffd54f' },
 ];
 
 const templates = [
@@ -283,6 +285,8 @@ const ShapeEditor = () => {
   const [showGuide, setShowGuide] = useState(false);
   const [stackEditorPosition, setStackEditorPosition] = useState(null);
   const [stackInput, setStackInput] = useState('');
+  const [mapEditorPosition, setMapEditorPosition] = useState(null);
+  const [mapInput, setMapInput] = useState('');
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -480,10 +484,24 @@ const ShapeEditor = () => {
         setArrayEditorPosition(null);
         setStackInput(shape.stackData ? shape.stackData.join(', ') : '');
       }
+    } else if (shape.type === 'map') {
+      if (boxIndex !== null) {
+        setColorPickerPosition({ x: e.clientX, y: e.clientY });
+        setArrayEditorPosition(null);
+        setStackEditorPosition(null);
+        setMapEditorPosition(null);
+      } else {
+        setMapEditorPosition({ x: e.clientX, y: e.clientY });
+        setColorPickerPosition(null);
+        setArrayEditorPosition(null);
+        setStackEditorPosition(null);
+        setMapInput(shape.mapData ? shape.mapData.map(item => `${item.key}:${item.value}`).join(', ') : '');
+      }
     } else {
       setColorPickerPosition({ x: e.clientX, y: e.clientY });
       setArrayEditorPosition(null);
       setStackEditorPosition(null);
+      setMapEditorPosition(null);
     }
   };
 
@@ -494,7 +512,8 @@ const ShapeEditor = () => {
         setShapes(shapes.map(shape => {
           if (shape.id === selectedShape.id) {
             const newBoxColors = [...(shape.boxColors || [])];
-            newBoxColors[selectedBoxIndex] = color.hex;
+            const boxColorsIdx = (shape.boxColors?.length || 0) - 1 - selectedBoxIndex;
+            newBoxColors[boxColorsIdx] = color.hex;
             return { ...shape, boxColors: newBoxColors };
           }
           return shape;
@@ -505,6 +524,19 @@ const ShapeEditor = () => {
           if (shape.id === selectedShape.id) {
             const newBoxColors = [...(shape.boxColors || [])];
             newBoxColors[selectedBoxIndex] = color.hex;
+            return { ...shape, boxColors: newBoxColors };
+          }
+          return shape;
+        }));
+      } else if (selectedShape.type === 'map' && selectedBoxIndex !== null) {
+        // 修正：reverse 索引 + 补全 boxColors 长度
+        setShapes(shapes.map(shape => {
+          if (shape.id === selectedShape.id) {
+            const mapLen = shape.mapData?.length || 0;
+            const newBoxColors = [...(shape.boxColors || [])];
+            while (newBoxColors.length < mapLen) newBoxColors.push('#ffd54f');
+            const boxColorsIdx = newBoxColors.length - 1 - selectedBoxIndex;
+            newBoxColors[boxColorsIdx] = color.hex;
             return { ...shape, boxColors: newBoxColors };
           }
           return shape;
@@ -544,6 +576,22 @@ const ShapeEditor = () => {
     }
   };
 
+  const handleMapSubmit = () => {
+    if (selectedShape) {
+      // 支持 a:1, b:2, c:3 格式
+      const mapData = mapInput.split(',').map(item => {
+        const [key, value] = item.split(':').map(s => s.trim());
+        return key && value !== undefined ? { key, value } : null;
+      }).filter(Boolean);
+      setShapes(shapes.map(shape =>
+        shape.id === selectedShape.id
+          ? { ...shape, mapData }
+          : shape
+      ));
+      setMapEditorPosition(null);
+    }
+  };
+
   const handleClickOutside = (e) => {
     if (colorPickerPosition && !e.target.closest('.color-picker')) {
       setColorPickerPosition(null);
@@ -554,6 +602,9 @@ const ShapeEditor = () => {
     }
     if (stackEditorPosition && !e.target.closest('.stack-editor')) {
       setStackEditorPosition(null);
+    }
+    if (mapEditorPosition && !e.target.closest('.map-editor')) {
+      setMapEditorPosition(null);
     }
   };
 
@@ -639,6 +690,7 @@ const ShapeEditor = () => {
       setColorPickerPosition(null);
       setArrayEditorPosition(null);
       setStackEditorPosition(null);
+      setMapEditorPosition(null);
       setCopiedShape(null);
       setEditingLabel(null);
 
@@ -809,7 +861,7 @@ const ShapeEditor = () => {
       document.removeEventListener('mouseup', handleMouseUp);
       document.removeEventListener('click', handleClickOutside);
     };
-  }, [draggedShape, dragOffset, shapes, colorPickerPosition, arrayEditorPosition, stackEditorPosition]);
+  }, [draggedShape, dragOffset, shapes, colorPickerPosition, arrayEditorPosition, stackEditorPosition, mapEditorPosition]);
 
   const renderShape = (shape) => {
     switch (shape.type) {
@@ -1281,6 +1333,19 @@ const ShapeEditor = () => {
             </div>
           );
         }
+      case 'map':
+        return (
+          <MapShape
+            key={shape.id}
+            shape={shape}
+            selectedShape={selectedShape}
+            selectedBoxIndex={selectedBoxIndex}
+            editingLabel={editingLabel}
+            onShapeMouseDown={handleShapeMouseDown}
+            onContextMenu={handleContextMenu}
+            onArrowLabelChange={handleArrowLabelChange}
+          />
+        );
       default:
         return null;
     }
@@ -1468,6 +1533,27 @@ const ShapeEditor = () => {
             <div>
               <Button onClick={handleStackSubmit}>Apply</Button>
               <Button onClick={() => setStackEditorPosition(null)}>Cancel</Button>
+            </div>
+          </ArrayEditorContainer>
+        )}
+        {mapEditorPosition && (
+          <ArrayEditorContainer
+            className="map-editor"
+            style={{
+              left: mapEditorPosition.x,
+              top: mapEditorPosition.y
+            }}
+          >
+            <h4>Edit Map</h4>
+            <p>Enter key:value pairs separated by commas (e.g., a:1, b:2, c:3):</p>
+            <ArrayInput
+              value={mapInput}
+              onChange={(e) => setMapInput(e.target.value)}
+              placeholder="e.g., a:1, b:2, c:3"
+            />
+            <div>
+              <Button onClick={handleMapSubmit}>Apply</Button>
+              <Button onClick={() => setMapEditorPosition(null)}>Cancel</Button>
             </div>
           </ArrayEditorContainer>
         )}
