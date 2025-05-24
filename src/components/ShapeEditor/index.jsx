@@ -3,6 +3,8 @@ import { ChromePicker } from 'react-color';
 import styled from 'styled-components';
 import EditorGuide from './EditorGuide';
 import MapShape from './MapShape';
+import GIF from 'gif.js/dist/gif.js';
+import html2canvas from 'html2canvas';
 
 const Container = styled.div`
   display: flex;
@@ -287,6 +289,7 @@ const ShapeEditor = () => {
   const [stackInput, setStackInput] = useState('');
   const [mapEditorPosition, setMapEditorPosition] = useState(null);
   const [mapInput, setMapInput] = useState('');
+  const [gifDelay, setGifDelay] = useState(600);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
 
@@ -865,6 +868,68 @@ const ShapeEditor = () => {
     }
   };
 
+  const exportGif = async () => {
+    if (!canvasRef.current) return;
+    const width = canvasRef.current.offsetWidth;
+    const height = canvasRef.current.offsetHeight;
+    const gif = new GIF({ workers: 2, quality: 10, width, height, workerScript: '/gif.worker.js' });
+
+    // 记录原背景样式
+    const origBgImg = canvasRef.current.style.backgroundImage;
+    const origBgSize = canvasRef.current.style.backgroundSize;
+    // 移除背景格子
+    canvasRef.current.style.backgroundImage = 'none';
+    canvasRef.current.style.backgroundSize = '';
+
+    for (let i = 0; i < shapes.length; i++) {
+      // 只显示第i个shape
+      const prevDisplay = [];
+      for (let j = 0; j < canvasRef.current.children.length; j++) {
+        const el = canvasRef.current.children[j];
+        if (j !== i) {
+          prevDisplay[j] = el.style.display;
+          el.style.display = 'none';
+        }
+      }
+      await new Promise(resolve => setTimeout(resolve, 50)); // 等待DOM刷新
+      // 获取当前 shape 的 DOM 元素
+      const shapeEl = canvasRef.current.children[i];
+      if (!shapeEl) continue;
+      // 用 html2canvas 截 shape 元素
+      const shapeCanvas = await html2canvas(shapeEl, { backgroundColor: null });
+      // 创建与主画布同尺寸的新 canvas，shape 居中
+      const frameCanvas = document.createElement('canvas');
+      frameCanvas.width = width;
+      frameCanvas.height = height;
+      const fctx = frameCanvas.getContext('2d');
+      // 计算 shape 居中位置
+      const dx = (width - shapeCanvas.width) / 2;
+      const dy = (height - shapeCanvas.height) / 2;
+      fctx.clearRect(0, 0, width, height);
+      fctx.drawImage(shapeCanvas, dx, dy);
+      gif.addFrame(frameCanvas, { delay: gifDelay });
+      // 恢复显示
+      for (let j = 0; j < canvasRef.current.children.length; j++) {
+        if (j !== i) {
+          canvasRef.current.children[j].style.display = prevDisplay[j] || '';
+        }
+      }
+    }
+    // 恢复背景格子
+    canvasRef.current.style.backgroundImage = origBgImg;
+    canvasRef.current.style.backgroundSize = origBgSize;
+
+    gif.on('finished', function(blob) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'shapes.gif';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+    gif.render();
+  };
+
   useEffect(() => {
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
@@ -1412,6 +1477,14 @@ const ShapeEditor = () => {
           <Button onClick={() => setShowGuide(true)}>
             YAML 文件指南
           </Button>
+        </div>
+        <div style={{ marginTop: '20px' }}>
+          <h3>导出</h3>
+          <div style={{ marginBottom: 8 }}>
+            <label style={{ fontSize: 14, marginRight: 8 }}>帧间隔(ms):</label>
+            <input type="number" min={50} max={5000} step={50} value={gifDelay} onChange={e => setGifDelay(Number(e.target.value))} style={{ width: 80, fontSize: 14, padding: 2 }} />
+          </div>
+          <Button onClick={exportGif}>导出 GIF</Button>
         </div>
       </Sidebar>
       <Canvas

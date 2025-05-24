@@ -10,6 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "gif.js": "^0.2.0",
+    "html2canvas": "^1.4.1",
     "katex": "^0.16.22",
     "react": "^19.1.0",
     "react-color": "^2.19.3",
