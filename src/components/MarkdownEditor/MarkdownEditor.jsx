@@ -7,6 +7,7 @@ import 'katex/dist/katex.min.css';
 import FileTree from '../FileTree/FileTree';
 import { tokenManager } from '../../services/api';
 import './MarkdownEditor.css';
+import styled from 'styled-components';
 
 // 布局类型
 const LAYOUT_TYPES = {
@@ -15,6 +16,12 @@ const LAYOUT_TYPES = {
   EDITOR_ONLY: 'editor-only',           // 仅编辑器
   PREVIEW_ONLY: 'preview-only'          // 仅预览
 };
+
+const EditorWrapper = styled.div`
+  background: ${({ theme }) => theme.card};
+  color: ${({ theme }) => theme.text};
+  min-height: 100vh;
+`;
 
 function MarkdownEditor() {
   const [markdown, setMarkdown] = useState('');
@@ -184,24 +191,26 @@ function MarkdownEditor() {
   };
 
   return (
-    <div className="markdown-editor-container">
-      <div className="editor-layout">
-        <FileTree onFileSelect={handleFileSelect} />
-        <div className="editor-main">
-          <div className="editor-header">
-            <h2>{currentFile ? currentFile.name : 'Markdown Editor'}</h2>
-            <div className="editor-header-actions">
-              {isSaving && <span className="saving-indicator">Saving...</span>}
-              {saveError && <span className="save-error">{saveError}</span>}
-              {renderLayoutControls()}
+    <EditorWrapper>
+      <div className="markdown-editor-container">
+        <div className="editor-layout">
+          <FileTree onFileSelect={handleFileSelect} />
+          <div className="editor-main">
+            <div className="editor-header">
+              <h2>{currentFile ? currentFile.name : 'Markdown Editor'}</h2>
+              <div className="editor-header-actions">
+                {isSaving && <span className="saving-indicator">Saving...</span>}
+                {saveError && <span className="save-error">{saveError}</span>}
+                {renderLayoutControls()}
+              </div>
             </div>
-          </div>
-          <div className="editor-content">
-            {renderContent()}
+            <div className="editor-content">
+              {renderContent()}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </EditorWrapper>
   );
 }
 

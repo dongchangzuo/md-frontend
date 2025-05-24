@@ -1,6 +1,13 @@
 import { useState } from 'react';
 import { tokenManager } from '../../services/api';
 import './OCR.css';
+import styled from 'styled-components';
+
+const OcrWrapper = styled.div`
+  background: ${({ theme }) => theme.card};
+  color: ${({ theme }) => theme.text};
+  min-height: 100vh;
+`;
 
 function OCR() {
   const [selectedFile, setSelectedFile] = useState(null);
@@ -72,66 +79,68 @@ function OCR() {
   };
 
   return (
-    <div className="ocr-container">
-      <div className="ocr-header">
-        <h2>OCR Text Recognition</h2>
-      </div>
-      
-      <div className="ocr-content">
-        <div className="upload-section">
-          <div className="file-input-container">
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleFileSelect}
-              className="file-input"
-              id="image-upload"
-            />
-            <label htmlFor="image-upload" className="file-input-label">
-              {selectedFile ? 'Change Image' : 'Select Image'}
-            </label>
-          </div>
-          
-          {previewUrl && (
-            <div className="image-preview">
-              <img src={previewUrl} alt="Preview" />
-            </div>
-          )}
-          
-          <button
-            className="recognize-button"
-            onClick={handleRecognize}
-            disabled={!selectedFile || isLoading}
-          >
-            {isLoading ? 'Recognizing...' : 'Recognize Text'}
-          </button>
+    <OcrWrapper>
+      <div className="ocr-container">
+        <div className="ocr-header">
+          <h2>OCR Text Recognition</h2>
         </div>
-
-        {error && (
-          <div className="error-message">
-            {error}
-          </div>
-        )}
-
-        {recognizedText && (
-          <div className="result-section">
-            <h3>Recognized Text:</h3>
-            <div className="recognized-text">
-              {recognizedText}
+        
+        <div className="ocr-content">
+          <div className="upload-section">
+            <div className="file-input-container">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileSelect}
+                className="file-input"
+                id="image-upload"
+              />
+              <label htmlFor="image-upload" className="file-input-label">
+                {selectedFile ? 'Change Image' : 'Select Image'}
+              </label>
             </div>
+            
+            {previewUrl && (
+              <div className="image-preview">
+                <img src={previewUrl} alt="Preview" />
+              </div>
+            )}
+            
             <button
-              className="copy-button"
-              onClick={() => {
-                navigator.clipboard.writeText(recognizedText);
-                alert('Text copied to clipboard!');
-              }}
+              className="recognize-button"
+              onClick={handleRecognize}
+              disabled={!selectedFile || isLoading}
             >
-              Copy Text
+              {isLoading ? 'Recognizing...' : 'Recognize Text'}
             </button>
           </div>
-        )}
+
+          {error && (
+            <div className="error-message">
+              {error}
+            </div>
+          )}
+
+          {recognizedText && (
+            <div className="result-section">
+              <h3>Recognized Text:</h3>
+              <div className="recognized-text">
+                {recognizedText}
+              </div>
+              <button
+                className="copy-button"
+                onClick={() => {
+                  navigator.clipboard.writeText(recognizedText);
+                  alert('Text copied to clipboard!');
+                }}
+              >
+                Copy Text
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-    </div>
+    </OcrWrapper>
   );
 }
 
