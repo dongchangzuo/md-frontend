@@ -407,6 +407,60 @@ const StackIconWithScale = () => {
   );
 };
 
+const MapIconWithScale = () => {
+  const [hovered, setHovered] = React.useState(false);
+  const keys = ['a', 'b', 'c'];
+  const values = ['1', '2', '3'];
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'flex-start',
+        gap: '2px',
+        padding: '2px 0',
+        transition: 'transform 0.22s cubic-bezier(.4,1.6,.6,1)',
+        transform: hovered ? 'scale(1.32)' : 'scale(1)',
+        cursor: 'pointer',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {keys.map((k, i) => (
+        <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+          <div style={{
+            width: 16,
+            height: 16,
+            background: 'linear-gradient(180deg, #ffd54f 80%, #ffb300 100%)',
+            borderRadius: 4,
+            boxShadow: '0 2px 6px rgba(255,213,79,0.18)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 700,
+            color: '#b8860b',
+            fontSize: 12
+          }}>{k}</div>
+          <span style={{ color: '#888', fontWeight: 700, fontSize: 13, margin: '0 2px' }}>:</span>
+          <div style={{
+            width: 16,
+            height: 16,
+            background: 'linear-gradient(180deg, #4a90e2 80%, #357abd 100%)',
+            borderRadius: 4,
+            boxShadow: '0 2px 6px rgba(74,144,226,0.18)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontWeight: 700,
+            color: '#fff',
+            fontSize: 12
+          }}>{values[i]}</div>
+        </div>
+      ))}
+    </div>
+  );
+};
+
 const ShapeEditor = () => {
   const [shapes, setShapes] = useState([]);
   const [selectedShape, setSelectedShape] = useState(null);
@@ -1605,6 +1659,10 @@ const ShapeEditor = () => {
             ) : shape.type === 'stack' ? (
               <Tooltip content="栈" delay={100}>
                 <StackIconWithScale />
+              </Tooltip>
+            ) : shape.type === 'map' ? (
+              <Tooltip content="映射（字典）" delay={100}>
+                <MapIconWithScale />
               </Tooltip>
             ) : renderShape(shape)}
           </ShapeItem>
