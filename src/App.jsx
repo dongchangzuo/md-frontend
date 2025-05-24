@@ -8,6 +8,9 @@ import MarkdownEditor from './components/MarkdownEditor/MarkdownEditor'
 import OCR from './components/OCR/OCR'
 import ShapeEditor from './components/ShapeEditor'
 import { authAPI, tokenManager } from './services/api'
+import { ThemeProvider } from 'styled-components';
+import { themes } from './styles/theme';
+import { GlobalStyle } from './styles/globalStyle';
 
 // 安全存储实现
 const secureStorage = {
@@ -72,6 +75,8 @@ function App() {
   const [authToken, setAuthToken] = useState(null);
   const [currentPage, setCurrentPage] = useState('home');
   const [isLoading, setIsLoading] = useState(true);
+  const [themeMode] = useState('light'); // 默认明亮
+  const theme = themes[themeMode];
   
   // Check for existing authentication on component mount
   useEffect(() => {
@@ -182,21 +187,24 @@ function App() {
   };
 
   return (
-    <Router>
-      <div className="app">
-        <Routes>
-          <Route path="/login" element={<Login onLogin={handleLogin} />} />
-          <Route path="/signup" element={<Signup onSignup={handleSignup} />} />
-          <Route path="/" element={renderContent()} />
-          <Route path="/editor" element={<ShapeEditor />} />
-          <Route path="/editor/map" element={<ShapeEditor defaultTab="map" />} />
-          <Route path="/editor/tree" element={<ShapeEditor defaultTab="tree" />} />
-          <Route path="/markdown" element={<MarkdownEditor />} />
-          <Route path="/ocr" element={<OCR />} />
-          <Route path="/home" element={<Home user={user} onLogout={handleLogout} onNavigate={navigateTo} />} />
-        </Routes>
-      </div>
-    </Router>
+    <ThemeProvider theme={theme}>
+      <GlobalStyle />
+      <Router>
+        <div className="app">
+          <Routes>
+            <Route path="/login" element={<Login onLogin={handleLogin} />} />
+            <Route path="/signup" element={<Signup onSignup={handleSignup} />} />
+            <Route path="/" element={renderContent()} />
+            <Route path="/editor" element={<ShapeEditor />} />
+            <Route path="/editor/map" element={<ShapeEditor defaultTab="map" />} />
+            <Route path="/editor/tree" element={<ShapeEditor defaultTab="tree" />} />
+            <Route path="/markdown" element={<MarkdownEditor />} />
+            <Route path="/ocr" element={<OCR />} />
+            <Route path="/home" element={<Home user={user} onLogout={handleLogout} onNavigate={navigateTo} />} />
+          </Routes>
+        </div>
+      </Router>
+    </ThemeProvider>
   );
 }
 
