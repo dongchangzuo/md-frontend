@@ -5,6 +5,7 @@ import EditorGuide from './EditorGuide';
 import MapShape from './MapShape';
 import GIF from 'gif.js/dist/gif.js';
 import html2canvas from 'html2canvas';
+import { useState as useTooltipState } from 'react';
 
 const Container = styled.div`
   display: flex;
@@ -263,6 +264,81 @@ const templates = [
     ]
   }
 ];
+
+// Tooltip 组件
+const Tooltip = ({ children, content, delay = 100 }) => {
+  const [visible, setVisible] = useTooltipState(false);
+  const [timer, setTimer] = useTooltipState(null);
+  const show = () => {
+    setTimer(setTimeout(() => setVisible(true), delay));
+  };
+  const hide = () => {
+    clearTimeout(timer);
+    setVisible(false);
+  };
+  return (
+    <span style={{ position: 'relative', display: 'inline-block' }} onMouseEnter={show} onMouseLeave={hide}>
+      {children}
+      {visible && (
+        <span style={{
+          position: 'absolute',
+          left: '50%',
+          top: '-38px',
+          transform: 'translateX(-50%)',
+          background: 'rgba(40,60,120,0.98)',
+          color: '#fff',
+          padding: '6px 16px',
+          borderRadius: '8px',
+          fontSize: 13,
+          fontWeight: 500,
+          whiteSpace: 'nowrap',
+          boxShadow: '0 4px 16px rgba(40,60,120,0.18)',
+          zIndex: 1000,
+          pointerEvents: 'none',
+        }}>
+          {content}
+        </span>
+      )}
+    </span>
+  );
+};
+
+const ArrayIconWithScale = () => {
+  const [hovered, setHovered] = React.useState(false);
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '2px',
+        padding: '2px 0',
+        transition: 'transform 0.22s cubic-bezier(.4,1.6,.6,1)',
+        transform: hovered ? 'scale(1.32)' : 'scale(1)',
+        cursor: 'pointer',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {[0, 1, 2].map(i => (
+        <div key={i} style={{
+          width: 18,
+          height: 24,
+          background: 'linear-gradient(180deg, #4a90e2 80%, #357abd 100%)',
+          border: '2px solid #357abd',
+          borderRadius: '6px',
+          boxShadow: '0 4px 12px rgba(52, 100, 180, 0.22), 0 1.5px 4px rgba(74,144,226,0.18)',
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+        }}>
+          <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', textShadow: '0 1px 2px #357abd' }}>{i + 1}</span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 const ShapeEditor = () => {
   const [shapes, setShapes] = useState([]);
@@ -1032,7 +1108,7 @@ const ShapeEditor = () => {
                 cursor: 'move',
                 backgroundColor: 'red',
                 borderRadius: '8px',
-                boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)'
+                boxShadow: '0 4px 12px rgba(52, 100, 180, 0.22), 0 1.5px 4px rgba(74,144,226,0.18)'
               }}
               onMouseDown={(e) => handleShapeMouseDown(e, shape)}
               onContextMenu={(e) => handleContextMenu(e, shape)}
@@ -1452,7 +1528,11 @@ const ShapeEditor = () => {
             draggable
             onDragStart={(e) => handleDragStart(e, shape)}
           >
-            {renderShape(shape)}
+            {shape.type === 'array' ? (
+              <Tooltip content="数组" delay={100}>
+                <ArrayIconWithScale />
+              </Tooltip>
+            ) : renderShape(shape)}
           </ShapeItem>
         ))}
         <div style={{ marginTop: '20px' }}>
