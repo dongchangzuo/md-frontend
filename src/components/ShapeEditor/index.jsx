@@ -6,6 +6,7 @@ import MapShape from './MapShape';
 import GIF from 'gif.js/dist/gif.js';
 import html2canvas from 'html2canvas';
 import { useState as useTooltipState } from 'react';
+import { ThemeProvider, createGlobalStyle } from 'styled-components';
 
 const Container = styled.div`
   display: flex;
@@ -538,6 +539,66 @@ const TreeIconWithScale = () => {
   );
 };
 
+// 多语言文案对象，必须放在组件外部
+const lang = {
+  zh: {
+    upload: '加载 YAML 文件',
+    guide: 'YAML 文件指南',
+    export: '导出 GIF',
+    delay: '帧间隔(ms):',
+    array: '数组',
+    stack: '栈',
+    map: '映射（字典）',
+    tree: '树结构',
+    components: '基础组件',
+  },
+  en: {
+    upload: 'Upload YAML File',
+    guide: 'YAML Guide',
+    export: 'Export GIF',
+    delay: 'Frame Delay (ms):',
+    array: 'Array',
+    stack: 'Stack',
+    map: 'Map (Dict)',
+    tree: 'Tree',
+    components: 'Components',
+  }
+};
+
+// 主题定义
+const themes = {
+  light: {
+    bg: '#f5f5f5',
+    sidebarBg: '#fff',
+    text: '#222',
+    border: '#e0e0e0',
+    shadow: '0 2px 8px rgba(0,0,0,0.04)',
+    canvasBg: '#f0f0f0',
+    card: '#fff',
+    accent: '#4a90e2',
+    gradient: 'linear-gradient(90deg, #4a90e2 0%, #81d4fa 100%)',
+  },
+  dark: {
+    bg: '#181c24',
+    sidebarBg: '#232733',
+    text: '#f5f5f5',
+    border: '#232733',
+    shadow: '0 2px 12px rgba(0,0,0,0.32)',
+    canvasBg: '#232733',
+    card: '#232733',
+    accent: '#90caf9',
+    gradient: 'linear-gradient(90deg, #90caf9 0%, #4a90e2 100%)',
+  }
+};
+
+const GlobalStyle = createGlobalStyle`
+  body {
+    background: ${({ theme }) => theme.bg};
+    color: ${({ theme }) => theme.text};
+    transition: background 0.2s, color 0.2s;
+  }
+`;
+
 const ShapeEditor = () => {
   const [shapes, setShapes] = useState([]);
   const [selectedShape, setSelectedShape] = useState(null);
@@ -563,6 +624,22 @@ const ShapeEditor = () => {
   const [gifDelay, setGifDelay] = useState(600);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
+  const [language, setLanguage] = useState('zh');
+  const [themeMode, setThemeMode] = useState('auto'); // 'light' | 'dark' | 'auto'
+  const [systemDark, setSystemDark] = useState(false);
+  const t = lang[language];
+
+  // 跟随系统
+  useEffect(() => {
+    if (themeMode === 'auto') {
+      const mq = window.matchMedia('(prefers-color-scheme: dark)');
+      setSystemDark(mq.matches);
+      const handler = e => setSystemDark(e.matches);
+      mq.addEventListener('change', handler);
+      return () => mq.removeEventListener('change', handler);
+    }
+  }, [themeMode]);
+  const theme = themeMode === 'auto' ? (systemDark ? themes.dark : themes.light) : themes[themeMode];
 
   const handleDragStart = (e, shape) => {
     e.dataTransfer.setData('shape', JSON.stringify(shape));
@@ -1711,245 +1788,265 @@ const ShapeEditor = () => {
   };
 
   return (
-    <Container>
-      <Sidebar>
-        <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
-          {/* 已移除 shape tab 按钮，保持 UI 简洁 */}
-        </div>
-        <div style={{
-          fontSize: 20,
-          fontWeight: 700,
-          background: 'linear-gradient(90deg, #4a90e2 0%, #81d4fa 100%)',
-          WebkitBackgroundClip: 'text',
-          WebkitTextFillColor: 'transparent',
-          padding: '8px 0 8px 8px',
-          borderRadius: '8px',
-          marginBottom: 8,
-          borderBottom: '2px solid #4a90e2',
-          letterSpacing: 2
-        }}>基础组件</div>
-        {basicShapes.map((shape, index) => (
-          <ShapeItem
-            key={index}
-            type={shape.type}
-            draggable
-            onDragStart={(e) => handleDragStart(e, shape)}
-          >
-            {shape.type === 'array' ? (
-              <Tooltip content="数组" delay={100}>
-                <ArrayIconWithScale />
-              </Tooltip>
-            ) : shape.type === 'stack' ? (
-              <Tooltip content="栈" delay={100}>
-                <StackIconWithScale />
-              </Tooltip>
-            ) : shape.type === 'map' ? (
-              <Tooltip content="映射（字典）" delay={100}>
-                <MapIconWithScale />
-              </Tooltip>
-            ) : shape.type === 'tree' ? (
-              <Tooltip content="树结构" delay={100}>
-                <TreeIconWithScale />
-              </Tooltip>
-            ) : renderShape(shape)}
-          </ShapeItem>
-        ))}
-      </Sidebar>
-      <MainArea>
-        <Toolbar>
-          {/* 文件上传 */}
-          <div>
-            <FileInput
-              type="file"
-              accept=".yaml,.yml"
-              onChange={handleFileInput}
-              ref={fileInputRef}
-            />
-            <FileInputLabel onClick={() => fileInputRef.current?.click()}>
-              加载 YAML 文件
-            </FileInputLabel>
+    <ThemeProvider theme={theme}>
+      <GlobalStyle />
+      <Container>
+        <Sidebar style={{ background: theme.sidebarBg, borderRight: `1px solid ${theme.border}` }}>
+          <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
+            {/* 已移除 shape tab 按钮，保持 UI 简洁 */}
           </div>
-          {/* 帮助文档 */}
-          <div>
-            <Button onClick={() => setShowGuide(true)}>
-              YAML 文件指南
-            </Button>
+          <div style={{
+            fontSize: 20,
+            fontWeight: 700,
+            padding: '8px 0 8px 8px',
+            borderRadius: '8px',
+            marginBottom: 8,
+            borderBottom: `2px solid ${theme.accent}`,
+            letterSpacing: 2
+          }}>
+            <span style={{
+              backgroundImage: theme.gradient,
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              display: 'inline-block',
+            }}>{t.components}</span>
           </div>
-          {/* 导出 */}
-          <div>
-            <label style={{ fontSize: 14, marginRight: 8 }}>帧间隔(ms):</label>
-            <input type="number" min={50} max={5000} step={50} value={gifDelay} onChange={e => setGifDelay(Number(e.target.value))} style={{ width: 80, fontSize: 14, padding: 2 }} />
-            <Button onClick={exportGif} style={{ marginLeft: 8 }}>导出 GIF</Button>
-          </div>
-        </Toolbar>
-        <CanvasArea>
-          <Canvas
-            ref={canvasRef}
-            onDrop={handleDrop}
-            onDragOver={handleDragOver}
-            onMouseDown={handleCanvasMouseDown}
-            onMouseMove={handleCanvasMouseMove}
-            onMouseUp={handleCanvasMouseUp}
-          >
-            {shapes.map(shape => renderShape(shape))}
-            {/* 渲染 group 选择框 */}
-            {isSelectingGroup && selectionStart && selectionEnd && (
-              <GroupContainer
-                style={{
-                  left: Math.min(selectionStart.x, selectionEnd.x),
-                  top: Math.min(selectionStart.y, selectionEnd.y),
-                  width: Math.abs(selectionEnd.x - selectionStart.x),
-                  height: Math.abs(selectionEnd.y - selectionStart.y)
-                }}
+          {basicShapes.map((shape, index) => (
+            <ShapeItem
+              key={index}
+              type={shape.type}
+              draggable
+              onDragStart={(e) => handleDragStart(e, shape)}
+            >
+              {shape.type === 'array' ? (
+                <Tooltip content={t.array} delay={100}>
+                  <ArrayIconWithScale />
+                </Tooltip>
+              ) : shape.type === 'stack' ? (
+                <Tooltip content={t.stack} delay={100}>
+                  <StackIconWithScale />
+                </Tooltip>
+              ) : shape.type === 'map' ? (
+                <Tooltip content={t.map} delay={100}>
+                  <MapIconWithScale />
+                </Tooltip>
+              ) : shape.type === 'tree' ? (
+                <Tooltip content={t.tree} delay={100}>
+                  <TreeIconWithScale />
+                </Tooltip>
+              ) : renderShape(shape)}
+            </ShapeItem>
+          ))}
+        </Sidebar>
+        <MainArea>
+          <Toolbar style={{ background: theme.card, boxShadow: theme.shadow, borderBottom: `1px solid ${theme.border}` }}>
+            {/* 语言切换 */}
+            <div style={{ marginLeft: 'auto', marginRight: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
+              <select value={themeMode} onChange={e => setThemeMode(e.target.value)} style={{ fontSize: 15, padding: '4px 12px', borderRadius: 6, border: '1px solid #ddd', background: themeMode==='dark'? '#232733' : '#f5f5f5', color: theme.text, outline: 'none', marginLeft: 16 }}>
+                <option value="light">☀️ Light</option>
+                <option value="dark">🌙 Dark</option>
+                <option value="auto">🖥️ Auto</option>
+              </select>
+              <select value={language} onChange={e => setLanguage(e.target.value)} style={{ fontSize: 15, padding: '4px 12px', borderRadius: 6, border: '1px solid #ddd', background: themeMode==='dark'? '#232733' : '#f5f5f5', color: theme.text, outline: 'none', marginLeft: 8 }}>
+                <option value="zh">中文</option>
+                <option value="en">English</option>
+              </select>
+            </div>
+            {/* 文件上传 */}
+            <div>
+              <FileInput
+                type="file"
+                accept=".yaml,.yml"
+                onChange={handleFileInput}
+                ref={fileInputRef}
               />
-            )}
-            {/* 渲染已创建的 groups */}
-            {groups.map(group => (
-              <GroupContainer
-                key={group.id}
-                style={{
-                  left: group.x,
-                  top: group.y,
-                  width: group.width,
-                  height: group.height,
-                  borderColor: selectedGroup?.id === group.id ? '#ff4081' : '#4a90e2'
-                }}
-              />
-            ))}
-            {colorPickerPosition && (
-              <ColorPickerContainer
-                className="color-picker"
-                style={{
-                  left: colorPickerPosition.x,
-                  top: colorPickerPosition.y
-                }}
-              >
-                <ChromePicker
-                  color={selectedShape?.color}
-                  onChange={handleColorChange}
+              <FileInputLabel onClick={() => fileInputRef.current?.click()}>
+                {t.upload}
+              </FileInputLabel>
+            </div>
+            {/* 帮助文档 */}
+            <div>
+              <Button onClick={() => setShowGuide(true)}>
+                {t.guide}
+              </Button>
+            </div>
+            {/* 导出 */}
+            <div>
+              <label style={{ fontSize: 14, marginRight: 8 }}>{t.delay}</label>
+              <input type="number" min={50} max={5000} step={50} value={gifDelay} onChange={e => setGifDelay(Number(e.target.value))} style={{ width: 80, fontSize: 14, padding: 2 }} />
+              <Button onClick={exportGif} style={{ marginLeft: 8 }}>{t.export}</Button>
+            </div>
+          </Toolbar>
+          <CanvasArea>
+            <Canvas
+              ref={canvasRef}
+              onDrop={handleDrop}
+              onDragOver={handleDragOver}
+              onMouseDown={handleCanvasMouseDown}
+              onMouseMove={handleCanvasMouseMove}
+              onMouseUp={handleCanvasMouseUp}
+              style={{ background: theme.canvasBg }}
+            >
+              {shapes.map(shape => renderShape(shape))}
+              {/* 渲染 group 选择框 */}
+              {isSelectingGroup && selectionStart && selectionEnd && (
+                <GroupContainer
+                  style={{
+                    left: Math.min(selectionStart.x, selectionEnd.x),
+                    top: Math.min(selectionStart.y, selectionEnd.y),
+                    width: Math.abs(selectionEnd.x - selectionStart.x),
+                    height: Math.abs(selectionEnd.y - selectionStart.y)
+                  }}
                 />
-                {selectedShape?.type === 'array' && selectedBoxIndex !== null ? (
-                  <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <Button onClick={() => handleAddArrow('up')}>
-                      {selectedShape.arrows?.[selectedBoxIndex]?.up ? '删除上方箭头' : '添加上方箭头'}
-                    </Button>
-                    <Button onClick={() => handleAddArrow('down')}>
-                      {selectedShape.arrows?.[selectedBoxIndex]?.down ? '删除下方箭头' : '添加下方箭头'}
-                    </Button>
+              )}
+              {/* 渲染已创建的 groups */}
+              {groups.map(group => (
+                <GroupContainer
+                  key={group.id}
+                  style={{
+                    left: group.x,
+                    top: group.y,
+                    width: group.width,
+                    height: group.height,
+                    borderColor: selectedGroup?.id === group.id ? '#ff4081' : '#4a90e2'
+                  }}
+                />
+              ))}
+              {colorPickerPosition && (
+                <ColorPickerContainer
+                  className="color-picker"
+                  style={{
+                    left: colorPickerPosition.x,
+                    top: colorPickerPosition.y
+                  }}
+                >
+                  <ChromePicker
+                    color={selectedShape?.color}
+                    onChange={handleColorChange}
+                  />
+                  {selectedShape?.type === 'array' && selectedBoxIndex !== null ? (
+                    <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                      <Button onClick={() => handleAddArrow('up')}>
+                        {selectedShape.arrows?.[selectedBoxIndex]?.up ? '删除上方箭头' : '添加上方箭头'}
+                      </Button>
+                      <Button onClick={() => handleAddArrow('down')}>
+                        {selectedShape.arrows?.[selectedBoxIndex]?.down ? '删除下方箭头' : '添加下方箭头'}
+                      </Button>
+                    </div>
+                  ) : selectedShape?.type === 'stack' && selectedBoxIndex !== null ? (
+                    (() => {
+                      const idx = selectedShape.stackData ? selectedShape.stackData.length - 1 - selectedBoxIndex : 0;
+                      return (
+                        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          <Button onClick={() => handleAddArrow('left')}>
+                            {selectedShape.arrows?.[idx]?.left ? '删除左箭头' : '添加左箭头'}
+                          </Button>
+                          <Button onClick={() => handleAddArrow('right')}>
+                            {selectedShape.arrows?.[idx]?.right ? '删除右箭头' : '添加右箭头'}
+                          </Button>
+                        </div>
+                      );
+                    })()
+                  ) : selectedShape?.type === 'map' && selectedBoxIndex !== null ? (
+                    (() => {
+                      const mapLen = selectedShape.mapData ? selectedShape.mapData.length : 0;
+                      const idx = mapLen - 1 - selectedBoxIndex;
+                      return (
+                        <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                          <Button onClick={() => handleAddArrow('left')}>
+                            {selectedShape.arrows?.[idx]?.left ? '删除左箭头' : '添加左箭头'}
+                          </Button>
+                          <Button onClick={() => handleAddArrow('right')}>
+                            {selectedShape.arrows?.[idx]?.right ? '删除右箭头' : '添加右箭头'}
+                          </Button>
+                        </div>
+                      );
+                    })()
+                  ) : (
+                    <div style={{ marginTop: 10 }}>
+                      <Button onClick={handleCopy}>
+                        复制图形
+                      </Button>
+                    </div>
+                  )}
+                </ColorPickerContainer>
+              )}
+              {arrayEditorPosition && (
+                <ArrayEditorContainer
+                  className="array-editor"
+                  style={{
+                    left: arrayEditorPosition.x,
+                    top: arrayEditorPosition.y
+                  }}
+                >
+                  <h4>Edit Array</h4>
+                  <p>Enter numbers separated by commas:</p>
+                  <ArrayInput
+                    value={arrayInput}
+                    onChange={(e) => setArrayInput(e.target.value)}
+                    placeholder="e.g., 1, 2, 3, 4, 5"
+                  />
+                  <div>
+                    <Button onClick={handleArraySubmit}>Apply</Button>
+                    <Button onClick={() => setArrayEditorPosition(null)}>Cancel</Button>
                   </div>
-                ) : selectedShape?.type === 'stack' && selectedBoxIndex !== null ? (
-                  (() => {
-                    const idx = selectedShape.stackData ? selectedShape.stackData.length - 1 - selectedBoxIndex : 0;
-                    return (
-                      <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <Button onClick={() => handleAddArrow('left')}>
-                          {selectedShape.arrows?.[idx]?.left ? '删除左箭头' : '添加左箭头'}
-                        </Button>
-                        <Button onClick={() => handleAddArrow('right')}>
-                          {selectedShape.arrows?.[idx]?.right ? '删除右箭头' : '添加右箭头'}
-                        </Button>
-                      </div>
-                    );
-                  })()
-                ) : selectedShape?.type === 'map' && selectedBoxIndex !== null ? (
-                  (() => {
-                    const mapLen = selectedShape.mapData ? selectedShape.mapData.length : 0;
-                    const idx = mapLen - 1 - selectedBoxIndex;
-                    return (
-                      <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                        <Button onClick={() => handleAddArrow('left')}>
-                          {selectedShape.arrows?.[idx]?.left ? '删除左箭头' : '添加左箭头'}
-                        </Button>
-                        <Button onClick={() => handleAddArrow('right')}>
-                          {selectedShape.arrows?.[idx]?.right ? '删除右箭头' : '添加右箭头'}
-                        </Button>
-                      </div>
-                    );
-                  })()
-                ) : (
-                  <div style={{ marginTop: 10 }}>
-                    <Button onClick={handleCopy}>
-                      复制图形
-                    </Button>
+                </ArrayEditorContainer>
+              )}
+              {stackEditorPosition && (
+                <ArrayEditorContainer
+                  className="stack-editor"
+                  style={{
+                    left: stackEditorPosition.x,
+                    top: stackEditorPosition.y
+                  }}
+                >
+                  <h4>Edit Stack</h4>
+                  <p>Enter values separated by commas (bottom → top):</p>
+                  <ArrayInput
+                    value={stackInput}
+                    onChange={(e) => setStackInput(e.target.value)}
+                    placeholder="e.g., 1, 2, 3, 4"
+                  />
+                  <div>
+                    <Button onClick={handleStackSubmit}>Apply</Button>
+                    <Button onClick={() => setStackEditorPosition(null)}>Cancel</Button>
                   </div>
-                )}
-              </ColorPickerContainer>
-            )}
-            {arrayEditorPosition && (
-              <ArrayEditorContainer
-                className="array-editor"
-                style={{
-                  left: arrayEditorPosition.x,
-                  top: arrayEditorPosition.y
-                }}
-              >
-                <h4>Edit Array</h4>
-                <p>Enter numbers separated by commas:</p>
-                <ArrayInput
-                  value={arrayInput}
-                  onChange={(e) => setArrayInput(e.target.value)}
-                  placeholder="e.g., 1, 2, 3, 4, 5"
-                />
-                <div>
-                  <Button onClick={handleArraySubmit}>Apply</Button>
-                  <Button onClick={() => setArrayEditorPosition(null)}>Cancel</Button>
-                </div>
-              </ArrayEditorContainer>
-            )}
-            {stackEditorPosition && (
-              <ArrayEditorContainer
-                className="stack-editor"
-                style={{
-                  left: stackEditorPosition.x,
-                  top: stackEditorPosition.y
-                }}
-              >
-                <h4>Edit Stack</h4>
-                <p>Enter values separated by commas (bottom → top):</p>
-                <ArrayInput
-                  value={stackInput}
-                  onChange={(e) => setStackInput(e.target.value)}
-                  placeholder="e.g., 1, 2, 3, 4"
-                />
-                <div>
-                  <Button onClick={handleStackSubmit}>Apply</Button>
-                  <Button onClick={() => setStackEditorPosition(null)}>Cancel</Button>
-                </div>
-              </ArrayEditorContainer>
-            )}
-            {mapEditorPosition && (
-              <ArrayEditorContainer
-                className="map-editor"
-                style={{
-                  left: mapEditorPosition.x,
-                  top: mapEditorPosition.y
-                }}
-              >
-                <h4>Edit Map</h4>
-                <p>Enter key:value pairs separated by commas (e.g., a:1, b:2, c:3):</p>
-                <ArrayInput
-                  value={mapInput}
-                  onChange={(e) => setMapInput(e.target.value)}
-                  placeholder="e.g., a:1, b:2, c:3"
-                />
-                <div>
-                  <Button onClick={handleMapSubmit}>Apply</Button>
-                  <Button onClick={() => setMapEditorPosition(null)}>Cancel</Button>
-                </div>
-              </ArrayEditorContainer>
-            )}
-          </Canvas>
-        </CanvasArea>
-        {showGuide && (
-          <ModalOverlay onClick={() => setShowGuide(false)}>
-            <ModalContent onClick={e => e.stopPropagation()}>
-              <CloseBtn onClick={() => setShowGuide(false)}>&times;</CloseBtn>
-              <EditorGuide />
-            </ModalContent>
-          </ModalOverlay>
-        )}
-      </MainArea>
-    </Container>
+                </ArrayEditorContainer>
+              )}
+              {mapEditorPosition && (
+                <ArrayEditorContainer
+                  className="map-editor"
+                  style={{
+                    left: mapEditorPosition.x,
+                    top: mapEditorPosition.y
+                  }}
+                >
+                  <h4>Edit Map</h4>
+                  <p>Enter key:value pairs separated by commas (e.g., a:1, b:2, c:3):</p>
+                  <ArrayInput
+                    value={mapInput}
+                    onChange={(e) => setMapInput(e.target.value)}
+                    placeholder="e.g., a:1, b:2, c:3"
+                  />
+                  <div>
+                    <Button onClick={handleMapSubmit}>Apply</Button>
+                    <Button onClick={() => setMapEditorPosition(null)}>Cancel</Button>
+                  </div>
+                </ArrayEditorContainer>
+              )}
+            </Canvas>
+          </CanvasArea>
+          {showGuide && (
+            <ModalOverlay onClick={() => setShowGuide(false)}>
+              <ModalContent onClick={e => e.stopPropagation()}>
+                <CloseBtn onClick={() => setShowGuide(false)}>&times;</CloseBtn>
+                <EditorGuide />
+              </ModalContent>
+            </ModalOverlay>
+          )}
+        </MainArea>
+      </Container>
+    </ThemeProvider>
   );
 };
 
