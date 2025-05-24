@@ -185,9 +185,15 @@ function App() {
     <Router>
       <div className="app">
         <Routes>
-          <Route path="/login" element={!user ? <Login onLogin={handleLogin} /> : <Navigate to="/" />} />
-          <Route path="/signup" element={!user ? <Signup onSignup={handleSignup} /> : <Navigate to="/" />} />
-          <Route path="/" element={user ? renderContent() : <Navigate to="/login" />} />
+          <Route path="/login" element={<Login onLogin={handleLogin} />} />
+          <Route path="/signup" element={<Signup onSignup={handleSignup} />} />
+          <Route path="/" element={renderContent()} />
+          <Route path="/editor" element={<ShapeEditor />} />
+          <Route path="/editor/map" element={<ShapeEditor defaultTab="map" />} />
+          <Route path="/editor/tree" element={<ShapeEditor defaultTab="tree" />} />
+          <Route path="/markdown" element={<MarkdownEditor />} />
+          <Route path="/ocr" element={<OCR />} />
+          <Route path="/home" element={<Home user={user} onLogout={handleLogout} onNavigate={navigateTo} />} />
         </Routes>
       </div>
     </Router>
