@@ -13,6 +13,32 @@ const Container = styled.div`
   background: #f5f5f5;
 `;
 
+const MainArea = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+`;
+
+const Toolbar = styled.div`
+  width: 100%;
+  background: #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  padding: 0 32px 0 32px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  min-height: 64px;
+  border-bottom: 1px solid #e0e0e0;
+`;
+
+const CanvasArea = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 0;
+`;
+
 const Sidebar = styled.div`
   width: 200px;
   background: #fff;
@@ -38,7 +64,7 @@ const Canvas = styled.div`
 const ShapeItem = styled.div`
   width: 60px;
   height: 60px;
-  margin: 10px;
+  margin: 8px 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -303,10 +329,13 @@ const ArrayIconWithScale = () => {
   return (
     <div
       style={{
+        width: 60,
+        height: 36,
         display: 'flex',
         alignItems: 'center',
+        justifyContent: 'center',
         gap: '2px',
-        padding: '2px 0',
+        padding: 0,
         transition: 'transform 0.22s cubic-bezier(.4,1.6,.6,1)',
         transform: hovered ? 'scale(1.32)' : 'scale(1)',
         cursor: 'pointer',
@@ -344,7 +373,7 @@ const StackIconWithScale = () => {
         flexDirection: 'column-reverse',
         alignItems: 'center',
         gap: '2px',
-        padding: '2px 0',
+        padding: 0,
         transition: 'transform 0.22s cubic-bezier(.4,1.6,.6,1)',
         transform: hovered ? 'scale(1.32)' : 'scale(1)',
         cursor: 'pointer',
@@ -457,6 +486,54 @@ const MapIconWithScale = () => {
           }}>{values[i]}</div>
         </div>
       ))}
+    </div>
+  );
+};
+
+const TreeIconWithScale = () => {
+  const [hovered, setHovered] = React.useState(false);
+  // 节点样式
+  const nodeStyle = (color) => ({
+    width: 14,
+    height: 14,
+    background: color,
+    borderRadius: '50%',
+    boxShadow: '0 2px 6px rgba(52,100,180,0.18)',
+    border: '2px solid #4a90e2',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: 10,
+    color: '#fff',
+    fontWeight: 700
+  });
+  return (
+    <div
+      style={{
+        width: 44,
+        height: 32,
+        position: 'relative',
+        transition: 'transform 0.22s cubic-bezier(.4,1.6,.6,1)',
+        transform: hovered ? 'scale(1.32)' : 'scale(1)',
+        cursor: 'pointer',
+        margin: '0 auto'
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* 连线 */}
+      <svg width="44" height="32" style={{ position: 'absolute', left: 0, top: 0, pointerEvents: 'none' }}>
+        {/* 根到左子 */}
+        <line x1="22" y1="8" x2="10" y2="24" stroke="#4a90e2" strokeWidth="2" />
+        {/* 根到右子 */}
+        <line x1="22" y1="8" x2="34" y2="24" stroke="#4a90e2" strokeWidth="2" />
+      </svg>
+      {/* 根节点 */}
+      <div style={{ ...nodeStyle('#4a90e2'), position: 'absolute', left: 15, top: 0 }}>1</div>
+      {/* 左子节点 */}
+      <div style={{ ...nodeStyle('#81d4fa'), position: 'absolute', left: 2, top: 18 }}>2</div>
+      {/* 右子节点 */}
+      <div style={{ ...nodeStyle('#81d4fa'), position: 'absolute', left: 28, top: 18 }}>3</div>
     </div>
   );
 };
@@ -1622,6 +1699,12 @@ const ShapeEditor = () => {
             onArrowLabelChange={handleArrowLabelChange}
           />
         );
+      case 'tree':
+        return (
+          <Tooltip content="树结构" delay={100}>
+            <TreeIconWithScale />
+          </Tooltip>
+        );
       default:
         return null;
     }
@@ -1664,229 +1747,208 @@ const ShapeEditor = () => {
               <Tooltip content="映射（字典）" delay={100}>
                 <MapIconWithScale />
               </Tooltip>
+            ) : shape.type === 'tree' ? (
+              <Tooltip content="树结构" delay={100}>
+                <TreeIconWithScale />
+              </Tooltip>
             ) : renderShape(shape)}
           </ShapeItem>
         ))}
-        <div style={{ marginTop: '20px' }}>
-          <h3>File Input</h3>
-          <FileInput
-            type="file"
-            accept=".yaml,.yml"
-            onChange={handleFileInput}
-            ref={fileInputRef}
-          />
-          <FileInputLabel onClick={() => fileInputRef.current?.click()}>
-            加载 YAML 文件
-          </FileInputLabel>
-        </div>
-        <div style={{ marginTop: '20px' }}>
-          <h3>Templates</h3>
-          <TemplateButton onClick={() => setShowTemplates(!showTemplates)}>
-            选择模板
-          </TemplateButton>
-        </div>
-        <div style={{ marginTop: '20px' }}>
-          <h3>Group 操作</h3>
-          <p style={{ fontSize: '12px', color: '#666' }}>
-            按住 Ctrl 键并拖动鼠标来选择图形创建 group
-          </p>
-        </div>
-        <div style={{ marginTop: '20px' }}>
-          <h3>帮助</h3>
-          <Button onClick={() => setShowGuide(true)}>
-            YAML 文件指南
-          </Button>
-        </div>
-        <div style={{ marginTop: '20px' }}>
-          <h3>导出</h3>
-          <div style={{ marginBottom: 8 }}>
+      </Sidebar>
+      <MainArea>
+        <Toolbar>
+          {/* 文件上传 */}
+          <div>
+            <FileInput
+              type="file"
+              accept=".yaml,.yml"
+              onChange={handleFileInput}
+              ref={fileInputRef}
+            />
+            <FileInputLabel onClick={() => fileInputRef.current?.click()}>
+              加载 YAML 文件
+            </FileInputLabel>
+          </div>
+          {/* 帮助文档 */}
+          <div>
+            <Button onClick={() => setShowGuide(true)}>
+              YAML 文件指南
+            </Button>
+          </div>
+          {/* 导出 */}
+          <div>
             <label style={{ fontSize: 14, marginRight: 8 }}>帧间隔(ms):</label>
             <input type="number" min={50} max={5000} step={50} value={gifDelay} onChange={e => setGifDelay(Number(e.target.value))} style={{ width: 80, fontSize: 14, padding: 2 }} />
+            <Button onClick={exportGif} style={{ marginLeft: 8 }}>导出 GIF</Button>
           </div>
-          <Button onClick={exportGif}>导出 GIF</Button>
-        </div>
-      </Sidebar>
-      <Canvas
-        ref={canvasRef}
-        onDrop={handleDrop}
-        onDragOver={handleDragOver}
-        onMouseDown={handleCanvasMouseDown}
-        onMouseMove={handleCanvasMouseMove}
-        onMouseUp={handleCanvasMouseUp}
-      >
-        {shapes.map(shape => renderShape(shape))}
-        
-        {/* 渲染 group 选择框 */}
-        {isSelectingGroup && selectionStart && selectionEnd && (
-          <GroupContainer
-            style={{
-              left: Math.min(selectionStart.x, selectionEnd.x),
-              top: Math.min(selectionStart.y, selectionEnd.y),
-              width: Math.abs(selectionEnd.x - selectionStart.x),
-              height: Math.abs(selectionEnd.y - selectionStart.y)
-            }}
-          />
-        )}
-
-        {/* 渲染已创建的 groups */}
-        {groups.map(group => (
-          <GroupContainer
-            key={group.id}
-            style={{
-              left: group.x,
-              top: group.y,
-              width: group.width,
-              height: group.height,
-              borderColor: selectedGroup?.id === group.id ? '#ff4081' : '#4a90e2'
-            }}
-          />
-        ))}
-
-        {showTemplates && (
-          <TemplateSelector>
-            <h4>选择模板</h4>
-            {templates.map((template, index) => (
-              <TemplateButton
-                key={index}
-                onClick={() => applyTemplate(template)}
-                style={{ display: 'block', width: '100%', marginBottom: '8px' }}
-              >
-                {template.name}
-              </TemplateButton>
-            ))}
-          </TemplateSelector>
-        )}
-        {colorPickerPosition && (
-          <ColorPickerContainer
-            className="color-picker"
-            style={{
-              left: colorPickerPosition.x,
-              top: colorPickerPosition.y
-            }}
+        </Toolbar>
+        <CanvasArea>
+          <Canvas
+            ref={canvasRef}
+            onDrop={handleDrop}
+            onDragOver={handleDragOver}
+            onMouseDown={handleCanvasMouseDown}
+            onMouseMove={handleCanvasMouseMove}
+            onMouseUp={handleCanvasMouseUp}
           >
-            <ChromePicker
-              color={selectedShape?.color}
-              onChange={handleColorChange}
-            />
-            {selectedShape?.type === 'array' && selectedBoxIndex !== null ? (
-              <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                <Button onClick={() => handleAddArrow('up')}>
-                  {selectedShape.arrows?.[selectedBoxIndex]?.up ? '删除上方箭头' : '添加上方箭头'}
-                </Button>
-                <Button onClick={() => handleAddArrow('down')}>
-                  {selectedShape.arrows?.[selectedBoxIndex]?.down ? '删除下方箭头' : '添加下方箭头'}
-                </Button>
-              </div>
-            ) : selectedShape?.type === 'stack' && selectedBoxIndex !== null ? (
-              (() => {
-                const idx = selectedShape.stackData ? selectedShape.stackData.length - 1 - selectedBoxIndex : 0;
-                return (
-                  <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <Button onClick={() => handleAddArrow('left')}>
-                      {selectedShape.arrows?.[idx]?.left ? '删除左箭头' : '添加左箭头'}
-                    </Button>
-                    <Button onClick={() => handleAddArrow('right')}>
-                      {selectedShape.arrows?.[idx]?.right ? '删除右箭头' : '添加右箭头'}
-                    </Button>
-                  </div>
-                );
-              })()
-            ) : selectedShape?.type === 'map' && selectedBoxIndex !== null ? (
-              (() => {
-                const mapLen = selectedShape.mapData ? selectedShape.mapData.length : 0;
-                const idx = mapLen - 1 - selectedBoxIndex;
-                return (
-                  <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
-                    <Button onClick={() => handleAddArrow('left')}>
-                      {selectedShape.arrows?.[idx]?.left ? '删除左箭头' : '添加左箭头'}
-                    </Button>
-                    <Button onClick={() => handleAddArrow('right')}>
-                      {selectedShape.arrows?.[idx]?.right ? '删除右箭头' : '添加右箭头'}
-                    </Button>
-                  </div>
-                );
-              })()
-            ) : (
-              <div style={{ marginTop: 10 }}>
-                <Button onClick={handleCopy}>
-                  复制图形
-                </Button>
-              </div>
+            {shapes.map(shape => renderShape(shape))}
+            {/* 渲染 group 选择框 */}
+            {isSelectingGroup && selectionStart && selectionEnd && (
+              <GroupContainer
+                style={{
+                  left: Math.min(selectionStart.x, selectionEnd.x),
+                  top: Math.min(selectionStart.y, selectionEnd.y),
+                  width: Math.abs(selectionEnd.x - selectionStart.x),
+                  height: Math.abs(selectionEnd.y - selectionStart.y)
+                }}
+              />
             )}
-          </ColorPickerContainer>
+            {/* 渲染已创建的 groups */}
+            {groups.map(group => (
+              <GroupContainer
+                key={group.id}
+                style={{
+                  left: group.x,
+                  top: group.y,
+                  width: group.width,
+                  height: group.height,
+                  borderColor: selectedGroup?.id === group.id ? '#ff4081' : '#4a90e2'
+                }}
+              />
+            ))}
+            {colorPickerPosition && (
+              <ColorPickerContainer
+                className="color-picker"
+                style={{
+                  left: colorPickerPosition.x,
+                  top: colorPickerPosition.y
+                }}
+              >
+                <ChromePicker
+                  color={selectedShape?.color}
+                  onChange={handleColorChange}
+                />
+                {selectedShape?.type === 'array' && selectedBoxIndex !== null ? (
+                  <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <Button onClick={() => handleAddArrow('up')}>
+                      {selectedShape.arrows?.[selectedBoxIndex]?.up ? '删除上方箭头' : '添加上方箭头'}
+                    </Button>
+                    <Button onClick={() => handleAddArrow('down')}>
+                      {selectedShape.arrows?.[selectedBoxIndex]?.down ? '删除下方箭头' : '添加下方箭头'}
+                    </Button>
+                  </div>
+                ) : selectedShape?.type === 'stack' && selectedBoxIndex !== null ? (
+                  (() => {
+                    const idx = selectedShape.stackData ? selectedShape.stackData.length - 1 - selectedBoxIndex : 0;
+                    return (
+                      <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <Button onClick={() => handleAddArrow('left')}>
+                          {selectedShape.arrows?.[idx]?.left ? '删除左箭头' : '添加左箭头'}
+                        </Button>
+                        <Button onClick={() => handleAddArrow('right')}>
+                          {selectedShape.arrows?.[idx]?.right ? '删除右箭头' : '添加右箭头'}
+                        </Button>
+                      </div>
+                    );
+                  })()
+                ) : selectedShape?.type === 'map' && selectedBoxIndex !== null ? (
+                  (() => {
+                    const mapLen = selectedShape.mapData ? selectedShape.mapData.length : 0;
+                    const idx = mapLen - 1 - selectedBoxIndex;
+                    return (
+                      <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                        <Button onClick={() => handleAddArrow('left')}>
+                          {selectedShape.arrows?.[idx]?.left ? '删除左箭头' : '添加左箭头'}
+                        </Button>
+                        <Button onClick={() => handleAddArrow('right')}>
+                          {selectedShape.arrows?.[idx]?.right ? '删除右箭头' : '添加右箭头'}
+                        </Button>
+                      </div>
+                    );
+                  })()
+                ) : (
+                  <div style={{ marginTop: 10 }}>
+                    <Button onClick={handleCopy}>
+                      复制图形
+                    </Button>
+                  </div>
+                )}
+              </ColorPickerContainer>
+            )}
+            {arrayEditorPosition && (
+              <ArrayEditorContainer
+                className="array-editor"
+                style={{
+                  left: arrayEditorPosition.x,
+                  top: arrayEditorPosition.y
+                }}
+              >
+                <h4>Edit Array</h4>
+                <p>Enter numbers separated by commas:</p>
+                <ArrayInput
+                  value={arrayInput}
+                  onChange={(e) => setArrayInput(e.target.value)}
+                  placeholder="e.g., 1, 2, 3, 4, 5"
+                />
+                <div>
+                  <Button onClick={handleArraySubmit}>Apply</Button>
+                  <Button onClick={() => setArrayEditorPosition(null)}>Cancel</Button>
+                </div>
+              </ArrayEditorContainer>
+            )}
+            {stackEditorPosition && (
+              <ArrayEditorContainer
+                className="stack-editor"
+                style={{
+                  left: stackEditorPosition.x,
+                  top: stackEditorPosition.y
+                }}
+              >
+                <h4>Edit Stack</h4>
+                <p>Enter values separated by commas (bottom → top):</p>
+                <ArrayInput
+                  value={stackInput}
+                  onChange={(e) => setStackInput(e.target.value)}
+                  placeholder="e.g., 1, 2, 3, 4"
+                />
+                <div>
+                  <Button onClick={handleStackSubmit}>Apply</Button>
+                  <Button onClick={() => setStackEditorPosition(null)}>Cancel</Button>
+                </div>
+              </ArrayEditorContainer>
+            )}
+            {mapEditorPosition && (
+              <ArrayEditorContainer
+                className="map-editor"
+                style={{
+                  left: mapEditorPosition.x,
+                  top: mapEditorPosition.y
+                }}
+              >
+                <h4>Edit Map</h4>
+                <p>Enter key:value pairs separated by commas (e.g., a:1, b:2, c:3):</p>
+                <ArrayInput
+                  value={mapInput}
+                  onChange={(e) => setMapInput(e.target.value)}
+                  placeholder="e.g., a:1, b:2, c:3"
+                />
+                <div>
+                  <Button onClick={handleMapSubmit}>Apply</Button>
+                  <Button onClick={() => setMapEditorPosition(null)}>Cancel</Button>
+                </div>
+              </ArrayEditorContainer>
+            )}
+          </Canvas>
+        </CanvasArea>
+        {showGuide && (
+          <ModalOverlay onClick={() => setShowGuide(false)}>
+            <ModalContent onClick={e => e.stopPropagation()}>
+              <CloseBtn onClick={() => setShowGuide(false)}>&times;</CloseBtn>
+              <EditorGuide />
+            </ModalContent>
+          </ModalOverlay>
         )}
-        {arrayEditorPosition && (
-          <ArrayEditorContainer
-            className="array-editor"
-            style={{
-              left: arrayEditorPosition.x,
-              top: arrayEditorPosition.y
-            }}
-          >
-            <h4>Edit Array</h4>
-            <p>Enter numbers separated by commas:</p>
-            <ArrayInput
-              value={arrayInput}
-              onChange={(e) => setArrayInput(e.target.value)}
-              placeholder="e.g., 1, 2, 3, 4, 5"
-            />
-            <div>
-              <Button onClick={handleArraySubmit}>Apply</Button>
-              <Button onClick={() => setArrayEditorPosition(null)}>Cancel</Button>
-            </div>
-          </ArrayEditorContainer>
-        )}
-        {stackEditorPosition && (
-          <ArrayEditorContainer
-            className="stack-editor"
-            style={{
-              left: stackEditorPosition.x,
-              top: stackEditorPosition.y
-            }}
-          >
-            <h4>Edit Stack</h4>
-            <p>Enter values separated by commas (bottom → top):</p>
-            <ArrayInput
-              value={stackInput}
-              onChange={(e) => setStackInput(e.target.value)}
-              placeholder="e.g., 1, 2, 3, 4"
-            />
-            <div>
-              <Button onClick={handleStackSubmit}>Apply</Button>
-              <Button onClick={() => setStackEditorPosition(null)}>Cancel</Button>
-            </div>
-          </ArrayEditorContainer>
-        )}
-        {mapEditorPosition && (
-          <ArrayEditorContainer
-            className="map-editor"
-            style={{
-              left: mapEditorPosition.x,
-              top: mapEditorPosition.y
-            }}
-          >
-            <h4>Edit Map</h4>
-            <p>Enter key:value pairs separated by commas (e.g., a:1, b:2, c:3):</p>
-            <ArrayInput
-              value={mapInput}
-              onChange={(e) => setMapInput(e.target.value)}
-              placeholder="e.g., a:1, b:2, c:3"
-            />
-            <div>
-              <Button onClick={handleMapSubmit}>Apply</Button>
-              <Button onClick={() => setMapEditorPosition(null)}>Cancel</Button>
-            </div>
-          </ArrayEditorContainer>
-        )}
-      </Canvas>
-      {showGuide && (
-        <ModalOverlay onClick={() => setShowGuide(false)}>
-          <ModalContent onClick={e => e.stopPropagation()}>
-            <CloseBtn onClick={() => setShowGuide(false)}>&times;</CloseBtn>
-            <EditorGuide />
-          </ModalContent>
-        </ModalOverlay>
-      )}
+      </MainArea>
     </Container>
   );
 };
