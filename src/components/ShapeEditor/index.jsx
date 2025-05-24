@@ -5,7 +5,6 @@ import EditorGuide from './EditorGuide';
 import MapShape from './MapShape';
 import GIF from 'gif.js/dist/gif.js';
 import html2canvas from 'html2canvas';
-import { useLocation } from 'react-router-dom';
 
 const Container = styled.div`
   display: flex;
@@ -268,7 +267,7 @@ const templates = [
   }
 ];
 
-const ShapeEditor = ({ defaultTab }) => {
+const ShapeEditor = () => {
   const [shapes, setShapes] = useState([]);
   const [selectedShape, setSelectedShape] = useState(null);
   const [selectedBoxIndex, setSelectedBoxIndex] = useState(null);
@@ -293,14 +292,6 @@ const ShapeEditor = ({ defaultTab }) => {
   const [gifDelay, setGifDelay] = useState(600);
   const canvasRef = useRef(null);
   const fileInputRef = useRef(null);
-  const location = useLocation();
-  const [activeTab, setActiveTab] = useState(defaultTab || 'all');
-
-  useEffect(() => {
-    if (location.pathname.endsWith('/map')) setActiveTab('map');
-    else if (location.pathname.endsWith('/tree')) setActiveTab('tree');
-    else setActiveTab(defaultTab || 'all');
-  }, [location.pathname, defaultTab]);
 
   const handleDragStart = (e, shape) => {
     e.dataTransfer.setData('shape', JSON.stringify(shape));
@@ -1443,12 +1434,21 @@ const ShapeEditor = ({ defaultTab }) => {
     <Container>
       <Sidebar>
         <div style={{ marginBottom: 12, display: 'flex', gap: 8 }}>
-          <Button onClick={() => setActiveTab('all')} style={{ background: activeTab === 'all' ? '#357abd' : undefined }}>全部</Button>
-          <Button onClick={() => setActiveTab('map')} style={{ background: activeTab === 'map' ? '#ffd54f' : undefined, color: activeTab === 'map' ? '#333' : undefined }}>Map</Button>
-          <Button onClick={() => setActiveTab('tree')} style={{ background: activeTab === 'tree' ? '#c8e6c9' : undefined, color: activeTab === 'tree' ? '#333' : undefined }}>Tree</Button>
+          {/* 已移除 shape tab 按钮，保持 UI 简洁 */}
         </div>
-        <h3>Basic Shapes</h3>
-        {basicShapes.filter(shape => activeTab === 'all' || shape.type === activeTab).map((shape, index) => (
+        <div style={{
+          fontSize: 20,
+          fontWeight: 700,
+          background: 'linear-gradient(90deg, #4a90e2 0%, #81d4fa 100%)',
+          WebkitBackgroundClip: 'text',
+          WebkitTextFillColor: 'transparent',
+          padding: '8px 0 8px 8px',
+          borderRadius: '8px',
+          marginBottom: 8,
+          borderBottom: '2px solid #4a90e2',
+          letterSpacing: 2
+        }}>基础组件</div>
+        {basicShapes.map((shape, index) => (
           <ShapeItem
             key={index}
             type={shape.type}
