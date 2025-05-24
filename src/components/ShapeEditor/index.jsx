@@ -645,6 +645,20 @@ const ShapeEditor = () => {
         }));
         setColorPickerPosition(null);
         setSelectedBoxIndex(null);
+      } else if (selectedShape.type === 'map') {
+        setShapes(shapes.map(shape => {
+          if (shape.id === selectedShape.id) {
+            const arrows = { ...(shape.arrows || {}) };
+            const idx = (shape.mapData?.length || 0) - 1 - selectedBoxIndex;
+            if (!arrows[idx]) arrows[idx] = {};
+            arrows[idx][position] = !arrows[idx][position];
+            if (!arrows[idx].left && !arrows[idx].right) delete arrows[idx];
+            return { ...shape, arrows };
+          }
+          return shape;
+        }));
+        setColorPickerPosition(null);
+        setSelectedBoxIndex(null);
       }
     }
   };
@@ -1474,6 +1488,21 @@ const ShapeEditor = () => {
             ) : selectedShape?.type === 'stack' && selectedBoxIndex !== null ? (
               (() => {
                 const idx = selectedShape.stackData ? selectedShape.stackData.length - 1 - selectedBoxIndex : 0;
+                return (
+                  <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
+                    <Button onClick={() => handleAddArrow('left')}>
+                      {selectedShape.arrows?.[idx]?.left ? '删除左箭头' : '添加左箭头'}
+                    </Button>
+                    <Button onClick={() => handleAddArrow('right')}>
+                      {selectedShape.arrows?.[idx]?.right ? '删除右箭头' : '添加右箭头'}
+                    </Button>
+                  </div>
+                );
+              })()
+            ) : selectedShape?.type === 'map' && selectedBoxIndex !== null ? (
+              (() => {
+                const mapLen = selectedShape.mapData ? selectedShape.mapData.length : 0;
+                const idx = mapLen - 1 - selectedBoxIndex;
                 return (
                   <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 4 }}>
                     <Button onClick={() => handleAddArrow('left')}>
