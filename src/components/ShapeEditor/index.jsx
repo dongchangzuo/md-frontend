@@ -43,15 +43,10 @@ const ShapeItem = styled.div`
   align-items: center;
   justify-content: center;
   cursor: move;
-  background: ${props => props.type === 'array' ? 'transparent' : '#fff'};
-  border: ${props => props.type === 'array' ? 'none' : '1px solid #ddd'};
+  background: transparent;
+  border: none;
   border-radius: 4px;
-  transition: all 0.2s;
-
-  &:hover {
-    transform: ${props => props.type === 'array' ? 'none' : 'scale(1.05)'};
-    box-shadow: ${props => props.type === 'array' ? 'none' : '0 2px 5px rgba(0, 0, 0, 0.1)'};
-  }
+  transition: none;
 `;
 
 const DraggableShape = styled.div`
@@ -324,7 +319,7 @@ const ArrayIconWithScale = () => {
           width: 18,
           height: 24,
           background: 'linear-gradient(180deg, #4a90e2 80%, #357abd 100%)',
-          border: '2px solid #357abd',
+          // border: '2px solid #357abd',
           borderRadius: '6px',
           boxShadow: '0 4px 12px rgba(52, 100, 180, 0.22), 0 1.5px 4px rgba(74,144,226,0.18)',
           display: 'flex',
@@ -336,6 +331,78 @@ const ArrayIconWithScale = () => {
           <span style={{ fontSize: 13, fontWeight: 700, color: '#fff', textShadow: '0 1px 2px #357abd' }}>{i + 1}</span>
         </div>
       ))}
+    </div>
+  );
+};
+
+const StackIconWithScale = () => {
+  const [hovered, setHovered] = React.useState(false);
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: 'column-reverse',
+        alignItems: 'center',
+        gap: '2px',
+        padding: '2px 0',
+        transition: 'transform 0.22s cubic-bezier(.4,1.6,.6,1)',
+        transform: hovered ? 'scale(1.32)' : 'scale(1)',
+        cursor: 'pointer',
+      }}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      {/* 栈底色块（3） */}
+      <div style={{
+        width: 22,
+        height: 13,
+        background: 'linear-gradient(180deg, #4a90e2 80%, #357abd 100%)',
+        // border: '2px solid #357abd',
+        borderRadius: '0 0 7px 7px',
+        boxShadow: '0 4px 12px rgba(52, 100, 180, 0.22)',
+        marginTop: 2,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: 700,
+        color: '#fff',
+        fontSize: 13,
+        textShadow: '0 1px 2px #357abd'
+      }}>3</div>
+      {/* 中间色块（2） */}
+      <div style={{
+        width: 22,
+        height: 13,
+        background: 'linear-gradient(180deg, #4a90e2 80%, #357abd 100%)',
+        // border: '2px solid #357abd',
+        borderRadius: 4,
+        boxShadow: '0 4px 12px rgba(52, 100, 180, 0.18)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: 700,
+        color: '#fff',
+        fontSize: 13,
+        textShadow: '0 1px 2px #357abd'
+      }}>2</div>
+      {/* 栈顶高亮色块（1） */}
+      <div style={{
+        width: 22,
+        height: 15,
+        background: 'linear-gradient(180deg, #ffd54f 80%, #ffb300 100%)',
+        // border: '2px solid #ffb300',
+        borderRadius: '7px 7px 0 0',
+        boxShadow: '0 4px 16px rgba(255,213,79,0.18)',
+        marginBottom: 2,
+        position: 'relative',
+        zIndex: 1,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        fontWeight: 700,
+        color: '#b8860b',
+        fontSize: 13
+      }}>1↑</div>
     </div>
   );
 };
@@ -1210,7 +1277,7 @@ const ShapeEditor = () => {
                       width: '45px',
                       height: '45px',
                       backgroundColor: shape.boxColors?.[index] || '#4a90e2',
-                      border: '2px solid #357abd',
+                      // border: '2px solid #357abd',
                       borderRadius: '6px',
                       display: 'flex',
                       alignItems: 'center',
@@ -1326,7 +1393,7 @@ const ShapeEditor = () => {
                 width: '20px',
                 height: '20px',
                 backgroundColor: '#4a90e2',
-                border: '2px solid #357abd',
+                // border: '2px solid #357abd',
                 borderRadius: '4px',
                 display: 'flex',
                 alignItems: 'center',
@@ -1340,7 +1407,7 @@ const ShapeEditor = () => {
                 width: '20px',
                 height: '20px',
                 backgroundColor: '#4a90e2',
-                border: '2px solid #357abd',
+                // border: '2px solid #357abd',
                 borderRadius: '4px',
                 display: 'flex',
                 alignItems: 'center',
@@ -1354,7 +1421,7 @@ const ShapeEditor = () => {
                 width: '20px',
                 height: '20px',
                 backgroundColor: '#4a90e2',
-                border: '2px solid #357abd',
+                // border: '2px solid #357abd',
                 borderRadius: '4px',
                 display: 'flex',
                 alignItems: 'center',
@@ -1428,7 +1495,7 @@ const ShapeEditor = () => {
                       width: '45px',
                       height: '45px',
                       backgroundColor: boxColors?.[index] || '#4a90e2',
-                      border: '2px solid #357abd',
+                      // border: '2px solid #357abd',
                       borderRadius: '6px',
                       display: 'flex',
                       alignItems: 'center',
@@ -1479,9 +1546,12 @@ const ShapeEditor = () => {
         } else { // sidebar icon
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ width: '20px', height: '20px', backgroundColor: '#4a90e2', border: '2px solid #357abd', borderRadius: '4px', margin: '0 auto' }}></div>
-              <div style={{ width: '20px', height: '20px', backgroundColor: '#4a90e2', border: '2px solid #357abd', borderRadius: '4px', margin: '0 auto' }}></div>
-              <div style={{ width: '20px', height: '20px', backgroundColor: '#4a90e2', border: '2px solid #357abd', borderRadius: '4px', margin: '0 auto' }}></div>
+              <div style={{ width: '20px', height: '20px', backgroundColor: '#4a90e2', // border: '2px solid #357abd',
+                borderRadius: '4px', margin: '0 auto' }}></div>
+              <div style={{ width: '20px', height: '20px', backgroundColor: '#4a90e2', // border: '2px solid #357abd',
+                borderRadius: '4px', margin: '0 auto' }}></div>
+              <div style={{ width: '20px', height: '20px', backgroundColor: '#4a90e2', // border: '2px solid #357abd',
+                borderRadius: '4px', margin: '0 auto' }}></div>
             </div>
           );
         }
@@ -1531,6 +1601,10 @@ const ShapeEditor = () => {
             {shape.type === 'array' ? (
               <Tooltip content="数组" delay={100}>
                 <ArrayIconWithScale />
+              </Tooltip>
+            ) : shape.type === 'stack' ? (
+              <Tooltip content="栈" delay={100}>
+                <StackIconWithScale />
               </Tooltip>
             ) : renderShape(shape)}
           </ShapeItem>
