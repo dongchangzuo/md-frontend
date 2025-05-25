@@ -2,11 +2,33 @@ import { useState, useEffect } from 'react';
 import { tokenManager } from '../../services/api';
 import './FileTree.css';
 
-function FileTree({ onFileSelect }) {
+function FileTree({ onFileSelect, isLocalMode }) {
   const [files, setFiles] = useState([]);
   const [expandedFolders, setExpandedFolders] = useState(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // 本地文件树 key
+  const LOCAL_FILES_KEY = 'local-md-files';
+
+  // 加载本地文件树
+  const loadLocalFiles = () => {
+    try {
+      const data = localStorage.getItem(LOCAL_FILES_KEY);
+      if (data) {
+        setFiles(JSON.parse(data));
+      } else {
+        setFiles([]);
+      }
+    } catch (e) {
+      setFiles([]);
+    }
+  };
+
+  // 保存本地文件树
+  const saveLocalFiles = (tree) => {
+    localStorage.setItem(LOCAL_FILES_KEY, JSON.stringify(tree));
+  };
 
   // 保存文件内容
   const saveFile = async (path, content) => {
@@ -100,7 +122,8 @@ function FileTree({ onFileSelect }) {
 
       if (!response.ok) {
         if (response.status === 401) {
-          throw new Error('Authentication failed');
+          loadLocalFiles();
+          return;
         }
         throw new Error('Failed to fetch files');
       }
@@ -111,26 +134,69 @@ function FileTree({ onFileSelect }) {
     } catch (error) {
       console.error('Error fetching files:', error);
       setError(error.message);
-      if (error.message === 'No authentication token found') {
-        alert('Please login first');
-      } else if (error.message === 'Authentication failed') {
-        alert('Authentication failed. Please login again');
-      } else {
-        alert('Failed to fetch files');
-      }
+      loadLocalFiles();
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchFiles();
-  }, []);
+    if (isLocalMode) {
+      loadLocalFiles();
+    } else {
+      fetchFiles();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLocalMode]);
 
   const handleCreateItem = async (type, parentPath = '/') => {
     const name = prompt(`Enter ${type} name:`);
     if (!name) return;
 
+    if (isLocalMode) {
+      // 本地模式：直接操作 localStorage
+      let tree = [];
+      try {
+        const data = localStorage.getItem(LOCAL_FILES_KEY);
+        if (data) tree = JSON.parse(data);
+      } catch {}
+
+      // 递归查找 parentPath
+      const addItem = (nodes, parentPath, item) => {
+        if (parentPath === '/' || parentPath === '') {
+          nodes.push(item);
+          return true;
+        }
+        for (let node of nodes) {
+          if (node.path === parentPath && node.type === 'folder') {
+            node.children = node.children || [];
+            node.children.push(item);
+            return true;
+          }
+          if (node.children && addItem(node.children, parentPath, item)) return true;
+        }
+        return false;
+      };
+
+      const fullPath = type === 'folder'
+        ? (parentPath === '/' ? `/${name}` : `${parentPath}/${name}`)
+        : (parentPath === '/' ? `/${name}.md` : `${parentPath}/${name}.md`);
+
+      const newItem = {
+        id: Date.now() + Math.random(),
+        name: type === 'folder' ? name : name + (name.endsWith('.md') ? '' : '.md'),
+        path: fullPath,
+        type: type === 'folder' ? 'folder' : 'file',
+        directory: type === 'folder',
+        children: type === 'folder' ? [] : undefined,
+      };
+      addItem(tree, parentPath, newItem);
+      localStorage.setItem(LOCAL_FILES_KEY, JSON.stringify(tree));
+      setFiles([...tree]);
+      return;
+    }
+
+    // 云端模式：原有逻辑
     try {
       const token = tokenManager.getToken();
       if (!token) {
@@ -139,7 +205,6 @@ function FileTree({ onFileSelect }) {
 
       if (type === 'folder') {
         const fullPath = parentPath === '/' ? `/${name}` : `${parentPath}/${name}`;
-        
         const response = await fetch('http://localhost:8080/api/filesystem/directories', {
           method: 'POST',
           headers: {
@@ -151,18 +216,15 @@ function FileTree({ onFileSelect }) {
             path: fullPath
           })
         });
-
         if (!response.ok) {
           if (response.status === 401) {
             throw new Error('Authentication failed');
           }
           throw new Error('Failed to create directory');
         }
-
         await fetchFiles();
       } else {
         const fullPath = parentPath === '/' ? `/${name}.md` : `${parentPath}/${name}.md`;
-        
         const response = await fetch('http://localhost:8080/api/filesystem/files', {
           method: 'POST',
           headers: {
@@ -175,14 +237,12 @@ function FileTree({ onFileSelect }) {
             content: ''
           })
         });
-
         if (!response.ok) {
           if (response.status === 401) {
             throw new Error('Authentication failed');
           }
           throw new Error('Failed to create file');
         }
-
         await fetchFiles();
       }
     } catch (error) {
@@ -246,7 +306,7 @@ function FileTree({ onFileSelect }) {
     return <div className="file-tree">Loading...</div>;
   }
 
-  if (error) {
+  if (error && !isLocalMode) {
     return <div className="file-tree">Error: {error}</div>;
   }
 
@@ -254,6 +314,19 @@ function FileTree({ onFileSelect }) {
     <div className="file-tree">
       <div className="file-tree-header">
         <h3>Files</h3>
+        <span style={{
+          marginLeft: 12,
+          padding: '2px 10px',
+          borderRadius: 8,
+          fontSize: 13,
+          fontWeight: 600,
+          background: isLocalMode ? '#ffe082' : '#e3f2fd',
+          color: isLocalMode ? '#b26a00' : '#1976d2',
+          border: isLocalMode ? '1px solid #ffd54f' : '1px solid #90caf9',
+          verticalAlign: 'middle'
+        }}>
+          {isLocalMode ? '本地模式' : '云端模式'}
+        </span>
         <div className="file-tree-actions">
           <button onClick={() => handleCreateItem('file')}>New File</button>
           <button onClick={() => handleCreateItem('folder')}>New Folder</button>

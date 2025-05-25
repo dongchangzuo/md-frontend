@@ -7,6 +7,7 @@ import 'katex/dist/katex.min.css';
 import FileTree from '../FileTree/FileTree';
 import { tokenManager } from '../../services/api';
 import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 
 // 布局类型
 const LAYOUT_TYPES = {
@@ -207,6 +208,8 @@ function MarkdownEditor({ themeMode, setThemeMode }) {
   const [currentFile, setCurrentFile] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState(null);
+  const navigate = useNavigate();
+  const [isLocalMode, setIsLocalMode] = useState(false);
 
   const handleFileSelect = (file) => {
     setCurrentFile(file);
@@ -222,10 +225,37 @@ function MarkdownEditor({ themeMode, setThemeMode }) {
   const saveFileContent = async () => {
     if (!currentFile) return;
 
+    if (isLocalMode) {
+      // 本地模式：保存到 localStorage
+      try {
+        let tree = [];
+        const data = localStorage.getItem('local-md-files');
+        if (data) tree = JSON.parse(data);
+        // 递归查找并更新内容
+        const updateContent = (nodes, path, content) => {
+          for (let node of nodes) {
+            if (node.path === path && node.type === 'file') {
+              node.content = content;
+              return true;
+            }
+            if (node.children && updateContent(node.children, path, content)) return true;
+          }
+          return false;
+        };
+        updateContent(tree, currentFile.path, markdown);
+        localStorage.setItem('local-md-files', JSON.stringify(tree));
+        setIsSaving(false);
+      } catch (e) {
+        setSaveError('本地保存失败');
+        setIsSaving(false);
+      }
+      return;
+    }
+
+    // 云端模式：原有逻辑
     try {
       setIsSaving(true);
       setSaveError(null);
-      
       const response = await fetch(`http://localhost:8080/api/filesystem/files?path=${encodeURIComponent(currentFile.path)}`, {
         method: 'PUT',
         headers: {
@@ -236,7 +266,6 @@ function MarkdownEditor({ themeMode, setThemeMode }) {
           content: markdown
         })
       });
-
       if (!response.ok) {
         if (response.status === 401) {
           throw new Error('Authentication failed');
@@ -266,6 +295,22 @@ function MarkdownEditor({ themeMode, setThemeMode }) {
 
     return () => clearTimeout(saveTimeout);
   }, [markdown, currentFile]);
+
+  // 模式切换
+  const handleModeSwitch = (mode) => {
+    if (mode === 'cloud') {
+      const token = tokenManager.getToken();
+      if (!token) {
+        navigate('/login');
+        return;
+      }
+      setIsLocalMode(false);
+      // TODO: 这里可触发云端数据拉取逻辑
+    } else {
+      setIsLocalMode(true);
+      // TODO: 这里可触发本地数据拉取逻辑
+    }
+  };
 
   const renderLayoutControls = () => (
     <EditorHeaderActions>
@@ -378,13 +423,49 @@ function MarkdownEditor({ themeMode, setThemeMode }) {
       <Container>
         <EditorLayout>
           <FileTreeWrapper>
-            <FileTree onFileSelect={handleFileSelect} />
+            <FileTree onFileSelect={handleFileSelect} isLocalMode={isLocalMode} />
           </FileTreeWrapper>
           <EditorMain>
             <EditorHeader>
               <h2>{currentFile ? currentFile.name : 'Markdown Editor'}</h2>
-              {renderLayoutControls()}
-              {renderThemeSwitcher()}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <button
+                  onClick={() => handleModeSwitch('cloud')}
+                  style={{
+                    padding: '6px 16px',
+                    background: !isLocalMode ? '#1976d2' : '#e3f2fd',
+                    color: !isLocalMode ? '#fff' : '#1976d2',
+                    border: !isLocalMode ? '1.5px solid #1976d2' : '1.5px solid #90caf9',
+                    borderRadius: 8,
+                    fontWeight: 600,
+                    fontSize: 14,
+                    marginRight: 4,
+                    cursor: 'pointer',
+                    transition: 'all 0.18s'
+                  }}
+                >
+                  云端模式
+                </button>
+                <button
+                  onClick={() => handleModeSwitch('local')}
+                  style={{
+                    padding: '6px 16px',
+                    background: isLocalMode ? '#ffd54f' : '#fffde7',
+                    color: isLocalMode ? '#b26a00' : '#b26a00',
+                    border: isLocalMode ? '1.5px solid #ffd54f' : '1.5px solid #ffe082',
+                    borderRadius: 8,
+                    fontWeight: 600,
+                    fontSize: 14,
+                    marginRight: 16,
+                    cursor: 'pointer',
+                    transition: 'all 0.18s'
+                  }}
+                >
+                  本地模式
+                </button>
+                {renderLayoutControls()}
+                {renderThemeSwitcher()}
+              </div>
             </EditorHeader>
             <EditorContent>
               {layout === LAYOUT_TYPES.SPLIT_HORIZONTAL && (
