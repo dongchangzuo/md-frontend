@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import { tokenManager } from '../../services/api';
 import { lang } from '../../i18n/lang';
+import { useTheme } from '../../theme/ThemeContext';
 import './FileTree.css';
 
 function FileTree({ onFileSelect, isLocalMode, language = 'en' }) {
+  const { theme } = useTheme();
   const [files, setFiles] = useState([]);
   const [expandedFolders, setExpandedFolders] = useState(new Set());
   const [isLoading, setIsLoading] = useState(false);
@@ -317,14 +319,14 @@ function FileTree({ onFileSelect, isLocalMode, language = 'en' }) {
       <div className="file-tree-header">
         <h3>{t.files}</h3>
         <span style={{
-          marginLeft: 12,
-          padding: '2px 10px',
-          borderRadius: 8,
-          fontSize: 13,
+          marginLeft: '0.75rem',
+          padding: '0.125rem 0.625rem',
+          borderRadius: 'var(--radius-sm)',
+          fontSize: '0.8125rem',
           fontWeight: 600,
-          background: isLocalMode ? '#ffe082' : '#e3f2fd',
-          color: isLocalMode ? '#b26a00' : '#1976d2',
-          border: isLocalMode ? '1px solid #ffd54f' : '1px solid #90caf9',
+          background: isLocalMode ? theme.warningBg : theme.infoBg,
+          color: isLocalMode ? theme.warningText : theme.infoText,
+          border: isLocalMode ? `1px solid ${theme.warningBorder}` : `1px solid ${theme.infoBorder}`,
           verticalAlign: 'middle'
         }}>
           {isLocalMode ? t.localMode : t.cloudMode}
