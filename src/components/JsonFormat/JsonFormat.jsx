@@ -94,10 +94,34 @@ const TextArea = styled.textarea`
   line-height: 1.5;
   resize: none;
   outline: none;
+  tab-size: 2;
+  -moz-tab-size: 2;
+  white-space: pre;
+  word-wrap: normal;
+  overflow-x: auto;
 
   &:focus {
     border-color: ${({ theme }) => theme.primary};
     box-shadow: 0 0 0 2px ${({ theme }) => theme.primary}20;
+  }
+
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.card};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.border};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: ${({ theme }) => theme.primary};
   }
 `;
 
