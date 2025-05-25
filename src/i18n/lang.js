@@ -64,6 +64,7 @@ export const lang = {
     markdownEditor: 'Markdown编辑器',
     ocr: 'OCR识别',
     shapeEditor: '图形编辑器',
+    jsonFormatter: 'JSON格式化',
     logout: '退出登录',
     userInfo: '用户信息',
     userId: '用户ID',
@@ -71,6 +72,7 @@ export const lang = {
     createAndEditMarkdown: '创建和编辑Markdown文档',
     extractTextFromImages: '从图片中提取文字',
     createAndEditShapes: '创建和编辑图形',
+    formatAndValidateJson: '格式化和验证JSON数据',
 
     // Markdown编辑器
     markdownEditorTitle: 'Markdown编辑器',
@@ -224,10 +226,15 @@ export const lang = {
     markdownEditor: 'Markdown Editor',
     ocr: 'OCR',
     shapeEditor: 'Shape Editor',
+    jsonFormatter: 'JSON Formatter',
     logout: 'Logout',
     userInfo: 'User Information',
     userId: 'User ID',
     roles: 'Roles',
+    createAndEditMarkdown: 'Create and edit markdown documents',
+    extractTextFromImages: 'Extract text from images',
+    createAndEditShapes: 'Create and edit shapes',
+    formatAndValidateJson: 'Format and validate JSON data',
 
     // Markdown Editor
     markdownEditorTitle: 'Markdown Editor',
@@ -320,6 +327,16 @@ export const lang = {
     localMode: 'Local Mode',
     cloudMode: 'Cloud Mode',
     loading: 'Loading...',
-    error: 'Error'
+    error: 'Error',
+
+    // JSON Formatter
+    jsonFormatError: 'Invalid JSON format',
+    format: 'Format',
+    minify: 'Minify',
+    copy: 'Copy',
+    clear: 'Clear',
+    input: 'Input',
+    output: 'Output',
+    jsonFormatTitle: 'JSON Formatter'
   }
 }; 

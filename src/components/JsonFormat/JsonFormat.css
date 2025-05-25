@@ -1,0 +1,62 @@
+/* JSON 语法高亮样式 */
+.key {
+  color: #9cdcfe;
+}
+
+.string {
+  color: #ce9178;
+}
+
+.number {
+  color: #b5cea8;
+}
+
+.boolean {
+  color: #569cd6;
+}
+
+.null {
+  color: #569cd6;
+}
+
+/* 暗色主题 */
+[data-theme='dark'] .key {
+  color: #9cdcfe;
+}
+
+[data-theme='dark'] .string {
+  color: #ce9178;
+}
+
+[data-theme='dark'] .number {
+  color: #b5cea8;
+}
+
+[data-theme='dark'] .boolean {
+  color: #569cd6;
+}
+
+[data-theme='dark'] .null {
+  color: #569cd6;
+}
+
+/* 亮色主题 */
+[data-theme='light'] .key {
+  color: #0451a5;
+}
+
+[data-theme='light'] .string {
+  color: #a31515;
+}
+
+[data-theme='light'] .number {
+  color: #098658;
+}
+
+[data-theme='light'] .boolean {
+  color: #0000ff;
+}
+
+[data-theme='light'] .null {
+  color: #0000ff;
+} 

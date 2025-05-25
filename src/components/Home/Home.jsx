@@ -40,6 +40,10 @@ const Home = ({ user, onLogout, onNavigate, language, setLanguage }) => {
             <h3>{t.shapeEditor}</h3>
             <p>Create and edit shapes</p>
           </div>
+          <div className="app-card" onClick={() => onNavigate('json')}>
+            <h3>{t.jsonFormatter}</h3>
+            <p>{t.formatAndValidateJson}</p>
+          </div>
         </div>
         <button onClick={handleLogout} className="logout-button">
           {t.logout}

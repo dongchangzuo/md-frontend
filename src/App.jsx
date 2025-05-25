@@ -7,6 +7,7 @@ import Home from './components/Home/Home'
 import MarkdownEditor from './components/MarkdownEditor/MarkdownEditor'
 import OCR from './components/OCR/OCR'
 import ShapeEditor from './components/ShapeEditor'
+import JsonFormat from './components/JsonFormat/JsonFormat'
 import { authAPI, tokenManager } from './services/api'
 import { ThemeProvider } from './theme/ThemeContext';
 import { ThemeProvider as StyledThemeProvider } from 'styled-components';
@@ -174,6 +175,9 @@ function AppContent() {
       case 'shapes':
         console.log('Rendering ShapeEditor');
         return <ShapeEditor language={language} setLanguage={setLanguage} />;
+      case 'json':
+        console.log('Rendering JsonFormat');
+        return <JsonFormat language={language} />;
       case 'home':
       default:
         console.log('Rendering Home');
@@ -203,6 +207,7 @@ function AppContent() {
             <Route path="/editor/tree" element={<ShapeEditor defaultTab="tree" language={language} setLanguage={setLanguage} />} />
             <Route path="/markdown" element={<MarkdownEditor language={language} setLanguage={setLanguage} />} />
             <Route path="/ocr" element={<OCR language={language} setLanguage={setLanguage} />} />
+            <Route path="/json" element={<JsonFormat language={language} />} />
             <Route path="/home" element={<Home user={user} onLogout={handleLogout} onNavigate={navigateTo} language={language} setLanguage={setLanguage} />} />
           </Routes>
         </div>

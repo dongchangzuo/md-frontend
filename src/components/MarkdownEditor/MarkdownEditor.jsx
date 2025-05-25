@@ -146,6 +146,9 @@ const PreviewContainer = styled.div`
   background: ${({ theme }) => theme.bg};
   color: ${({ theme }) => theme.text};
   overflow: auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 100%;
 `;
 
 const LayoutButton = styled.button`
@@ -320,6 +323,19 @@ const MarkdownPreview = styled.div`
   background: ${props => props.theme.background};
   border-radius: 8px;
   padding: 24px;
+  flex: 1;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+
+  > *:first-child {
+    margin-top: 0;
+  }
+
+  > *:last-child {
+    margin-bottom: 0;
+  }
+
   h1, h2, h3, h4, h5, h6 {
     color: ${props => props.theme.text};
     font-weight: 700;
