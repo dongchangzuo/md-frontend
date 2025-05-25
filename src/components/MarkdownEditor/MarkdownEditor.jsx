@@ -145,7 +145,6 @@ const PreviewContainer = styled.div`
   flex: 1;
   background: ${({ theme }) => theme.bg};
   color: ${({ theme }) => theme.text};
-  padding: 16px;
   overflow: auto;
 `;
 
@@ -218,6 +217,176 @@ const ModeButton = styled.button`
   }
 `;
 
+// Markdown 主题定义
+const markdownThemes = {
+  default: {
+    name: '默认主题',
+    styles: {
+      background: ({ theme }) => theme.markdownBg,
+      text: ({ theme }) => theme.markdownText,
+      codeBg: ({ theme }) => theme.markdownCodeBg,
+      codeText: ({ theme }) => theme.markdownCodeText,
+      blockquoteBg: ({ theme }) => theme.markdownBlockquoteBg,
+      blockquoteBorder: ({ theme }) => theme.markdownBlockquoteBorder,
+      hr: ({ theme }) => theme.markdownHr,
+      link: ({ theme }) => theme.markdownLink,
+      tableBorder: ({ theme }) => theme.markdownTableBorder
+    }
+  },
+  github: {
+    name: 'GitHub',
+    styles: {
+      background: '#ffffff',
+      text: '#24292e',
+      codeBg: '#f6f8fa',
+      codeText: '#24292e',
+      blockquoteBg: '#f6f8fa',
+      blockquoteBorder: '#dfe2e5',
+      hr: '#e1e4e8',
+      link: '#0366d6',
+      tableBorder: '#dfe2e5'
+    }
+  },
+  dark: {
+    name: '暗色主题',
+    styles: {
+      background: '#1a1a1a',
+      text: '#e6e6e6',
+      codeBg: '#2d2d2d',
+      codeText: '#e6e6e6',
+      blockquoteBg: '#2d2d2d',
+      blockquoteBorder: '#404040',
+      hr: '#404040',
+      link: '#58a6ff',
+      tableBorder: '#404040'
+    }
+  },
+  solarized: {
+    name: 'Solarized',
+    styles: {
+      background: '#fdf6e3',
+      text: '#657b83',
+      codeBg: '#eee8d5',
+      codeText: '#657b83',
+      blockquoteBg: '#eee8d5',
+      blockquoteBorder: '#93a1a1',
+      hr: '#93a1a1',
+      link: '#268bd2',
+      tableBorder: '#93a1a1'
+    }
+  },
+  nord: {
+    name: 'Nord',
+    styles: {
+      background: '#2e3440',
+      text: '#eceff4',
+      codeBg: '#3b4252',
+      codeText: '#eceff4',
+      blockquoteBg: '#3b4252',
+      blockquoteBorder: '#4c566a',
+      hr: '#4c566a',
+      link: '#88c0d0',
+      tableBorder: '#4c566a'
+    }
+  }
+};
+
+const ThemeSelector = styled.select`
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid ${({ theme }) => theme.border};
+  background: ${({ theme }) => theme.bg};
+  color: ${({ theme }) => theme.text};
+  font-size: 14px;
+  margin-left: 8px;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.primary};
+  }
+
+  &:focus {
+    border-color: ${({ theme }) => theme.primary};
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.primary}20;
+  }
+`;
+
+const MarkdownPreview = styled.div`
+  font-size: 16px;
+  line-height: 1.75;
+  color: ${props => props.theme.text};
+  background: ${props => props.theme.background};
+  border-radius: 8px;
+  padding: 24px;
+  h1, h2, h3, h4, h5, h6 {
+    color: ${props => props.theme.text};
+    font-weight: 700;
+    margin: 1.5em 0 0.7em 0;
+    line-height: 1.2;
+  }
+  h1 { font-size: 2.2em; border-bottom: 2px solid ${props => props.theme.hr}; padding-bottom: 0.2em; }
+  h2 { font-size: 1.7em; border-bottom: 1px solid ${props => props.theme.hr}; padding-bottom: 0.15em; }
+  h3 { font-size: 1.3em; }
+  h4, h5, h6 { font-size: 1.1em; }
+  p { margin: 1em 0; }
+  ul, ol { margin: 1em 0 1em 2em; }
+  li { margin: 0.3em 0; }
+  code {
+    background: ${props => props.theme.codeBg};
+    color: ${props => props.theme.codeText};
+    font-family: 'Fira Mono', 'Menlo', 'Consolas', monospace;
+    font-size: 0.97em;
+    border-radius: 4px;
+    padding: 2px 6px;
+  }
+  pre {
+    background: ${props => props.theme.codeBg};
+    color: ${props => props.theme.codeText};
+    font-family: 'Fira Mono', 'Menlo', 'Consolas', monospace;
+    font-size: 0.97em;
+    border-radius: 6px;
+    padding: 14px 18px;
+    margin: 1.2em 0;
+    overflow-x: auto;
+  }
+  blockquote {
+    background: ${props => props.theme.blockquoteBg};
+    border-left: 4px solid ${props => props.theme.blockquoteBorder};
+    color: ${props => props.theme.text};
+    margin: 1.2em 0;
+    padding: 0.7em 1.2em;
+    border-radius: 4px;
+    font-style: italic;
+  }
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1.2em 0;
+    background: ${props => props.theme.background};
+  }
+  th, td {
+    border: 1px solid ${props => props.theme.tableBorder};
+    padding: 8px 12px;
+    text-align: left;
+  }
+  th {
+    background: ${props => props.theme.blockquoteBg};
+    color: ${props => props.theme.text};
+  }
+  a {
+    color: ${props => props.theme.link};
+    text-decoration: underline;
+    &:hover { text-decoration: underline wavy; }
+  }
+  hr {
+    border: none;
+    border-top: 1.5px solid ${props => props.theme.hr};
+    margin: 2em 0;
+  }
+`;
+
 function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }) {
   const { theme, themeMode, toggleTheme } = useTheme();
   const [internalLanguage, setInternalLanguage] = useState(propLanguage || 'en');
@@ -244,6 +413,7 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
   const [sidebarWidth, setSidebarWidth] = useState(280);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const sidebarRef = useRef(null);
+  const [markdownTheme, setMarkdownTheme] = useState('default');
 
   const handleContentChange = (e) => {
     setContent(e.target.value);
@@ -460,7 +630,17 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
   );
 
   const renderThemeSwitcher = () => (
-    <div style={{ marginLeft: 'auto', marginRight: 0 }}>
+    <div style={{ marginLeft: 'auto', marginRight: 0, display: 'flex', alignItems: 'center' }}>
+      <ThemeSelector
+        value={markdownTheme}
+        onChange={(e) => setMarkdownTheme(e.target.value)}
+      >
+        {Object.entries(markdownThemes).map(([key, theme]) => (
+          <option key={key} value={key}>
+            {theme.name}
+          </option>
+        ))}
+      </ThemeSelector>
       <select
         value={themeMode}
         onChange={e => toggleTheme(e.target.value)}
@@ -494,7 +674,7 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
 
   const renderPreview = () => (
     <PreviewContainer>
-      <MarkdownPreview>
+      <MarkdownPreview theme={markdownThemes[markdownTheme].styles}>
         <ReactMarkdown 
           remarkPlugins={[remarkGfm, remarkMath]}
           rehypePlugins={[rehypeKatex]}
