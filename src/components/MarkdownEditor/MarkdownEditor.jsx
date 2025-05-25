@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -10,6 +10,7 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { lang } from '../../i18n/lang';
 import './MarkdownEditor.css';
+import { useTheme } from '../../theme/ThemeContext';
 
 // 布局类型
 const LAYOUT_TYPES = {
@@ -204,17 +205,24 @@ const MarkdownPreview = styled.div`
   }
 `;
 
-function MarkdownEditor({ themeMode, setThemeMode, language: propLanguage, setLanguage: propSetLanguage }) {
+function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }) {
+  const { theme, themeMode, toggleTheme } = useTheme();
   const [internalLanguage, setInternalLanguage] = useState(propLanguage || 'en');
   const language = propLanguage || internalLanguage;
   const setLanguage = propSetLanguage || setInternalLanguage;
   const [content, setContent] = useState('');
-  const [isPreview, setIsPreview] = useState(false);
-  const [isSplit, setIsSplit] = useState(false);
-  const [splitMode, setSplitMode] = useState('horizontal');
-  const [isCloudMode, setIsCloudMode] = useState(false);
+  const [previewMode, setPreviewMode] = useState(false);
+  const [splitMode, setSplitMode] = useState(false);
+  const [cloudMode, setCloudMode] = useState(false);
   const [files, setFiles] = useState([]);
   const [currentFile, setCurrentFile] = useState(null);
+  const [showNewFileModal, setShowNewFileModal] = useState(false);
+  const [showNewFolderModal, setShowNewFolderModal] = useState(false);
+  const [newFileName, setNewFileName] = useState('');
+  const [newFolderName, setNewFolderName] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [showRenameModal, setShowRenameModal] = useState(false);
+  const [newName, setNewName] = useState('');
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
   const t = lang[language];
@@ -225,19 +233,15 @@ function MarkdownEditor({ themeMode, setThemeMode, language: propLanguage, setLa
   };
 
   const handlePreviewToggle = () => {
-    setIsPreview(!isPreview);
+    setPreviewMode(!previewMode);
   };
 
   const handleSplitToggle = () => {
-    setIsSplit(!isSplit);
-  };
-
-  const handleSplitModeChange = (mode) => {
-    setSplitMode(mode);
+    setSplitMode(!splitMode);
   };
 
   const handleCloudModeToggle = () => {
-    setIsCloudMode(!isCloudMode);
+    setCloudMode(!cloudMode);
   };
 
   const handleNewFile = () => {
@@ -284,7 +288,7 @@ function MarkdownEditor({ themeMode, setThemeMode, language: propLanguage, setLa
   const saveFileContent = async () => {
     if (!currentFile) return;
 
-    if (isCloudMode) {
+    if (cloudMode) {
       // 云端模式：原有逻辑
       try {
         setError(null);
@@ -339,7 +343,7 @@ function MarkdownEditor({ themeMode, setThemeMode, language: propLanguage, setLa
   };
 
   // 自动保存
-  React.useEffect(() => {
+  useEffect(() => {
     if (!currentFile) return;
 
     const saveTimeout = setTimeout(() => {
@@ -357,9 +361,9 @@ function MarkdownEditor({ themeMode, setThemeMode, language: propLanguage, setLa
         navigate('/login');
         return;
       }
-      setIsCloudMode(true);
+      setCloudMode(true);
     } else {
-      setIsCloudMode(false);
+      setCloudMode(false);
     }
   };
 
@@ -392,12 +396,21 @@ function MarkdownEditor({ themeMode, setThemeMode, language: propLanguage, setLa
     <div style={{ marginLeft: 'auto', marginRight: 0 }}>
       <select
         value={themeMode}
-        onChange={e => setThemeMode(e.target.value)}
-        style={{ fontSize: 15, padding: '4px 12px', borderRadius: 6, border: '1px solid #ddd', background: themeMode==='dark'? '#232733' : '#f5f5f5', color: 'inherit', outline: 'none', marginLeft: 16 }}
+        onChange={e => toggleTheme(e.target.value)}
+        style={{ 
+          fontSize: 15, 
+          padding: '4px 12px', 
+          borderRadius: 6, 
+          border: `1px solid ${theme.border}`, 
+          background: theme.card, 
+          color: theme.text, 
+          outline: 'none', 
+          marginLeft: 16 
+        }}
       >
-        <option value="light">☀️ Light</option>
-        <option value="dark">🌙 Dark</option>
-        <option value="auto">🖥️ Auto</option>
+        <option value="light">☀️ {t.light}</option>
+        <option value="dark">🌙 {t.dark}</option>
+        <option value="auto">🖥️ {t.auto}</option>
       </select>
     </div>
   );
@@ -476,7 +489,7 @@ function MarkdownEditor({ themeMode, setThemeMode, language: propLanguage, setLa
           <FileTreeWrapper>
             <FileTree 
               onFileSelect={handleFileSelect} 
-              isLocalMode={!isCloudMode} 
+              isLocalMode={!cloudMode} 
               language={language}
             />
           </FileTreeWrapper>
@@ -505,9 +518,9 @@ function MarkdownEditor({ themeMode, setThemeMode, language: propLanguage, setLa
                   onClick={() => handleModeSwitch('cloud')}
                   style={{
                     padding: '6px 16px',
-                    background: !isCloudMode ? '#1976d2' : '#e3f2fd',
-                    color: !isCloudMode ? '#fff' : '#1976d2',
-                    border: !isCloudMode ? '1.5px solid #1976d2' : '1.5px solid #90caf9',
+                    background: !cloudMode ? '#1976d2' : '#e3f2fd',
+                    color: !cloudMode ? '#fff' : '#1976d2',
+                    border: !cloudMode ? '1.5px solid #1976d2' : '1.5px solid #90caf9',
                     borderRadius: 8,
                     fontWeight: 600,
                     fontSize: 14,
@@ -516,15 +529,15 @@ function MarkdownEditor({ themeMode, setThemeMode, language: propLanguage, setLa
                     transition: 'all 0.18s'
                   }}
                 >
-                  云端模式
+                  {t.cloudMode}
                 </button>
                 <button
                   onClick={() => handleModeSwitch('local')}
                   style={{
                     padding: '6px 16px',
-                    background: isCloudMode ? '#ffd54f' : '#fffde7',
-                    color: isCloudMode ? '#b26a00' : '#b26a00',
-                    border: isCloudMode ? '1.5px solid #ffd54f' : '1.5px solid #ffe082',
+                    background: cloudMode ? '#ffd54f' : '#fffde7',
+                    color: cloudMode ? '#b26a00' : '#b26a00',
+                    border: cloudMode ? '1.5px solid #ffd54f' : '1.5px solid #ffe082',
                     borderRadius: 8,
                     fontWeight: 600,
                     fontSize: 14,
@@ -533,7 +546,7 @@ function MarkdownEditor({ themeMode, setThemeMode, language: propLanguage, setLa
                     transition: 'all 0.18s'
                   }}
                 >
-                  本地模式
+                  {t.localMode}
                 </button>
                 {renderLayoutControls()}
                 {renderThemeSwitcher()}

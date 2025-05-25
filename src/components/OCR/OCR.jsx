@@ -1,20 +1,17 @@
 import React, { useState, useRef } from 'react';
-import { lang } from '../../i18n/lang';
-import './OCR.css';
 import styled from 'styled-components';
+import { lang } from '../../i18n/lang';
+import { useTheme } from '../../theme/ThemeContext';
+import './OCR.css';
 
-const OcrWrapper = styled.div`
-  background: ${({ theme }) => theme.card};
-  color: ${({ theme }) => theme.text};
-  min-height: 100vh;
-`;
-
-function OCR({ language, setLanguage }) {
+const OCR = ({ language, setLanguage }) => {
+  const { theme, themeMode, toggleTheme } = useTheme();
   const [selectedImage, setSelectedImage] = useState(null);
   const [recognizedText, setRecognizedText] = useState('');
   const [isRecognizing, setIsRecognizing] = useState(false);
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
+
   const t = lang[language];
 
   const handleImageSelect = (event) => {
@@ -43,10 +40,10 @@ function OCR({ language, setLanguage }) {
     setError('');
 
     try {
-      // TODO: Implement OCR recognition
-      // For now, just simulate a delay
+      // 这里应该调用实际的 OCR API
+      // 目前使用模拟数据
       await new Promise(resolve => setTimeout(resolve, 2000));
-      setRecognizedText('Sample recognized text');
+      setRecognizedText('这是识别出的文本示例。\n这是第二行。');
     } catch (err) {
       setError(t.recognitionFailed);
     } finally {
@@ -55,71 +52,71 @@ function OCR({ language, setLanguage }) {
   };
 
   const handleCopyText = () => {
-    if (recognizedText) {
-      navigator.clipboard.writeText(recognizedText);
-      alert(t.textCopied);
-    }
+    navigator.clipboard.writeText(recognizedText);
   };
 
   return (
-    <OcrWrapper>
-      <div className="ocr-container">
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-          <select value={language} onChange={e => setLanguage(e.target.value)} style={{ fontSize: 15, padding: '4px 12px', borderRadius: 6, border: '1px solid #ddd', background: '#f5f5f5', color: '#222', outline: 'none' }}>
+    <div className="ocr-container">
+      <div className="ocr-header">
+        <h1>{t.ocrTitle}</h1>
+        <div className="controls">
+          <button onClick={toggleTheme}>
+            {themeMode === 'dark' ? t.lightMode : t.darkMode}
+          </button>
+          <select value={language} onChange={(e) => setLanguage(e.target.value)}>
             <option value="zh">中文</option>
             <option value="en">English</option>
           </select>
         </div>
-        <div className="ocr-header">
-          <h2>{t.ocrTitle}</h2>
-        </div>
-        
-        <div className="ocr-content">
-          <div className="image-section">
-            {selectedImage ? (
-              <div className="image-preview">
-                <img src={selectedImage} alt="Selected" />
-                <button onClick={() => fileInputRef.current?.click()} className="change-image">
-                  {t.changeImage}
-                </button>
-              </div>
-            ) : (
-              <div className="upload-area" onClick={() => fileInputRef.current?.click()}>
-                <p>{t.selectImage}</p>
-              </div>
-            )}
-            <input
-              type="file"
-              ref={fileInputRef}
-              onChange={handleImageSelect}
-              accept="image/*"
-              style={{ display: 'none' }}
-            />
-          </div>
+      </div>
 
-          <div className="text-section">
-            <button
-              onClick={handleRecognize}
-              disabled={!selectedImage || isRecognizing}
-              className="recognize-button"
-            >
-              {isRecognizing ? t.recognizing : t.recognizeText}
-            </button>
-            {error && <div className="error-message">{error}</div>}
-            {recognizedText && (
-              <div className="recognized-text">
-                <h3>{t.recognizedText}</h3>
-                <p>{recognizedText}</p>
-                <button onClick={handleCopyText} className="copy-button">
-                  {t.copyText}
-                </button>
+      <div className="ocr-content">
+        <div className="image-section">
+          {selectedImage ? (
+            <div className="selected-image">
+              <img src={selectedImage} alt="Selected" />
+              <button onClick={() => fileInputRef.current.click()}>
+                {t.changeImage}
+              </button>
+            </div>
+          ) : (
+            <div className="upload-area" onClick={() => fileInputRef.current.click()}>
+              <p>{t.selectImage}</p>
+            </div>
+          )}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleImageSelect}
+            accept="image/*"
+            style={{ display: 'none' }}
+          />
+        </div>
+
+        <div className="text-section">
+          <button
+            className="recognize-button"
+            onClick={handleRecognize}
+            disabled={!selectedImage || isRecognizing}
+          >
+            {isRecognizing ? t.recognizing : t.recognizeText}
+          </button>
+
+          {error && <div className="error">{error}</div>}
+
+          {recognizedText && (
+            <div className="recognized-text">
+              <h3>{t.recognizedText}</h3>
+              <div className="text-content">
+                {recognizedText}
               </div>
-            )}
-          </div>
+              <button onClick={handleCopyText}>{t.copyText}</button>
+            </div>
+          )}
         </div>
       </div>
-    </OcrWrapper>
+    </div>
   );
-}
+};
 
 export default OCR; 

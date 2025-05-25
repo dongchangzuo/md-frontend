@@ -8,8 +8,9 @@ import MarkdownEditor from './components/MarkdownEditor/MarkdownEditor'
 import OCR from './components/OCR/OCR'
 import ShapeEditor from './components/ShapeEditor'
 import { authAPI, tokenManager } from './services/api'
-import { ThemeProvider } from 'styled-components';
-import { themes } from './styles/theme';
+import { ThemeProvider } from './theme/ThemeContext';
+import { ThemeProvider as StyledThemeProvider } from 'styled-components';
+import { useTheme } from './theme/ThemeContext';
 import { GlobalStyle } from './styles/globalStyle';
 
 // 安全存储实现
@@ -69,15 +70,14 @@ const secureStorage = {
   }
 };
 
-function App() {
+function AppContent() {
+  const { theme, themeMode, toggleTheme } = useTheme();
   const [user, setUser] = useState(null);
   const [showSignup, setShowSignup] = useState(false);
   const [authToken, setAuthToken] = useState(null);
   const [currentPage, setCurrentPage] = useState('home');
   const [isLoading, setIsLoading] = useState(true);
-  const [themeMode, setThemeMode] = useState('light'); // 默认明亮
   const [language, setLanguage] = useState('zh');
-  const theme = themes[themeMode];
   
   // Check for existing authentication on component mount
   useEffect(() => {
@@ -167,13 +167,13 @@ function App() {
     switch (currentPage) {
       case 'markdown':
         console.log('Rendering MarkdownEditor');
-        return <MarkdownEditor themeMode={themeMode} setThemeMode={setThemeMode} language={language} setLanguage={setLanguage} />;
+        return <MarkdownEditor language={language} setLanguage={setLanguage} />;
       case 'ocr':
         console.log('Rendering OCR');
-        return <OCR themeMode={themeMode} setThemeMode={setThemeMode} language={language} setLanguage={setLanguage} />;
+        return <OCR language={language} setLanguage={setLanguage} />;
       case 'shapes':
         console.log('Rendering ShapeEditor');
-        return <ShapeEditor themeMode={themeMode} setThemeMode={setThemeMode} language={language} setLanguage={setLanguage} />;
+        return <ShapeEditor language={language} setLanguage={setLanguage} />;
       case 'home':
       default:
         console.log('Rendering Home');
@@ -182,8 +182,6 @@ function App() {
             user={user} 
             onLogout={handleLogout} 
             onNavigate={navigateTo}
-            themeMode={themeMode}
-            setThemeMode={setThemeMode}
             language={language}
             setLanguage={setLanguage}
           />
@@ -192,23 +190,31 @@ function App() {
   };
 
   return (
-    <ThemeProvider theme={theme}>
+    <StyledThemeProvider theme={theme}>
       <GlobalStyle />
       <Router>
         <div className="app">
           <Routes>
-            <Route path="/login" element={<Login onLogin={handleLogin} />} />
-            <Route path="/signup" element={<Signup onSignup={handleSignup} />} />
+            <Route path="/login" element={<Login onLogin={handleLogin} language={language} setLanguage={setLanguage} />} />
+            <Route path="/signup" element={<Signup onSignup={handleSignup} language={language} setLanguage={setLanguage} />} />
             <Route path="/" element={renderContent()} />
-            <Route path="/editor" element={<ShapeEditor themeMode={themeMode} setThemeMode={setThemeMode} />} />
-            <Route path="/editor/map" element={<ShapeEditor defaultTab="map" themeMode={themeMode} setThemeMode={setThemeMode} />} />
-            <Route path="/editor/tree" element={<ShapeEditor defaultTab="tree" themeMode={themeMode} setThemeMode={setThemeMode} />} />
-            <Route path="/markdown" element={<MarkdownEditor themeMode={themeMode} setThemeMode={setThemeMode} />} />
-            <Route path="/ocr" element={<OCR themeMode={themeMode} setThemeMode={setThemeMode} />} />
-            <Route path="/home" element={<Home user={user} onLogout={handleLogout} onNavigate={navigateTo} themeMode={themeMode} setThemeMode={setThemeMode} />} />
+            <Route path="/editor" element={<ShapeEditor language={language} setLanguage={setLanguage} />} />
+            <Route path="/editor/map" element={<ShapeEditor defaultTab="map" language={language} setLanguage={setLanguage} />} />
+            <Route path="/editor/tree" element={<ShapeEditor defaultTab="tree" language={language} setLanguage={setLanguage} />} />
+            <Route path="/markdown" element={<MarkdownEditor language={language} setLanguage={setLanguage} />} />
+            <Route path="/ocr" element={<OCR language={language} setLanguage={setLanguage} />} />
+            <Route path="/home" element={<Home user={user} onLogout={handleLogout} onNavigate={navigateTo} language={language} setLanguage={setLanguage} />} />
           </Routes>
         </div>
       </Router>
+    </StyledThemeProvider>
+  );
+}
+
+function App() {
+  return (
+    <ThemeProvider>
+      <AppContent />
     </ThemeProvider>
   );
 }

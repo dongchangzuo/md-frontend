@@ -1,48 +1,50 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import styled from 'styled-components';
 import { lang } from '../../i18n/lang';
+import { useTheme } from '../../theme/ThemeContext';
 import './Login.css';
 import { authAPI } from '../../services/api';
 
-function Login({ onLogin, onSwitchToSignup, language, setLanguage }) {
+const Login = ({ onLogin, onSwitchToSignup, language, setLanguage }) => {
+  const { theme, themeMode, toggleTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const navigate = useNavigate();
+
   const t = lang[language];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
-    if (!email) {
-      setError(t.emailRequired);
-      return;
-    }
-    if (!password) {
-      setError(t.passwordRequired);
+    if (!email || !password) {
+      setError(t.allFieldsRequired);
       return;
     }
 
     try {
       await onLogin(email, password);
-      navigate('/home');
     } catch (err) {
       setError(t.loginFailed);
     }
   };
 
   return (
-    <div className="login-container">
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
-        <select value={language} onChange={e => setLanguage(e.target.value)} style={{ fontSize: 15, padding: '4px 12px', borderRadius: 6, border: '1px solid #ddd', background: '#f5f5f5', color: '#222', outline: 'none' }}>
-          <option value="zh">中文</option>
-          <option value="en">English</option>
-        </select>
-      </div>
-      <div className="login-box">
-        <h2>{t.login}</h2>
-        {error && <div className="error-message">{error}</div>}
+    <div className="login">
+      <div className="login-container">
+        <div className="login-header">
+          <h1>{t.login}</h1>
+          <div className="controls">
+            <button onClick={toggleTheme}>
+              {themeMode === 'dark' ? t.lightMode : t.darkMode}
+            </button>
+            <select value={language} onChange={(e) => setLanguage(e.target.value)}>
+              <option value="zh">中文</option>
+              <option value="en">English</option>
+            </select>
+          </div>
+        </div>
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
             <label htmlFor="email">{t.email}</label>
@@ -51,9 +53,10 @@ function Login({ onLogin, onSwitchToSignup, language, setLanguage }) {
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder={t.email}
+              placeholder={t.emailPlaceholder}
             />
           </div>
+
           <div className="form-group">
             <label htmlFor="password">{t.password}</label>
             <input
@@ -61,10 +64,13 @@ function Login({ onLogin, onSwitchToSignup, language, setLanguage }) {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder={t.password}
+              placeholder={t.passwordPlaceholder}
             />
           </div>
-          <button type="submit" className="login-button">
+
+          {error && <div className="error">{error}</div>}
+
+          <button type="submit" className="submit-button">
             {t.login}
           </button>
         </form>
@@ -77,6 +83,6 @@ function Login({ onLogin, onSwitchToSignup, language, setLanguage }) {
       </div>
     </div>
   );
-}
+};
 
 export default Login; 
