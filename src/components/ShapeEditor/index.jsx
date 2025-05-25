@@ -628,6 +628,10 @@ const ShapeEditor = () => {
   const [themeMode, setThemeMode] = useState('auto'); // 'light' | 'dark' | 'auto'
   const [systemDark, setSystemDark] = useState(false);
   const t = lang[language];
+  const [animationFrames, setAnimationFrames] = useState([]);
+  const [isAnimating, setIsAnimating] = useState(false);
+  const [currentFrame, setCurrentFrame] = useState(0);
+  const [animationInterval, setAnimationInterval] = useState(null);
 
   // 跟随系统
   useEffect(() => {
@@ -1058,36 +1062,78 @@ const ShapeEditor = () => {
       setMapEditorPosition(null);
       setCopiedShape(null);
       setEditingLabel(null);
+      setIsAnimating(false);
+      setCurrentFrame(0);
+      setAnimationFrames([]);
 
-      console.log('Reading file:', file.name);
       const reader = new FileReader();
-      
       reader.onload = (event) => {
         try {
           const yamlContent = event.target.result;
-          console.log('File content:', yamlContent);
-          
-          const shapes = parseYamlToShapes(yamlContent);
-          console.log('Parsed shapes:', shapes);
-          
-          if (shapes.length === 0) {
-            alert('No shapes found in the YAML file.');
+          let data;
+          try {
+            data = require('js-yaml').load(yamlContent);
+          } catch (err) {
+            data = parseYamlToShapes(yamlContent);
+          }
+          let frames = [];
+          // 只支持新格式：spec/iframes
+          if (data.spec && Array.isArray(data.spec)) {
+            data.spec.forEach(specItem => {
+              if (specItem.type === 'array' && Array.isArray(specItem.iframes)) {
+                specItem.iframes.forEach(iframe => {
+                  if (iframe.type === 'array' && Array.isArray(iframe.element)) {
+                    const arr = iframe.element;
+                    const colors = Array.isArray(iframe.color) ? iframe.color : arr.map(() => '#4a90e2');
+                    const arrowsArr = Array.isArray(iframe.arraw) ? iframe.arraw : arr.map(() => 'none');
+                    frames.push({
+                      type: 'array',
+                      arrayData: arr,
+                      boxColors: colors,
+                      arrows: arrowsArr.reduce((acc, arrow, i) => {
+                        if (arrow && arrow !== 'none') {
+                          acc[i] = {};
+                          if (arrow.includes('up')) acc[i].up = true;
+                          if (arrow.includes('down')) acc[i].down = true;
+                        }
+                        return acc;
+                      }, {})
+                    });
+                  }
+                });
+              }
+            });
+          }
+          if (frames.length === 0) {
+            alert('YAML 未找到有效动画帧');
             return;
           }
-
-          // 添加新图形
-          setShapes(shapes);
+          setAnimationFrames(frames);
+          setCurrentFrame(0);
+          setIsAnimating(false);
+          setShapes([
+            {
+              type: 'array',
+              id: Date.now(),
+              x: 200,
+              y: 200,
+              width: 200,
+              height: 60,
+              color: '#1a73e8',
+              arrayData: frames[0].arrayData,
+              boxColors: frames[0].boxColors,
+              arrows: frames[0].arrows
+            }
+          ]);
+          console.log('frames:', frames);
+          console.log('setShapes:', frames[0]);
         } catch (error) {
-          console.error('Error parsing YAML:', error);
-          alert('Error parsing YAML file. Please check the format.');
+          alert('YAML 解析失败');
         }
       };
-
       reader.onerror = (error) => {
-        console.error('Error reading file:', error);
-        alert('Error reading file. Please try again.');
+        alert('文件读取失败');
       };
-
       reader.readAsText(file);
     }
   };
@@ -1485,7 +1531,6 @@ const ShapeEditor = () => {
                       width: '45px',
                       height: '45px',
                       backgroundColor: shape.boxColors?.[index] || '#4a90e2',
-                      // border: '2px solid #357abd',
                       borderRadius: '6px',
                       display: 'flex',
                       alignItems: 'center',
@@ -1499,7 +1544,7 @@ const ShapeEditor = () => {
                     }}
                     onContextMenu={(e) => handleContextMenu(e, shape, index)}
                   >
-                    {item}
+                    {String(item)}
                   </div>
                   {/* 下方箭头 - 指向上方 */}
                   {shape.arrows?.[index]?.down && (
@@ -1601,7 +1646,6 @@ const ShapeEditor = () => {
                 width: '20px',
                 height: '20px',
                 backgroundColor: '#4a90e2',
-                // border: '2px solid #357abd',
                 borderRadius: '4px',
                 display: 'flex',
                 alignItems: 'center',
@@ -1615,7 +1659,6 @@ const ShapeEditor = () => {
                 width: '20px',
                 height: '20px',
                 backgroundColor: '#4a90e2',
-                // border: '2px solid #357abd',
                 borderRadius: '4px',
                 display: 'flex',
                 alignItems: 'center',
@@ -1629,7 +1672,6 @@ const ShapeEditor = () => {
                 width: '20px',
                 height: '20px',
                 backgroundColor: '#4a90e2',
-                // border: '2px solid #357abd',
                 borderRadius: '4px',
                 display: 'flex',
                 alignItems: 'center',
@@ -1703,7 +1745,6 @@ const ShapeEditor = () => {
                       width: '45px',
                       height: '45px',
                       backgroundColor: boxColors?.[index] || '#4a90e2',
-                      // border: '2px solid #357abd',
                       borderRadius: '6px',
                       display: 'flex',
                       alignItems: 'center',
@@ -1718,7 +1759,7 @@ const ShapeEditor = () => {
                     }}
                     onContextMenu={(e) => handleContextMenu(e, shape, index)}
                   >
-                    {item}
+                    {String(item)}
                   </div>
                   {/* 右箭头（←） */}
                   {arrows?.[index]?.right && (
@@ -1754,12 +1795,9 @@ const ShapeEditor = () => {
         } else { // sidebar icon
           return (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              <div style={{ width: '20px', height: '20px', backgroundColor: '#4a90e2', // border: '2px solid #357abd',
-                borderRadius: '4px', margin: '0 auto' }}></div>
-              <div style={{ width: '20px', height: '20px', backgroundColor: '#4a90e2', // border: '2px solid #357abd',
-                borderRadius: '4px', margin: '0 auto' }}></div>
-              <div style={{ width: '20px', height: '20px', backgroundColor: '#4a90e2', // border: '2px solid #357abd',
-                borderRadius: '4px', margin: '0 auto' }}></div>
+              <div style={{ width: '20px', height: '20px', backgroundColor: '#4a90e2', borderRadius: '4px', margin: '0 auto' }}></div>
+              <div style={{ width: '20px', height: '20px', backgroundColor: '#4a90e2', borderRadius: '4px', margin: '0 auto' }}></div>
+              <div style={{ width: '20px', height: '20px', backgroundColor: '#4a90e2', borderRadius: '4px', margin: '0 auto' }}></div>
             </div>
           );
         }
@@ -1785,6 +1823,62 @@ const ShapeEditor = () => {
       default:
         return null;
     }
+  };
+
+  // 动画播放逻辑
+  useEffect(() => {
+    if (!isAnimating || animationFrames.length === 0) return;
+    if (currentFrame >= animationFrames.length) {
+      setIsAnimating(false);
+      setCurrentFrame(0);
+      return;
+    }
+    // 渲染当前帧
+    const frame = animationFrames[currentFrame];
+    const shape = {
+      type: 'array',
+      id: 1,
+      x: 200,
+      y: 200,
+      width: 200,
+      height: 60,
+      color: '#1a73e8',
+      arrayData: frame.arrayData,
+      boxColors: frame.boxColors,
+      arrows: frame.arrows
+    };
+    console.log('动画useEffect: currentFrame', currentFrame, 'shape', shape);
+    setShapes([shape]);
+    const timer = setTimeout(() => {
+      setCurrentFrame(f => f + 1);
+    }, 900);
+    setAnimationInterval(timer);
+    return () => clearTimeout(timer);
+  }, [isAnimating, currentFrame, animationFrames]);
+
+  // 动画控制按钮
+  const handleStartAnimation = () => {
+    if (animationFrames.length === 0) return;
+    setIsAnimating(true);
+    setCurrentFrame(0);
+  };
+  const handlePauseAnimation = () => {
+    setIsAnimating(false);
+    if (animationInterval) clearTimeout(animationInterval);
+  };
+  const handleReplayAnimation = () => {
+    setCurrentFrame(0);
+    setIsAnimating(true);
+  };
+  const handlePrevFrame = () => {
+    setIsAnimating(false);
+    setCurrentFrame(f => Math.max(0, f - 1));
+    if (animationInterval) clearTimeout(animationInterval);
+  };
+  const handleNextFrame = () => {
+    setIsAnimating(false);
+    setCurrentFrame(f => Math.min(animationFrames.length - 1, f + 1));
+    if (animationInterval) clearTimeout(animationInterval);
   };
 
   return (
@@ -2044,6 +2138,15 @@ const ShapeEditor = () => {
               </ModalContent>
             </ModalOverlay>
           )}
+          {/* 动画控制按钮区 */}
+          <div style={{ display: 'flex', gap: 12, marginBottom: 12 }}>
+            <button onClick={handleStartAnimation} disabled={isAnimating || animationFrames.length === 0} style={{ padding: '6px 18px', borderRadius: 6, border: 'none', background: isAnimating ? '#bbb' : '#43a047', color: '#fff', fontWeight: 600, fontSize: 15, cursor: isAnimating ? 'not-allowed' : 'pointer' }}>播放</button>
+            <button onClick={handlePauseAnimation} disabled={!isAnimating} style={{ padding: '6px 18px', borderRadius: 6, border: 'none', background: !isAnimating ? '#bbb' : '#e53935', color: '#fff', fontWeight: 600, fontSize: 15, cursor: !isAnimating ? 'not-allowed' : 'pointer' }}>暂停</button>
+            <button onClick={handleReplayAnimation} disabled={animationFrames.length === 0} style={{ padding: '6px 18px', borderRadius: 6, border: 'none', background: '#fbc02d', color: '#fff', fontWeight: 600, fontSize: 15, cursor: animationFrames.length === 0 ? 'not-allowed' : 'pointer' }}>重播</button>
+            <button onClick={handlePrevFrame} disabled={currentFrame === 0} style={{ padding: '6px 18px', borderRadius: 6, border: 'none', background: currentFrame === 0 ? '#bbb' : '#1976d2', color: '#fff', fontWeight: 600, fontSize: 15, cursor: currentFrame === 0 ? 'not-allowed' : 'pointer' }}>上一帧</button>
+            <button onClick={handleNextFrame} disabled={currentFrame === animationFrames.length - 1} style={{ padding: '6px 18px', borderRadius: 6, border: 'none', background: currentFrame === animationFrames.length - 1 ? '#bbb' : '#1976d2', color: '#fff', fontWeight: 600, fontSize: 15, cursor: currentFrame === animationFrames.length - 1 ? 'not-allowed' : 'pointer' }}>下一帧</button>
+            <span style={{ fontSize: 15, color: '#666', marginLeft: 8 }}>帧 {currentFrame + 1} / {animationFrames.length}</span>
+          </div>
         </MainArea>
       </Container>
     </ThemeProvider>

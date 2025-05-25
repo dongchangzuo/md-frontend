@@ -1,0 +1,66 @@
+apiVersion: apps/v1
+title: "the two sum"
+descriptio: "find the index"
+spec:
+  - type: array
+    iframes:
+      - type: array
+        element: [1, 2, 3, 4]
+        color: ["#000", "#000", "#000", "#000"]
+        arraw: ["none", "up", "down", "none"]
+
+      - type: array
+        element: [1, 2, 3, 4]
+        color: ["#000", "#000", "#000", "#000"]
+        arraw: ["none", "up", "down", "none"]
+
+      - type: array
+        element: [1, 2, 3, 4]
+        color: ["#000", "#000", "#000", "#000"]
+        arraw: ["none", "up", "down", "none"]
+
+      - type: array
+        element: [1, 2, 3, 4]
+        color: ["#000", "#000", "#000", "#000"]
+        arraw: ["none", "up", "down", "none"]
+
+      - type: array
+        element: [1, 2, 3, 4]
+        color: ["#000", "#000", "#000", "#000"]
+        arraw: ["none", "up", "down", "none"]
+
+      - type: array
+        element: [1, 2, 3, 4]
+        color: ["#000", "#000", "#000", "#000"]
+        arraw: ["none", "up", "down", "none"]
+  - type: array
+    iframes:
+      - type: array
+        element: [1, 2, 3, 4]
+        color: ["#000", "#000", "#000", "#000"]
+        arraw: ["none", "up", "down", "none"]
+
+      - type: array
+        element: [1, 2, 3, 4]
+        color: ["#000", "#000", "#000", "#000"]
+        arraw: ["none", "up", "down", "none"]
+
+      - type: array
+        element: [1, 2, 3, 4]
+        color: ["#000", "#000", "#000", "#000"]
+        arraw: ["none", "up", "down", "none"]
+
+      - type: array
+        element: [1, 2, 3, 4]
+        color: ["#000", "#000", "#000", "#000"]
+        arraw: ["none", "up", "down", "none"]
+
+      - type: array
+        element: [1, 2, 3, 4]
+        color: ["#000", "#000", "#000", "#000"]
+        arraw: ["none", "up", "down", "none"]
+
+      - type: array
+        element: [1, 2, 3, 4]
+        color: ["#000", "#000", "#000", "#000"]
+        arraw: ["none", "up", "down", "none"]
