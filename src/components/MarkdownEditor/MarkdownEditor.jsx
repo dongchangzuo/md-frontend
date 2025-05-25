@@ -165,77 +165,56 @@ const LayoutButton = styled.button`
   }
 `;
 
-const MarkdownPreview = styled.div`
-  font-size: 16px;
-  line-height: 1.75;
-  color: ${({ theme }) => theme.markdownText};
-  background: ${({ theme }) => theme.markdownBg};
+const ModeButton = styled.button`
+  padding: 6px 16px;
   border-radius: 8px;
-  padding: 0;
-  h1, h2, h3, h4, h5, h6 {
-    color: ${({ theme }) => theme.markdownText};
-    font-weight: 700;
-    margin: 1.5em 0 0.7em 0;
-    line-height: 1.2;
-  }
-  h1 { font-size: 2.2em; border-bottom: 2px solid ${({ theme }) => theme.markdownHr}; padding-bottom: 0.2em; }
-  h2 { font-size: 1.7em; border-bottom: 1px solid ${({ theme }) => theme.markdownHr}; padding-bottom: 0.15em; }
-  h3 { font-size: 1.3em; }
-  h4, h5, h6 { font-size: 1.1em; }
-  p { margin: 1em 0; }
-  ul, ol { margin: 1em 0 1em 2em; }
-  li { margin: 0.3em 0; }
-  code {
-    background: ${({ theme }) => theme.markdownCodeBg};
-    color: ${({ theme }) => theme.markdownCodeText};
-    font-family: 'Fira Mono', 'Menlo', 'Consolas', monospace;
-    font-size: 0.97em;
-    border-radius: 4px;
-    padding: 2px 6px;
-  }
-  pre {
-    background: ${({ theme }) => theme.markdownCodeBg};
-    color: ${({ theme }) => theme.markdownCodeText};
-    font-family: 'Fira Mono', 'Menlo', 'Consolas', monospace;
-    font-size: 0.97em;
-    border-radius: 6px;
-    padding: 14px 18px;
-    margin: 1.2em 0;
-    overflow-x: auto;
-  }
-  blockquote {
-    background: ${({ theme }) => theme.markdownBlockquoteBg};
-    border-left: 4px solid ${({ theme }) => theme.markdownBlockquoteBorder};
-    color: ${({ theme }) => theme.markdownText};
-    margin: 1.2em 0;
-    padding: 0.7em 1.2em;
-    border-radius: 4px;
-    font-style: italic;
-  }
-  table {
-    border-collapse: collapse;
+  font-weight: 600;
+  font-size: 14px;
+  margin-right: 4px;
+  cursor: pointer;
+  transition: all 0.18s;
+  position: relative;
+  overflow: hidden;
+  background: #f5f5f5;
+  color: #666;
+  border: 1px solid #ddd;
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
     width: 100%;
-    margin: 1.2em 0;
-    background: ${({ theme }) => theme.markdownBg};
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      transparent,
+      rgba(255, 255, 255, 0.4),
+      transparent
+    );
+    animation: wave 1.5s infinite;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s;
   }
-  th, td {
-    border: 1px solid ${({ theme }) => theme.markdownTableBorder};
-    padding: 8px 12px;
-    text-align: left;
+
+  &.active {
+    background: #1a1a1a;
+    color: white;
+    border-color: #1a1a1a;
+
+    &::after {
+      opacity: 1;
+    }
   }
-  th {
-    background: ${({ theme }) => theme.markdownBlockquoteBg};
-    color: ${({ theme }) => theme.markdownText};
-  }
-  a {
-    color: ${({ theme }) => theme.markdownLink};
-    text-decoration: underline;
-    &:hover { text-decoration: underline wavy; }
-  }
-  hr {
-    border: none;
-    border-top: 1.5px solid ${({ theme }) => theme.markdownHr};
-    margin: 2em 0;
+
+  @keyframes wave {
+    0% {
+      left: -100%;
+    }
+    100% {
+      left: 100%;
+    }
   }
 `;
 
@@ -614,40 +593,18 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
                   <option value="zh">中文</option>
                   <option value="en">English</option>
                 </select>
-                <button
+                <ModeButton
+                  className={cloudMode ? 'active' : ''}
                   onClick={() => handleModeSwitch('cloud')}
-                  style={{
-                    padding: '6px 16px',
-                    background: cloudMode ? '#1976d2' : '#e3f2fd',
-                    color: cloudMode ? '#fff' : '#1976d2',
-                    border: cloudMode ? '1.5px solid #1976d2' : '1.5px solid #90caf9',
-                    borderRadius: 8,
-                    fontWeight: 600,
-                    fontSize: 14,
-                    marginRight: 4,
-                    cursor: 'pointer',
-                    transition: 'all 0.18s'
-                  }}
                 >
                   {t.cloudMode}
-                </button>
-                <button
+                </ModeButton>
+                <ModeButton
+                  className={!cloudMode ? 'active' : ''}
                   onClick={() => handleModeSwitch('local')}
-                  style={{
-                    padding: '6px 16px',
-                    background: !cloudMode ? '#ffd54f' : '#fffde7',
-                    color: !cloudMode ? '#b26a00' : '#b26a00',
-                    border: !cloudMode ? '1.5px solid #ffd54f' : '1.5px solid #ffe082',
-                    borderRadius: 8,
-                    fontWeight: 600,
-                    fontSize: 14,
-                    marginRight: 16,
-                    cursor: 'pointer',
-                    transition: 'all 0.18s'
-                  }}
                 >
                   {t.localMode}
-                </button>
+                </ModeButton>
                 {renderLayoutControls()}
                 {renderThemeSwitcher()}
               </div>
