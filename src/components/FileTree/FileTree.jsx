@@ -1,12 +1,14 @@
 import { useState, useEffect } from 'react';
 import { tokenManager } from '../../services/api';
+import { lang } from '../../i18n/lang';
 import './FileTree.css';
 
-function FileTree({ onFileSelect, isLocalMode }) {
+function FileTree({ onFileSelect, isLocalMode, language = 'en' }) {
   const [files, setFiles] = useState([]);
   const [expandedFolders, setExpandedFolders] = useState(new Set());
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const t = lang[language] || lang.en;
 
   // 本地文件树 key
   const LOCAL_FILES_KEY = 'local-md-files';
@@ -150,7 +152,7 @@ function FileTree({ onFileSelect, isLocalMode }) {
   }, [isLocalMode]);
 
   const handleCreateItem = async (type, parentPath = '/') => {
-    const name = prompt(`Enter ${type} name:`);
+    const name = prompt(type === 'folder' ? t.enterFolderName : t.enterFileName);
     if (!name) return;
 
     if (isLocalMode) {
@@ -293,8 +295,8 @@ function FileTree({ onFileSelect, isLocalMode }) {
           <div className="tree-item-children">
             {item.children.map(child => renderTreeItem(child))}
             <div className="tree-item-actions">
-              <button onClick={() => handleCreateItem('file', item.path)}>+ File</button>
-              <button onClick={() => handleCreateItem('folder', item.path)}>+ Folder</button>
+              <button onClick={() => handleCreateItem('file', item.path)}>{t.newFile}</button>
+              <button onClick={() => handleCreateItem('folder', item.path)}>{t.newFolder}</button>
             </div>
           </div>
         )}
@@ -303,17 +305,17 @@ function FileTree({ onFileSelect, isLocalMode }) {
   };
 
   if (isLoading) {
-    return <div className="file-tree">Loading...</div>;
+    return <div className="file-tree">{t.loading}</div>;
   }
 
   if (error && !isLocalMode) {
-    return <div className="file-tree">Error: {error}</div>;
+    return <div className="file-tree">{t.error}: {error}</div>;
   }
 
   return (
     <div className="file-tree">
       <div className="file-tree-header">
-        <h3>Files</h3>
+        <h3>{t.files}</h3>
         <span style={{
           marginLeft: 12,
           padding: '2px 10px',
@@ -325,19 +327,19 @@ function FileTree({ onFileSelect, isLocalMode }) {
           border: isLocalMode ? '1px solid #ffd54f' : '1px solid #90caf9',
           verticalAlign: 'middle'
         }}>
-          {isLocalMode ? '本地模式' : '云端模式'}
+          {isLocalMode ? t.localMode : t.cloudMode}
         </span>
         <div className="file-tree-actions">
-          <button onClick={() => handleCreateItem('file')}>New File</button>
-          <button onClick={() => handleCreateItem('folder')}>New Folder</button>
+          <button onClick={() => handleCreateItem('file')}>{t.newFile}</button>
+          <button onClick={() => handleCreateItem('folder')}>{t.newFolder}</button>
         </div>
       </div>
       <div className="tree-items">
         {files.map(item => renderTreeItem(item))}
         {files.length === 0 && (
           <div className="tree-item-actions">
-            <button onClick={() => handleCreateItem('file')}>+ File</button>
-            <button onClick={() => handleCreateItem('folder')}>+ Folder</button>
+            <button onClick={() => handleCreateItem('file')}>{t.newFile}</button>
+            <button onClick={() => handleCreateItem('folder')}>{t.newFolder}</button>
           </div>
         )}
       </div>

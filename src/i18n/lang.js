@@ -153,7 +153,11 @@ export const lang = {
     left: '左',
     right: '右',
     up: '上',
-    down: '下'
+    down: '下',
+
+    // FileTree
+    enterFileName: '请输入文件名：',
+    enterFolderName: '请输入文件夹名：'
   },
   en: {
     // Common
@@ -305,6 +309,17 @@ export const lang = {
     left: 'Left',
     right: 'Right',
     up: 'Up',
-    down: 'Down'
+    down: 'Down',
+
+    // FileTree
+    files: 'Files',
+    newFile: 'New File',
+    newFolder: 'New Folder',
+    enterFileName: 'Enter file name:',
+    enterFolderName: 'Enter folder name:',
+    localMode: 'Local Mode',
+    cloudMode: 'Cloud Mode',
+    loading: 'Loading...',
+    error: 'Error'
   }
 }; 

@@ -115,8 +115,8 @@ const PreviewContainer = styled.div`
 `;
 
 const LayoutButton = styled.button`
-  background: ${({ active, theme }) => active ? theme.accent : theme.card};
-  color: ${({ active, theme }) => active ? '#fff' : theme.text};
+  background: ${({ $active, theme }) => $active ? theme.accent : theme.card};
+  color: ${({ $active, theme }) => $active ? '#fff' : theme.text};
   border: 1px solid ${({ theme }) => theme.border};
   border-radius: 4px;
   padding: 4px 10px;
@@ -204,7 +204,10 @@ const MarkdownPreview = styled.div`
   }
 `;
 
-function MarkdownEditor({ themeMode, setThemeMode, language, setLanguage }) {
+function MarkdownEditor({ themeMode, setThemeMode, language: propLanguage, setLanguage: propSetLanguage }) {
+  const [internalLanguage, setInternalLanguage] = useState(propLanguage || 'en');
+  const language = propLanguage || internalLanguage;
+  const setLanguage = propSetLanguage || setInternalLanguage;
   const [content, setContent] = useState('');
   const [isPreview, setIsPreview] = useState(false);
   const [isSplit, setIsSplit] = useState(false);
@@ -363,22 +366,22 @@ function MarkdownEditor({ themeMode, setThemeMode, language, setLanguage }) {
   const renderLayoutControls = () => (
     <EditorHeaderActions>
       <LayoutButton
-        active={splitMode === LAYOUT_TYPES.SPLIT_HORIZONTAL}
+        $active={splitMode === LAYOUT_TYPES.SPLIT_HORIZONTAL}
         onClick={() => setSplitMode(LAYOUT_TYPES.SPLIT_HORIZONTAL)}
         title="左右布局"
       >⇄</LayoutButton>
       <LayoutButton
-        active={splitMode === LAYOUT_TYPES.SPLIT_VERTICAL}
+        $active={splitMode === LAYOUT_TYPES.SPLIT_VERTICAL}
         onClick={() => setSplitMode(LAYOUT_TYPES.SPLIT_VERTICAL)}
         title="上下布局"
       >⇅</LayoutButton>
       <LayoutButton
-        active={splitMode === LAYOUT_TYPES.EDITOR_ONLY}
+        $active={splitMode === LAYOUT_TYPES.EDITOR_ONLY}
         onClick={() => setSplitMode(LAYOUT_TYPES.EDITOR_ONLY)}
         title="仅编辑器"
       >📝</LayoutButton>
       <LayoutButton
-        active={splitMode === LAYOUT_TYPES.PREVIEW_ONLY}
+        $active={splitMode === LAYOUT_TYPES.PREVIEW_ONLY}
         onClick={() => setSplitMode(LAYOUT_TYPES.PREVIEW_ONLY)}
         title="仅预览"
       >👁️</LayoutButton>
@@ -471,13 +474,30 @@ function MarkdownEditor({ themeMode, setThemeMode, language, setLanguage }) {
       <Container>
         <EditorLayout>
           <FileTreeWrapper>
-            <FileTree onFileSelect={handleFileSelect} isLocalMode={!isCloudMode} />
+            <FileTree 
+              onFileSelect={handleFileSelect} 
+              isLocalMode={!isCloudMode} 
+              language={language}
+            />
           </FileTreeWrapper>
           <EditorMain>
             <EditorHeader>
-              <h2>{currentFile ? currentFile.name : 'Markdown Editor'}</h2>
+              <h2>{currentFile ? currentFile.name : t.markdownEditorTitle}</h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                <select value={language} onChange={e => setLanguage(e.target.value)} style={{ fontSize: 15, padding: '4px 12px', borderRadius: 6, border: '1px solid #ddd', background: '#f5f5f5', color: '#222', outline: 'none', marginRight: 12 }}>
+                <select 
+                  value={language} 
+                  onChange={e => setLanguage(e.target.value)} 
+                  style={{ 
+                    fontSize: 15, 
+                    padding: '4px 12px', 
+                    borderRadius: 6, 
+                    border: '1px solid #ddd', 
+                    background: '#f5f5f5', 
+                    color: '#222', 
+                    outline: 'none', 
+                    marginRight: 12 
+                  }}
+                >
                   <option value="zh">中文</option>
                   <option value="en">English</option>
                 </select>
