@@ -11,6 +11,38 @@
   overflow: hidden;
 }
 
+.expand-button {
+  position: fixed;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 48px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: none;
+  border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text);
+  font-size: 0.875rem;
+  padding: 0;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s;
+  z-index: 100;
+}
+
+.expand-button:hover {
+  background: var(--hover);
+  color: var(--primary);
+}
+
+.expand-button:active {
+  background: var(--primary-light);
+}
+
 .toolbar {
   display: flex;
   align-items: center;

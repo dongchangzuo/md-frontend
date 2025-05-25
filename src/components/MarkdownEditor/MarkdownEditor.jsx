@@ -35,13 +35,47 @@ const Container = styled.div`
 const EditorLayout = styled.div`
   display: flex;
   height: 100%;
+  position: relative;
 `;
 
 const FileTreeWrapper = styled.div`
-  width: 220px;
+  width: var(--sidebar-width, 280px);
+  min-width: 200px;
+  max-width: 500px;
   background: ${({ theme }) => theme.sidebarBg};
   border-right: 1px solid ${({ theme }) => theme.border};
   color: ${({ theme }) => theme.text};
+  transition: width 0.2s ease;
+  flex-shrink: 0;
+  position: relative;
+`;
+
+const ResizeHandle = styled.div`
+  position: absolute;
+  right: -4px;
+  top: 0;
+  bottom: 0;
+  width: 8px;
+  cursor: col-resize;
+  z-index: 10;
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: 50%;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: ${({ theme }) => theme.border};
+    transform: translateX(-50%);
+    transition: all 0.2s;
+  }
+
+  &:hover::before,
+  &:active::before {
+    background: ${({ theme }) => theme.primary};
+    width: 4px;
+  }
 `;
 
 const EditorMain = styled.div`
@@ -227,6 +261,10 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
   const fileInputRef = useRef(null);
   const t = lang[language];
   const navigate = useNavigate();
+  const [isResizing, setIsResizing] = useState(false);
+  const [sidebarWidth, setSidebarWidth] = useState(280);
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const sidebarRef = useRef(null);
 
   const handleContentChange = (e) => {
     setContent(e.target.value);
@@ -367,6 +405,56 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
     }
   };
 
+  // 处理拖动开始
+  const handleMouseDown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizing(true);
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  };
+
+  // 处理拖动
+  const handleMouseMove = (e) => {
+    if (!isResizing) return;
+    
+    const newWidth = e.clientX;
+    if (newWidth < 200) {
+      setIsCollapsed(true);
+      setSidebarWidth(0);
+    } else if (newWidth > 500) {
+      setSidebarWidth(500);
+    } else {
+      setIsCollapsed(false);
+      setSidebarWidth(newWidth);
+    }
+
+    // 更新 CSS 变量
+    document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}px`);
+  };
+
+  // 处理拖动结束
+  const handleMouseUp = () => {
+    setIsResizing(false);
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  };
+
+  // 展开侧边栏
+  const handleExpand = () => {
+    setIsCollapsed(false);
+    setSidebarWidth(280);
+    document.documentElement.style.setProperty('--sidebar-width', '280px');
+  };
+
+  // 初始化时设置侧边栏宽度
+  useEffect(() => {
+    document.documentElement.style.setProperty('--sidebar-width', '280px');
+    return () => {
+      document.documentElement.style.removeProperty('--sidebar-width');
+    };
+  }, []);
+
   const renderLayoutControls = () => (
     <EditorHeaderActions>
       <LayoutButton
@@ -486,13 +574,25 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
     <EditorWrapper>
       <Container>
         <EditorLayout>
-          <FileTreeWrapper>
+          <FileTreeWrapper ref={sidebarRef}>
             <FileTree 
               onFileSelect={handleFileSelect} 
               isLocalMode={!cloudMode} 
               language={language}
             />
+            {!isCollapsed && (
+              <ResizeHandle onMouseDown={handleMouseDown} />
+            )}
           </FileTreeWrapper>
+          {isCollapsed && (
+            <button 
+              className="expand-button"
+              onClick={handleExpand}
+              title={t.expandSidebar}
+            >
+              ▶
+            </button>
+          )}
           <EditorMain>
             <EditorHeader>
               <h2>{currentFile ? currentFile.name : t.markdownEditorTitle}</h2>
@@ -518,9 +618,9 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
                   onClick={() => handleModeSwitch('cloud')}
                   style={{
                     padding: '6px 16px',
-                    background: !cloudMode ? '#1976d2' : '#e3f2fd',
-                    color: !cloudMode ? '#fff' : '#1976d2',
-                    border: !cloudMode ? '1.5px solid #1976d2' : '1.5px solid #90caf9',
+                    background: cloudMode ? '#1976d2' : '#e3f2fd',
+                    color: cloudMode ? '#fff' : '#1976d2',
+                    border: cloudMode ? '1.5px solid #1976d2' : '1.5px solid #90caf9',
                     borderRadius: 8,
                     fontWeight: 600,
                     fontSize: 14,
@@ -535,9 +635,9 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
                   onClick={() => handleModeSwitch('local')}
                   style={{
                     padding: '6px 16px',
-                    background: cloudMode ? '#ffd54f' : '#fffde7',
-                    color: cloudMode ? '#b26a00' : '#b26a00',
-                    border: cloudMode ? '1.5px solid #ffd54f' : '1.5px solid #ffe082',
+                    background: !cloudMode ? '#ffd54f' : '#fffde7',
+                    color: !cloudMode ? '#b26a00' : '#b26a00',
+                    border: !cloudMode ? '1.5px solid #ffd54f' : '1.5px solid #ffe082',
                     borderRadius: 8,
                     fontWeight: 600,
                     fontSize: 14,
