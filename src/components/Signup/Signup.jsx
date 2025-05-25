@@ -1,131 +1,108 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { lang } from '../../i18n/lang';
 import './Signup.css';
 import { authAPI } from '../../services/api';
 
-function Signup({ onSignup, onSwitchToLogin }) {
-  const [name, setName] = useState('');
+function Signup({ onSignup, onSwitchToLogin, language, setLanguage }) {
   const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+  const t = lang[language];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Reset previous error
     setError('');
-    
-    // Basic validation
-    if (!name || !email || !password || !confirmPassword) {
-      setError('Please fill in all fields');
+
+    if (!email) {
+      setError(t.emailRequired);
       return;
     }
-    
-    // Basic email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      setError('Please enter a valid email address');
+    if (!username) {
+      setError(t.usernameRequired);
       return;
     }
-    
-    // Password match validation
+    if (!password) {
+      setError(t.passwordRequired);
+      return;
+    }
     if (password !== confirmPassword) {
-      setError('Passwords do not match');
+      setError(t.passwordMismatch);
       return;
     }
-    
-    // Password strength validation
-    if (password.length < 8) {
-      setError('Password must be at least 8 characters long');
-      return;
-    }
-    
-    // Prepare API request data
-    const signupData = {
-      username: name,
-      email: email,
-      password: password
-    };
-    
+
     try {
-      setIsLoading(true);
-      // Call the signup API
-      const response = await authAPI.signup(signupData);
-      // Handle successful signup
-      onSignup(response);
+      await onSignup(email, username, password);
+      navigate('/home');
     } catch (err) {
-      // Handle signup error
-      setError(err.message || 'Failed to create account. Please try again.');
-    } finally {
-      setIsLoading(false);
+      setError(t.signupFailed);
     }
   };
 
   return (
     <div className="signup-container">
-      <div className="signup-form-container">
-        <h2>Sign Up</h2>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <select value={language} onChange={e => setLanguage(e.target.value)} style={{ fontSize: 15, padding: '4px 12px', borderRadius: 6, border: '1px solid #ddd', background: '#f5f5f5', color: '#222', outline: 'none' }}>
+          <option value="zh">中文</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      <div className="signup-box">
+        <h2>{t.signup}</h2>
         {error && <div className="error-message">{error}</div>}
-        <form onSubmit={handleSubmit} className="signup-form">
+        <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="name">Username</label>
-            <input
-              type="text"
-              id="name"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Enter your username"
-              disabled={isLoading}
-              required
-            />
-          </div>
-          <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">{t.email}</label>
             <input
               type="email"
               id="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Enter your email"
-              disabled={isLoading}
-              required
+              placeholder={t.email}
             />
           </div>
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="username">{t.username}</label>
+            <input
+              type="text"
+              id="username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              placeholder={t.username}
+            />
+          </div>
+          <div className="form-group">
+            <label htmlFor="password">{t.password}</label>
             <input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Create a password"
-              disabled={isLoading}
-              required
+              placeholder={t.password}
             />
           </div>
           <div className="form-group">
-            <label htmlFor="confirmPassword">Confirm Password</label>
+            <label htmlFor="confirmPassword">{t.confirmPassword}</label>
             <input
               type="password"
               id="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm your password"
-              disabled={isLoading}
-              required
+              placeholder={t.confirmPassword}
             />
           </div>
-          <button 
-            type="submit" 
-            className="signup-button"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Signing up...' : 'Sign Up'}
+          <button type="submit" className="signup-button">
+            {t.signup}
           </button>
         </form>
-        <div className="login-link">
-          Already have an account? <span onClick={onSwitchToLogin}>Login</span>
+        <div className="switch-auth">
+          <span>{t.alreadyHaveAccount}</span>
+          <button onClick={onSwitchToLogin} className="switch-button">
+            {t.switchToLogin}
+          </button>
         </div>
       </div>
     </div>

@@ -76,6 +76,7 @@ function App() {
   const [currentPage, setCurrentPage] = useState('home');
   const [isLoading, setIsLoading] = useState(true);
   const [themeMode, setThemeMode] = useState('light'); // 默认明亮
+  const [language, setLanguage] = useState('zh');
   const theme = themes[themeMode];
   
   // Check for existing authentication on component mount
@@ -156,9 +157,9 @@ function App() {
 
     if (!user) {
       return showSignup ? (
-        <Signup onSignup={handleSignup} onSwitchToLogin={toggleAuthMode} />
+        <Signup onSignup={handleSignup} onSwitchToLogin={toggleAuthMode} language={language} setLanguage={setLanguage} />
       ) : (
-        <Login onLogin={handleLogin} onSwitchToSignup={toggleAuthMode} />
+        <Login onLogin={handleLogin} onSwitchToSignup={toggleAuthMode} language={language} setLanguage={setLanguage} />
       );
     }
 
@@ -166,13 +167,13 @@ function App() {
     switch (currentPage) {
       case 'markdown':
         console.log('Rendering MarkdownEditor');
-        return <MarkdownEditor themeMode={themeMode} setThemeMode={setThemeMode} />;
+        return <MarkdownEditor themeMode={themeMode} setThemeMode={setThemeMode} language={language} setLanguage={setLanguage} />;
       case 'ocr':
         console.log('Rendering OCR');
-        return <OCR themeMode={themeMode} setThemeMode={setThemeMode} />;
+        return <OCR themeMode={themeMode} setThemeMode={setThemeMode} language={language} setLanguage={setLanguage} />;
       case 'shapes':
         console.log('Rendering ShapeEditor');
-        return <ShapeEditor themeMode={themeMode} setThemeMode={setThemeMode} />;
+        return <ShapeEditor themeMode={themeMode} setThemeMode={setThemeMode} language={language} setLanguage={setLanguage} />;
       case 'home':
       default:
         console.log('Rendering Home');
@@ -183,6 +184,8 @@ function App() {
             onNavigate={navigateTo}
             themeMode={themeMode}
             setThemeMode={setThemeMode}
+            language={language}
+            setLanguage={setLanguage}
           />
         );
     }

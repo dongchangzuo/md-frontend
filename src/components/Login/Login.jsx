@@ -1,129 +1,77 @@
-import { useState } from 'react';
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { lang } from '../../i18n/lang';
 import './Login.css';
 import { authAPI } from '../../services/api';
 
-function Login({ onLogin, onSwitchToSignup }) {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: '',
-  });
-  const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [loginError, setLoginError] = useState('');
-
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.email) {
-      newErrors.email = 'Email is required';
-    } else if (!/\S+@\S+\.\S+/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
-    }
-    
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({
-        ...prev,
-        [name]: ''
-      }));
-    }
-    // Clear login error when user makes any change
-    if (loginError) {
-      setLoginError('');
-    }
-  };
+function Login({ onLogin, onSwitchToSignup, language, setLanguage }) {
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const t = lang[language];
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
+    setError('');
+
+    if (!email) {
+      setError(t.emailRequired);
       return;
     }
-    
-    setIsLoading(true);
-    setLoginError('');
-    
+    if (!password) {
+      setError(t.passwordRequired);
+      return;
+    }
+
     try {
-      const response = await authAPI.login(formData);
-      onLogin(response);
-    } catch (error) {
-      setLoginError(error.message || 'Login failed. Please try again.');
-    } finally {
-      setIsLoading(false);
+      await onLogin(email, password);
+      navigate('/home');
+    } catch (err) {
+      setError(t.loginFailed);
     }
   };
 
   return (
     <div className="login-container">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <select value={language} onChange={e => setLanguage(e.target.value)} style={{ fontSize: 15, padding: '4px 12px', borderRadius: 6, border: '1px solid #ddd', background: '#f5f5f5', color: '#222', outline: 'none' }}>
+          <option value="zh">中文</option>
+          <option value="en">English</option>
+        </select>
+      </div>
       <div className="login-box">
-        <h2>Login</h2>
-        {loginError && (
-          <div className="error-message">
-            {loginError}
-          </div>
-        )}
+        <h2>{t.login}</h2>
+        {error && <div className="error-message">{error}</div>}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label htmlFor="email">Email</label>
+            <label htmlFor="email">{t.email}</label>
             <input
               type="email"
               id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className={errors.email ? 'error' : ''}
-              placeholder="Enter your email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t.email}
             />
-            {errors.email && <span className="error-text">{errors.email}</span>}
           </div>
-          
           <div className="form-group">
-            <label htmlFor="password">Password</label>
+            <label htmlFor="password">{t.password}</label>
             <input
               type="password"
               id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={errors.password ? 'error' : ''}
-              placeholder="Enter your password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={t.password}
             />
-            {errors.password && <span className="error-text">{errors.password}</span>}
           </div>
-          
-          <button 
-            type="submit" 
-            className="login-button"
-            disabled={isLoading}
-          >
-            {isLoading ? 'Logging in...' : 'Login'}
+          <button type="submit" className="login-button">
+            {t.login}
           </button>
         </form>
-        
-        <div className="signup-link">
-          Don't have an account?{' '}
-          <button 
-            type="button" 
-            className="link-button"
-            onClick={onSwitchToSignup}
-          >
-            Sign up
+        <div className="switch-auth">
+          <span>{t.noAccount}</span>
+          <button onClick={onSwitchToSignup} className="switch-button">
+            {t.switchToSignup}
           </button>
         </div>
       </div>

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { tokenManager } from '../../services/api';
+import React, { useState, useRef } from 'react';
+import { lang } from '../../i18n/lang';
 import './OCR.css';
 import styled from 'styled-components';
 
@@ -9,135 +9,113 @@ const OcrWrapper = styled.div`
   min-height: 100vh;
 `;
 
-function OCR() {
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [previewUrl, setPreviewUrl] = useState(null);
+function OCR({ language, setLanguage }) {
+  const [selectedImage, setSelectedImage] = useState(null);
   const [recognizedText, setRecognizedText] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const [isRecognizing, setIsRecognizing] = useState(false);
+  const [error, setError] = useState('');
+  const fileInputRef = useRef(null);
+  const t = lang[language];
 
-  const handleFileSelect = (event) => {
+  const handleImageSelect = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setSelectedFile(file);
-      // 创建预览URL
-      const url = URL.createObjectURL(file);
-      setPreviewUrl(url);
-      setRecognizedText('');
-      setError(null);
+      if (file.size > 5 * 1024 * 1024) {
+        setError(t.imageTooLarge);
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setSelectedImage(e.target.result);
+        setError('');
+      };
+      reader.readAsDataURL(file);
     }
   };
 
   const handleRecognize = async () => {
-    if (!selectedFile) {
-      setError('Please select an image first');
+    if (!selectedImage) {
+      setError(t.selectImage);
       return;
     }
 
+    setIsRecognizing(true);
+    setError('');
+
     try {
-      setIsLoading(true);
-      setError(null);
-
-      const token = tokenManager.getToken();
-      if (!token) {
-        throw new Error('No authentication token found');
-      }
-
-      const formData = new FormData();
-      formData.append('image', selectedFile);
-
-      const response = await fetch('http://localhost:8080/api/ocr/recognize', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        },
-        body: formData
-      });
-
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Authentication failed');
-        }
-        throw new Error('Failed to recognize text');
-      }
-
-      const data = await response.json();
-      setRecognizedText(data.text || 'No text recognized');
-    } catch (error) {
-      console.error('Error recognizing text:', error);
-      setError(error.message);
-      if (error.message === 'No authentication token found') {
-        alert('Please login first');
-      } else if (error.message === 'Authentication failed') {
-        alert('Authentication failed. Please login again');
-      } else {
-        alert('Failed to recognize text');
-      }
+      // TODO: Implement OCR recognition
+      // For now, just simulate a delay
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      setRecognizedText('Sample recognized text');
+    } catch (err) {
+      setError(t.recognitionFailed);
     } finally {
-      setIsLoading(false);
+      setIsRecognizing(false);
+    }
+  };
+
+  const handleCopyText = () => {
+    if (recognizedText) {
+      navigator.clipboard.writeText(recognizedText);
+      alert(t.textCopied);
     }
   };
 
   return (
     <OcrWrapper>
       <div className="ocr-container">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+          <select value={language} onChange={e => setLanguage(e.target.value)} style={{ fontSize: 15, padding: '4px 12px', borderRadius: 6, border: '1px solid #ddd', background: '#f5f5f5', color: '#222', outline: 'none' }}>
+            <option value="zh">中文</option>
+            <option value="en">English</option>
+          </select>
+        </div>
         <div className="ocr-header">
-          <h2>OCR Text Recognition</h2>
+          <h2>{t.ocrTitle}</h2>
         </div>
         
         <div className="ocr-content">
-          <div className="upload-section">
-            <div className="file-input-container">
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileSelect}
-                className="file-input"
-                id="image-upload"
-              />
-              <label htmlFor="image-upload" className="file-input-label">
-                {selectedFile ? 'Change Image' : 'Select Image'}
-              </label>
-            </div>
-            
-            {previewUrl && (
+          <div className="image-section">
+            {selectedImage ? (
               <div className="image-preview">
-                <img src={previewUrl} alt="Preview" />
+                <img src={selectedImage} alt="Selected" />
+                <button onClick={() => fileInputRef.current?.click()} className="change-image">
+                  {t.changeImage}
+                </button>
+              </div>
+            ) : (
+              <div className="upload-area" onClick={() => fileInputRef.current?.click()}>
+                <p>{t.selectImage}</p>
               </div>
             )}
-            
-            <button
-              className="recognize-button"
-              onClick={handleRecognize}
-              disabled={!selectedFile || isLoading}
-            >
-              {isLoading ? 'Recognizing...' : 'Recognize Text'}
-            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleImageSelect}
+              accept="image/*"
+              style={{ display: 'none' }}
+            />
           </div>
 
-          {error && (
-            <div className="error-message">
-              {error}
-            </div>
-          )}
-
-          {recognizedText && (
-            <div className="result-section">
-              <h3>Recognized Text:</h3>
+          <div className="text-section">
+            <button
+              onClick={handleRecognize}
+              disabled={!selectedImage || isRecognizing}
+              className="recognize-button"
+            >
+              {isRecognizing ? t.recognizing : t.recognizeText}
+            </button>
+            {error && <div className="error-message">{error}</div>}
+            {recognizedText && (
               <div className="recognized-text">
-                {recognizedText}
+                <h3>{t.recognizedText}</h3>
+                <p>{recognizedText}</p>
+                <button onClick={handleCopyText} className="copy-button">
+                  {t.copyText}
+                </button>
               </div>
-              <button
-                className="copy-button"
-                onClick={() => {
-                  navigator.clipboard.writeText(recognizedText);
-                  alert('Text copied to clipboard!');
-                }}
-              >
-                Copy Text
-              </button>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </OcrWrapper>

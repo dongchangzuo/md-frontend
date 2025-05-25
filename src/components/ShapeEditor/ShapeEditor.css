@@ -1,0 +1,115 @@
+.shape-editor {
+  padding: 20px;
+  height: 100vh;
+  background: #f5f5f5;
+}
+
+.editor-container {
+  display: flex;
+  flex-direction: column;
+  height: calc(100vh - 80px);
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.toolbar {
+  padding: 16px;
+  border-bottom: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.tool-group {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.tool-group h3 {
+  margin: 0;
+  font-size: 16px;
+  color: #333;
+}
+
+.tool-group button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background: #4a90e2;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.tool-group button:hover {
+  background: #357abd;
+}
+
+.frame-control {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.frame-control label {
+  font-size: 14px;
+  color: #666;
+}
+
+.frame-control input {
+  width: 80px;
+  padding: 4px 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.canvas-container {
+  flex: 1;
+  padding: 20px;
+  position: relative;
+  background: #f0f0f0;
+  overflow: auto;
+}
+
+.canvas-container canvas {
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.controls {
+  padding: 16px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.controls button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  background: #4a90e2;
+  color: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background-color 0.2s;
+}
+
+.controls button:hover {
+  background: #357abd;
+}
+
+.controls button:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.controls span {
+  font-size: 14px;
+  color: #666;
+  margin-left: 8px;
+} 

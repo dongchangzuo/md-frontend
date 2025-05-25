@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
@@ -8,6 +8,8 @@ import FileTree from '../FileTree/FileTree';
 import { tokenManager } from '../../services/api';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
+import { lang } from '../../i18n/lang';
+import './MarkdownEditor.css';
 
 // 布局类型
 const LAYOUT_TYPES = {
@@ -202,30 +204,113 @@ const MarkdownPreview = styled.div`
   }
 `;
 
-function MarkdownEditor({ themeMode, setThemeMode }) {
-  const [markdown, setMarkdown] = useState('');
-  const [layout, setLayout] = useState(LAYOUT_TYPES.SPLIT_HORIZONTAL);
+function MarkdownEditor({ themeMode, setThemeMode, language, setLanguage }) {
+  const [content, setContent] = useState('');
+  const [isPreview, setIsPreview] = useState(false);
+  const [isSplit, setIsSplit] = useState(false);
+  const [splitMode, setSplitMode] = useState('horizontal');
+  const [isCloudMode, setIsCloudMode] = useState(false);
+  const [files, setFiles] = useState([]);
   const [currentFile, setCurrentFile] = useState(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveError, setSaveError] = useState(null);
+  const [error, setError] = useState('');
+  const fileInputRef = useRef(null);
+  const t = lang[language];
   const navigate = useNavigate();
-  const [isLocalMode, setIsLocalMode] = useState(false);
+
+  const handleContentChange = (e) => {
+    setContent(e.target.value);
+  };
+
+  const handlePreviewToggle = () => {
+    setIsPreview(!isPreview);
+  };
+
+  const handleSplitToggle = () => {
+    setIsSplit(!isSplit);
+  };
+
+  const handleSplitModeChange = (mode) => {
+    setSplitMode(mode);
+  };
+
+  const handleCloudModeToggle = () => {
+    setIsCloudMode(!isCloudMode);
+  };
+
+  const handleNewFile = () => {
+    const fileName = prompt(t.newFile);
+    if (fileName) {
+      setFiles([...files, { name: fileName, content: '' }]);
+    }
+  };
+
+  const handleNewFolder = () => {
+    const folderName = prompt(t.newFolder);
+    if (folderName) {
+      setFiles([...files, { name: folderName, type: 'folder', children: [] }]);
+    }
+  };
 
   const handleFileSelect = (file) => {
     setCurrentFile(file);
-    setMarkdown(file.content || '');
+    setContent(file.content || '');
   };
 
-  const handleMarkdownChange = (e) => {
-    const newContent = e.target.value;
-    setMarkdown(newContent);
+  const handleFileRename = (file) => {
+    const newName = prompt(t.rename, file.name);
+    if (newName) {
+      const newFiles = files.map(f => 
+        f === file ? { ...f, name: newName } : f
+      );
+      setFiles(newFiles);
+    }
+  };
+
+  const handleFileDelete = (file) => {
+    if (confirm(t.deleteConfirm)) {
+      const newFiles = files.filter(f => f !== file);
+      setFiles(newFiles);
+      if (currentFile === file) {
+        setCurrentFile(null);
+        setContent('');
+      }
+    }
   };
 
   // 保存文件内容
   const saveFileContent = async () => {
     if (!currentFile) return;
 
-    if (isLocalMode) {
+    if (isCloudMode) {
+      // 云端模式：原有逻辑
+      try {
+        setError(null);
+        const response = await fetch(`http://localhost:8080/api/filesystem/files?path=${encodeURIComponent(currentFile.path)}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${tokenManager.getToken()}`
+          },
+          body: JSON.stringify({
+            content: content
+          })
+        });
+        if (!response.ok) {
+          if (response.status === 401) {
+            throw new Error('Authentication failed');
+          }
+          throw new Error('Failed to save file');
+        }
+      } catch (error) {
+        console.error('Error saving file:', error);
+        setError(error.message);
+        if (error.message === 'Authentication failed') {
+          alert('Authentication failed. Please login again');
+        } else {
+          alert('Failed to save file');
+        }
+      }
+    } else {
       // 本地模式：保存到 localStorage
       try {
         let tree = [];
@@ -242,51 +327,16 @@ function MarkdownEditor({ themeMode, setThemeMode }) {
           }
           return false;
         };
-        updateContent(tree, currentFile.path, markdown);
+        updateContent(tree, currentFile.path, content);
         localStorage.setItem('local-md-files', JSON.stringify(tree));
-        setIsSaving(false);
       } catch (e) {
-        setSaveError('本地保存失败');
-        setIsSaving(false);
+        setError('本地保存失败');
       }
-      return;
-    }
-
-    // 云端模式：原有逻辑
-    try {
-      setIsSaving(true);
-      setSaveError(null);
-      const response = await fetch(`http://localhost:8080/api/filesystem/files?path=${encodeURIComponent(currentFile.path)}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${tokenManager.getToken()}`
-        },
-        body: JSON.stringify({
-          content: markdown
-        })
-      });
-      if (!response.ok) {
-        if (response.status === 401) {
-          throw new Error('Authentication failed');
-        }
-        throw new Error('Failed to save file');
-      }
-    } catch (error) {
-      console.error('Error saving file:', error);
-      setSaveError(error.message);
-      if (error.message === 'Authentication failed') {
-        alert('Authentication failed. Please login again');
-      } else {
-        alert('Failed to save file');
-      }
-    } finally {
-      setIsSaving(false);
     }
   };
 
   // 自动保存
-  useEffect(() => {
+  React.useEffect(() => {
     if (!currentFile) return;
 
     const saveTimeout = setTimeout(() => {
@@ -294,7 +344,7 @@ function MarkdownEditor({ themeMode, setThemeMode }) {
     }, 1000); // 1秒后自动保存
 
     return () => clearTimeout(saveTimeout);
-  }, [markdown, currentFile]);
+  }, [content, currentFile]);
 
   // 模式切换
   const handleModeSwitch = (mode) => {
@@ -304,34 +354,32 @@ function MarkdownEditor({ themeMode, setThemeMode }) {
         navigate('/login');
         return;
       }
-      setIsLocalMode(false);
-      // TODO: 这里可触发云端数据拉取逻辑
+      setIsCloudMode(true);
     } else {
-      setIsLocalMode(true);
-      // TODO: 这里可触发本地数据拉取逻辑
+      setIsCloudMode(false);
     }
   };
 
   const renderLayoutControls = () => (
     <EditorHeaderActions>
       <LayoutButton
-        active={layout === LAYOUT_TYPES.SPLIT_HORIZONTAL}
-        onClick={() => setLayout(LAYOUT_TYPES.SPLIT_HORIZONTAL)}
+        active={splitMode === LAYOUT_TYPES.SPLIT_HORIZONTAL}
+        onClick={() => setSplitMode(LAYOUT_TYPES.SPLIT_HORIZONTAL)}
         title="左右布局"
       >⇄</LayoutButton>
       <LayoutButton
-        active={layout === LAYOUT_TYPES.SPLIT_VERTICAL}
-        onClick={() => setLayout(LAYOUT_TYPES.SPLIT_VERTICAL)}
+        active={splitMode === LAYOUT_TYPES.SPLIT_VERTICAL}
+        onClick={() => setSplitMode(LAYOUT_TYPES.SPLIT_VERTICAL)}
         title="上下布局"
       >⇅</LayoutButton>
       <LayoutButton
-        active={layout === LAYOUT_TYPES.EDITOR_ONLY}
-        onClick={() => setLayout(LAYOUT_TYPES.EDITOR_ONLY)}
+        active={splitMode === LAYOUT_TYPES.EDITOR_ONLY}
+        onClick={() => setSplitMode(LAYOUT_TYPES.EDITOR_ONLY)}
         title="仅编辑器"
       >📝</LayoutButton>
       <LayoutButton
-        active={layout === LAYOUT_TYPES.PREVIEW_ONLY}
-        onClick={() => setLayout(LAYOUT_TYPES.PREVIEW_ONLY)}
+        active={splitMode === LAYOUT_TYPES.PREVIEW_ONLY}
+        onClick={() => setSplitMode(LAYOUT_TYPES.PREVIEW_ONLY)}
         title="仅预览"
       >👁️</LayoutButton>
     </EditorHeaderActions>
@@ -354,9 +402,9 @@ function MarkdownEditor({ themeMode, setThemeMode }) {
   const renderEditor = () => (
     <EditorContainer>
       <MarkdownTextarea
-        value={markdown}
-        onChange={handleMarkdownChange}
-        placeholder="Write your markdown here..."
+        value={content}
+        onChange={handleContentChange}
+        placeholder={t.writeMarkdown}
       />
     </EditorContainer>
   );
@@ -387,14 +435,14 @@ function MarkdownEditor({ themeMode, setThemeMode }) {
             td: ({node, ...props}) => <td {...props} />
           }}
         >
-          {markdown}
+          {content}
         </ReactMarkdown>
       </MarkdownPreview>
     </PreviewContainer>
   );
 
   const renderContent = () => {
-    switch (layout) {
+    switch (splitMode) {
       case LAYOUT_TYPES.SPLIT_HORIZONTAL:
         return (
           <div className="split-horizontal">
@@ -423,19 +471,23 @@ function MarkdownEditor({ themeMode, setThemeMode }) {
       <Container>
         <EditorLayout>
           <FileTreeWrapper>
-            <FileTree onFileSelect={handleFileSelect} isLocalMode={isLocalMode} />
+            <FileTree onFileSelect={handleFileSelect} isLocalMode={!isCloudMode} />
           </FileTreeWrapper>
           <EditorMain>
             <EditorHeader>
               <h2>{currentFile ? currentFile.name : 'Markdown Editor'}</h2>
               <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                <select value={language} onChange={e => setLanguage(e.target.value)} style={{ fontSize: 15, padding: '4px 12px', borderRadius: 6, border: '1px solid #ddd', background: '#f5f5f5', color: '#222', outline: 'none', marginRight: 12 }}>
+                  <option value="zh">中文</option>
+                  <option value="en">English</option>
+                </select>
                 <button
                   onClick={() => handleModeSwitch('cloud')}
                   style={{
                     padding: '6px 16px',
-                    background: !isLocalMode ? '#1976d2' : '#e3f2fd',
-                    color: !isLocalMode ? '#fff' : '#1976d2',
-                    border: !isLocalMode ? '1.5px solid #1976d2' : '1.5px solid #90caf9',
+                    background: !isCloudMode ? '#1976d2' : '#e3f2fd',
+                    color: !isCloudMode ? '#fff' : '#1976d2',
+                    border: !isCloudMode ? '1.5px solid #1976d2' : '1.5px solid #90caf9',
                     borderRadius: 8,
                     fontWeight: 600,
                     fontSize: 14,
@@ -450,9 +502,9 @@ function MarkdownEditor({ themeMode, setThemeMode }) {
                   onClick={() => handleModeSwitch('local')}
                   style={{
                     padding: '6px 16px',
-                    background: isLocalMode ? '#ffd54f' : '#fffde7',
-                    color: isLocalMode ? '#b26a00' : '#b26a00',
-                    border: isLocalMode ? '1.5px solid #ffd54f' : '1.5px solid #ffe082',
+                    background: isCloudMode ? '#ffd54f' : '#fffde7',
+                    color: isCloudMode ? '#b26a00' : '#b26a00',
+                    border: isCloudMode ? '1.5px solid #ffd54f' : '1.5px solid #ffe082',
                     borderRadius: 8,
                     fontWeight: 600,
                     fontSize: 14,
@@ -468,20 +520,20 @@ function MarkdownEditor({ themeMode, setThemeMode }) {
               </div>
             </EditorHeader>
             <EditorContent>
-              {layout === LAYOUT_TYPES.SPLIT_HORIZONTAL && (
+              {splitMode === LAYOUT_TYPES.SPLIT_HORIZONTAL && (
                 <SplitHorizontal>
                   {renderEditor()}
                   {renderPreview()}
                 </SplitHorizontal>
               )}
-              {layout === LAYOUT_TYPES.SPLIT_VERTICAL && (
+              {splitMode === LAYOUT_TYPES.SPLIT_VERTICAL && (
                 <SplitVertical>
                   {renderEditor()}
                   {renderPreview()}
                 </SplitVertical>
               )}
-              {layout === LAYOUT_TYPES.EDITOR_ONLY && renderEditor()}
-              {layout === LAYOUT_TYPES.PREVIEW_ONLY && renderPreview()}
+              {splitMode === LAYOUT_TYPES.EDITOR_ONLY && renderEditor()}
+              {splitMode === LAYOUT_TYPES.PREVIEW_ONLY && renderPreview()}
             </EditorContent>
           </EditorMain>
         </EditorLayout>

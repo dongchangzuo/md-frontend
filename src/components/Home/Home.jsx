@@ -1,82 +1,51 @@
 import React from 'react';
-import styled from 'styled-components';
+import { useNavigate } from 'react-router-dom';
+import { lang } from '../../i18n/lang';
 import './Home.css';
 
-const HomeWrapper = styled.div`
-  background: ${({ theme }) => theme.card};
-  color: ${({ theme }) => theme.text};
-  min-height: 100vh;
-`;
+const Home = ({ user, onLogout, onNavigate, language, setLanguage }) => {
+  const navigate = useNavigate();
+  const t = lang[language];
 
-const Container = styled.div`
-  padding: 20px;
-`;
-
-const Button = styled.button`
-  padding: 10px 20px;
-  margin: 10px;
-  border: none;
-  border-radius: 4px;
-  background-color: #4a90e2;
-  color: white;
-  cursor: pointer;
-  transition: background-color 0.2s;
-
-  &:hover {
-    background-color: #357abd;
-  }
-`;
-
-const Home = ({ user, onLogout, onNavigate }) => {
-  const handleMarkdownClick = () => {
-    console.log('Markdown button clicked');
-    onNavigate('markdown');
-  };
-
-  const handleOCRClick = () => {
-    console.log('OCR button clicked');
-    onNavigate('ocr');
-  };
-
-  const handleShapeEditorClick = () => {
-    console.log('Shape Editor button clicked');
-    onNavigate('shapes');
+  const handleLogout = () => {
+    onLogout();
+    navigate('/login');
   };
 
   return (
-    <HomeWrapper>
-      <Container>
-        <h1>Welcome, {user?.username || 'User'}!</h1>
-        <div>
-          <Button onClick={handleMarkdownClick}>Markdown Editor</Button>
-          <Button onClick={handleOCRClick}>OCR</Button>
-          <Button onClick={handleShapeEditorClick}>Shape Editor</Button>
-          <Button onClick={onLogout}>Logout</Button>
+    <div className="home-container">
+      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 16 }}>
+        <select value={language} onChange={e => setLanguage(e.target.value)} style={{ fontSize: 15, padding: '4px 12px', borderRadius: 6, border: '1px solid #ddd', background: '#f5f5f5', color: '#222', outline: 'none' }}>
+          <option value="zh">中文</option>
+          <option value="en">English</option>
+        </select>
+      </div>
+      <div className="home-content">
+        <h1>{t.welcome(user?.username)}</h1>
+        <div className="user-info">
+          <h2>{t.userInfo}</h2>
+          <p>{t.userId}: {user?.id}</p>
+          <p>{t.roles}: {user?.roles?.join(', ')}</p>
         </div>
-        
-        <div className="user-info-panel">
-          <h2>User Information</h2>
-          <div className="info-grid">
-            <div className="info-item">
-              <label>Username:</label>
-              <span>{user.username}</span>
-            </div>
-            <div className="info-item">
-              <label>Email:</label>
-              <span>{user.email}</span>
-            </div>
-            <div className="info-item">
-              <label>User ID:</label>
-              <span>{user.id}</span>
-            </div>
-            <div className="info-item">
-              <label>Roles:</label>
-              <span>{user.roles?.join(', ') || 'User'}</span>
-            </div>
+        <div className="app-grid">
+          <div className="app-card" onClick={() => onNavigate('markdown')}>
+            <h3>{t.markdownEditor}</h3>
+            <p>Create and edit markdown documents</p>
+          </div>
+          <div className="app-card" onClick={() => onNavigate('ocr')}>
+            <h3>{t.ocr}</h3>
+            <p>Extract text from images</p>
+          </div>
+          <div className="app-card" onClick={() => onNavigate('shape')}>
+            <h3>{t.shapeEditor}</h3>
+            <p>Create and edit shapes</p>
           </div>
         </div>
-      </Container>
-    </HomeWrapper>
+        <button onClick={handleLogout} className="logout-button">
+          {t.logout}
+        </button>
+      </div>
+    </div>
   );
 };
 
