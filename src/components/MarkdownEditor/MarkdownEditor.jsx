@@ -5,6 +5,7 @@ import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import rehypeRaw from 'rehype-raw';
 import remarkEmoji from 'remark-emoji';
+import remarkFrontmatter from 'remark-frontmatter';
 import 'katex/dist/katex.min.css';
 import FileTree from '../FileTree/FileTree';
 import { tokenManager } from '../../services/api';
@@ -479,14 +480,6 @@ const MarkdownPreview = styled.div`
   p { margin: 1em 0; }
   ul, ol { margin: 1em 0 1em 2em; }
   li { margin: 0.3em 0; }
-  code {
-    background: ${props => props.theme.codeBg};
-    color: ${props => props.theme.codeText};
-    font-family: 'Fira Mono', 'Menlo', 'Consolas', monospace;
-    font-size: 0.97em;
-    border-radius: 4px;
-    padding: 2px 6px;
-  }
   pre {
     background: ${props => props.theme.codeBg};
     color: ${props => props.theme.codeText};
@@ -495,7 +488,30 @@ const MarkdownPreview = styled.div`
     border-radius: 6px;
     padding: 14px 18px;
     margin: 1.2em 0;
-    overflow-x: auto;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    overflow: visible;
+  }
+  pre code {
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+    font-family: inherit;
+    font-size: inherit;
+    color: inherit;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    line-height: 1.5;
+    tab-size: 4;
+    hyphens: none;
+  }
+  code {
+    background: ${props => props.theme.codeBg};
+    color: ${props => props.theme.codeText};
+    font-family: 'Fira Mono', 'Menlo', 'Consolas', monospace;
+    font-size: 0.97em;
+    border-radius: 4px;
+    padding: 2px 6px;
   }
   blockquote {
     background: ${props => props.theme.blockquoteBg};
@@ -556,6 +572,18 @@ const MarkdownPreview = styled.div`
     margin: 1em 0;
     overflow-x: auto;
     overflow-y: hidden;
+  }
+
+  .frontmatter {
+    background: ${({ theme }) => theme.codeBg};
+    padding: 1em;
+    margin-bottom: 1em;
+    border-radius: 4px;
+    font-family: 'Fira Mono', 'Menlo', 'Consolas', monospace;
+    font-size: 0.9em;
+    color: ${({ theme }) => theme.codeText};
+    white-space: pre;
+    overflow-x: auto;
   }
 `;
 
@@ -852,10 +880,14 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
           remarkPlugins={[
             [remarkGfm, {
               strikethrough: true,
-              singleTilde: true
+              singleTilde: true,
+              autolink: true,
+              taskList: true,
+              table: true
             }],
             remarkMath,
-            [remarkEmoji, { padSpaceAfter: true }]
+            [remarkEmoji, { padSpaceAfter: true }],
+            [remarkFrontmatter, ['yaml']]
           ]}
           rehypePlugins={[rehypeKatex, rehypeRaw]}
           components={{
@@ -866,8 +898,20 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
             ul: ({node, ...props}) => <ul {...props} />,
             ol: ({node, ...props}) => <ol {...props} />,
             li: ({node, ...props}) => <li {...props} />,
-            code: ({node, inline, ...props}) => 
-              inline ? <code {...props} /> : <pre><code {...props} /></pre>,
+            code: ({node, inline, className, children, ...props}) => {
+              const match = /language-(\w+)/.exec(className || '');
+              return !inline && match ? (
+                <pre>
+                  <code className={className} {...props}>
+                    {String(children).replace(/\n$/, '')}
+                  </code>
+                </pre>
+              ) : (
+                <code className={className} {...props}>
+                  {children}
+                </code>
+              );
+            },
             blockquote: ({node, ...props}) => <blockquote {...props} />,
             img: ({node, ...props}) => <img {...props} />,
             table: ({node, ...props}) => <table {...props} />,
@@ -880,6 +924,20 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
             mark: ({node, ...props}) => <mark {...props} />,
             math: ({node, inline, ...props}) => (
               <span className={inline ? 'math-inline' : 'math-display'} {...props} />
+            ),
+            yaml: ({node, ...props}) => (
+              <div className="frontmatter" {...props} />
+            ),
+            a: ({node, ...props}) => (
+              <a 
+                {...props} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                style={{ 
+                  color: props.theme?.link || '#0366d6',
+                  textDecoration: 'none'
+                }}
+              />
             )
           }}
         >
