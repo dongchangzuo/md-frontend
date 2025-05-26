@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import rehypeRaw from 'rehype-raw';
 import remarkEmoji from 'remark-emoji';
 import 'katex/dist/katex.min.css';
 import FileTree from '../FileTree/FileTree';
@@ -543,11 +544,9 @@ const MarkdownPreview = styled.div`
     border-radius: 3px;
   }
   del {
-    background-color: #ffeb3b;
-    color: #000;
-    text-decoration: none;
-    padding: 0.2em 0.4em;
-    border-radius: 3px;
+    text-decoration: line-through;
+    color: ${({ theme }) => theme.text};
+    opacity: 0.7;
   }
   .math-inline {
     padding: 0 0.2em;
@@ -858,7 +857,7 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
             remarkMath,
             [remarkEmoji, { padSpaceAfter: true }]
           ]}
-          rehypePlugins={[rehypeKatex]}
+          rehypePlugins={[rehypeKatex, rehypeRaw]}
           components={{
             h1: ({node, ...props}) => <h1 {...props} />,
             h2: ({node, ...props}) => <h2 {...props} />,
@@ -878,6 +877,7 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
             th: ({node, ...props}) => <th {...props} />,
             td: ({node, ...props}) => <td {...props} />,
             del: ({node, ...props}) => <del {...props} />,
+            mark: ({node, ...props}) => <mark {...props} />,
             math: ({node, inline, ...props}) => (
               <span className={inline ? 'math-inline' : 'math-display'} {...props} />
             )
