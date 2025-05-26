@@ -138,6 +138,19 @@ const SplitVertical = styled.div`
   width: 100%;
   height: 100%;
   overflow: hidden;
+  position: relative;
+
+  &::after {
+    content: '';
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    height: 1px;
+    background: ${({ theme }) => theme.border};
+    box-shadow: 0 0 4px ${({ theme }) => theme.border};
+    z-index: 1;
+  }
 `;
 
 const EditorContainer = styled.div`
@@ -147,6 +160,12 @@ const EditorContainer = styled.div`
   background: ${({ theme }) => theme.card};
   border-right: 1px solid ${({ theme }) => theme.border};
   overflow: hidden;
+  position: relative;
+
+  ${SplitVertical} & {
+    border-right: none;
+    border-bottom: 1px solid ${({ theme }) => theme.border};
+  }
 `;
 
 const MarkdownTextarea = styled.textarea`
@@ -191,6 +210,11 @@ const PreviewContainer = styled.div`
   display: flex;
   flex-direction: column;
   height: 100%;
+  position: relative;
+
+  ${SplitVertical} & {
+    border-top: 1px solid ${({ theme }) => theme.border};
+  }
 
   /* 自定义滚动条样式 */
   &::-webkit-scrollbar {
@@ -543,7 +567,7 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
   const setLanguage = propSetLanguage || setInternalLanguage;
   const [content, setContent] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
-  const [splitMode, setSplitMode] = useState(false);
+  const [splitMode, setSplitMode] = useState(LAYOUT_TYPES.SPLIT_HORIZONTAL);
   const [cloudMode, setCloudMode] = useState(false);
   const [files, setFiles] = useState([]);
   const [currentFile, setCurrentFile] = useState(null);
