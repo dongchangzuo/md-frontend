@@ -434,30 +434,10 @@ const MarkdownPreview = styled.div`
   border-radius: 8px;
   padding: 24px;
   flex: 1;
-  height: 100%;
   display: flex;
   flex-direction: column;
-  overflow-x: auto;
-
-  /* 自定义滚动条样式 */
-  &::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: ${({ theme }) => theme.bg};
-    border-radius: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme.border};
-    border-radius: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: ${({ theme }) => theme.primary};
-  }
+  overflow: visible;
+  box-sizing: border-box;
 
   > *:first-child {
     margin-top: 0;
