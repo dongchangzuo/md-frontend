@@ -100,6 +100,8 @@ export const lang = {
     noPermission: '没有权限',
     networkError: '网络错误',
     unknownError: '未知错误',
+    exportHtml: '导出HTML',
+    exportSuccess: '已复制到剪贴板',
 
     // OCR
     ocrTitle: 'OCR文字识别',
@@ -261,6 +263,8 @@ export const lang = {
     noPermission: 'No permission',
     networkError: 'Network error',
     unknownError: 'Unknown error',
+    exportHtml: 'Export HTML',
+    exportSuccess: 'Copied to clipboard',
 
     // OCR
     ocrTitle: 'OCR Text Recognition',

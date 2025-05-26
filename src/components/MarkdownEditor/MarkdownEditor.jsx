@@ -3,6 +3,7 @@ import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
+import remarkEmoji from 'remark-emoji';
 import 'katex/dist/katex.min.css';
 import FileTree from '../FileTree/FileTree';
 import { tokenManager } from '../../services/api';
@@ -11,6 +12,12 @@ import { useNavigate } from 'react-router-dom';
 import { lang } from '../../i18n/lang';
 import './MarkdownEditor.css';
 import { useTheme } from '../../theme/ThemeContext';
+import { marked } from 'marked';
+import emoji from 'emoji-toolkit';
+
+// 配置 emoji-toolkit
+emoji.allow_native = true;
+emoji.replace_mode = 'unified';
 
 // 布局类型
 const LAYOUT_TYPES = {
@@ -23,19 +30,29 @@ const LAYOUT_TYPES = {
 const EditorWrapper = styled.div`
   background: ${({ theme }) => theme.card};
   color: ${({ theme }) => theme.text};
-  min-height: 100vh;
+  height: 100vh;
+  overflow: hidden;
 `;
 
 const Container = styled.div`
   display: flex;
   flex-direction: column;
   height: 100vh;
+  overflow: hidden;
 `;
 
 const EditorLayout = styled.div`
   display: flex;
-  height: 100%;
+  height: calc(100vh - 60px); // 减去头部高度
   position: relative;
+  overflow: hidden;
+`;
+
+const EditorHeaderActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-right: 16px;
 `;
 
 const FileTreeWrapper = styled.div`
@@ -83,18 +100,19 @@ const EditorMain = styled.div`
   display: flex;
   flex-direction: column;
   background: ${({ theme }) => theme.card};
+  overflow: hidden;
 `;
 
 const EditorHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 24px 8px 24px;
+  padding: 12px 16px;
   border-bottom: 1px solid ${({ theme }) => theme.border};
   background: ${({ theme }) => theme.card};
 `;
 
-const EditorHeaderActions = styled.div`
+const HeaderActions = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
@@ -104,12 +122,14 @@ const EditorContent = styled.div`
   flex: 1;
   display: flex;
   background: ${({ theme }) => theme.card};
+  overflow: hidden;
 `;
 
 const SplitHorizontal = styled.div`
   display: flex;
   width: 100%;
   height: 100%;
+  overflow: hidden;
 `;
 
 const SplitVertical = styled.div`
@@ -117,6 +137,7 @@ const SplitVertical = styled.div`
   flex-direction: column;
   width: 100%;
   height: 100%;
+  overflow: hidden;
 `;
 
 const EditorContainer = styled.div`
@@ -125,20 +146,41 @@ const EditorContainer = styled.div`
   flex-direction: column;
   background: ${({ theme }) => theme.card};
   border-right: 1px solid ${({ theme }) => theme.border};
+  overflow: hidden;
 `;
 
 const MarkdownTextarea = styled.textarea`
   width: 100%;
   height: 100%;
-  min-height: 300px;
   padding: 16px;
   font-size: 16px;
   border: none;
   outline: none;
   background: ${({ theme }) => theme.bg};
   color: ${({ theme }) => theme.text};
-  resize: vertical;
+  resize: none;
   border-radius: 0 0 8px 8px;
+  overflow-y: auto;
+
+  /* 自定义滚动条样式 */
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.bg};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.border};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: ${({ theme }) => theme.primary};
+  }
 `;
 
 const PreviewContainer = styled.div`
@@ -148,7 +190,27 @@ const PreviewContainer = styled.div`
   overflow: auto;
   display: flex;
   flex-direction: column;
-  min-height: 100%;
+  height: 100%;
+
+  /* 自定义滚动条样式 */
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.bg};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.border};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: ${({ theme }) => theme.primary};
+  }
 `;
 
 const LayoutButton = styled.button`
@@ -217,6 +279,28 @@ const ModeButton = styled.button`
     100% {
       left: 100%;
     }
+  }
+`;
+
+const ActionButton = styled.button`
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid ${({ theme }) => theme.border};
+  background: ${({ theme }) => theme.card};
+  color: ${({ theme }) => theme.text};
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
+
+  &:hover {
+    background: ${({ theme }) => theme.primary};
+    color: white;
+    border-color: ${({ theme }) => theme.primary};
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 `;
 
@@ -324,9 +408,30 @@ const MarkdownPreview = styled.div`
   border-radius: 8px;
   padding: 24px;
   flex: 1;
-  min-height: 100%;
+  height: 100%;
   display: flex;
   flex-direction: column;
+  overflow-x: auto;
+
+  /* 自定义滚动条样式 */
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: ${({ theme }) => theme.bg};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: ${({ theme }) => theme.border};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: ${({ theme }) => theme.primary};
+  }
 
   > *:first-child {
     margin-top: 0;
@@ -401,6 +506,34 @@ const MarkdownPreview = styled.div`
     border-top: 1.5px solid ${props => props.theme.hr};
     margin: 2em 0;
   }
+  img.emoji {
+    height: 1.2em;
+    width: 1.2em;
+    margin: 0 .05em 0 .1em;
+    vertical-align: -0.1em;
+  }
+  mark {
+    background-color: #ffeb3b;
+    color: #000;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+  }
+  del {
+    background-color: #ffeb3b;
+    color: #000;
+    text-decoration: none;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+  }
+  .math-inline {
+    padding: 0 0.2em;
+  }
+
+  .math-display {
+    margin: 1em 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
 `;
 
 function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }) {
@@ -430,6 +563,7 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
   const [isCollapsed, setIsCollapsed] = useState(false);
   const sidebarRef = useRef(null);
   const [markdownTheme, setMarkdownTheme] = useState('default');
+  const [showExportSuccess, setShowExportSuccess] = useState(false);
 
   const handleContentChange = (e) => {
     setContent(e.target.value);
@@ -692,7 +826,14 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
     <PreviewContainer>
       <MarkdownPreview theme={markdownThemes[markdownTheme].styles}>
         <ReactMarkdown 
-          remarkPlugins={[remarkGfm, remarkMath]}
+          remarkPlugins={[
+            [remarkGfm, {
+              strikethrough: true,
+              singleTilde: true
+            }],
+            remarkMath,
+            [remarkEmoji, { padSpaceAfter: true }]
+          ]}
           rehypePlugins={[rehypeKatex]}
           components={{
             h1: ({node, ...props}) => <h1 {...props} />,
@@ -711,7 +852,11 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
             tbody: ({node, ...props}) => <tbody {...props} />,
             tr: ({node, ...props}) => <tr {...props} />,
             th: ({node, ...props}) => <th {...props} />,
-            td: ({node, ...props}) => <td {...props} />
+            td: ({node, ...props}) => <td {...props} />,
+            del: ({node, ...props}) => <del {...props} />,
+            math: ({node, inline, ...props}) => (
+              <span className={inline ? 'math-inline' : 'math-display'} {...props} />
+            )
           }}
         >
           {content}
@@ -745,6 +890,121 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
     }
   };
 
+  const handleExportHtml = () => {
+    try {
+      // 使用 marked 将 markdown 转换为 HTML，并处理 emoji
+      const htmlContent = marked(emoji.toImage(content));
+      
+      // 创建完整的 HTML 文档
+      const fullHtml = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>${currentFile ? currentFile.name : 'Markdown Export'}</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.6;
+      color: #333;
+      max-width: 800px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1, h2, h3, h4, h5, h6 {
+      margin-top: 24px;
+      margin-bottom: 16px;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+    h1 { font-size: 2em; }
+    h2 { font-size: 1.5em; }
+    h3 { font-size: 1.25em; }
+    p { margin-bottom: 16px; }
+    code {
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+      padding: 0.2em 0.4em;
+      margin: 0;
+      font-size: 85%;
+      background-color: rgba(27,31,35,0.05);
+      border-radius: 3px;
+    }
+    pre {
+      padding: 16px;
+      overflow: auto;
+      font-size: 85%;
+      line-height: 1.45;
+      background-color: #f6f8fa;
+      border-radius: 3px;
+    }
+    pre code {
+      padding: 0;
+      margin: 0;
+      background-color: transparent;
+    }
+    blockquote {
+      padding: 0 1em;
+      color: #6a737d;
+      border-left: 0.25em solid #dfe2e5;
+      margin: 0 0 16px 0;
+    }
+    table {
+      border-spacing: 0;
+      border-collapse: collapse;
+      margin-bottom: 16px;
+    }
+    table th, table td {
+      padding: 6px 13px;
+      border: 1px solid #dfe2e5;
+    }
+    table tr {
+      background-color: #fff;
+      border-top: 1px solid #c6cbd1;
+    }
+    table tr:nth-child(2n) {
+      background-color: #f6f8fa;
+    }
+    img {
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+    img.emoji {
+      height: 1.2em;
+      width: 1.2em;
+      margin: 0 .05em 0 .1em;
+      vertical-align: -0.1em;
+    }
+    a {
+      color: #0366d6;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  ${htmlContent}
+</body>
+</html>`;
+
+      // 复制到剪贴板
+      navigator.clipboard.writeText(fullHtml).then(() => {
+        setShowExportSuccess(true);
+        setTimeout(() => setShowExportSuccess(false), 2000);
+      });
+    } catch (error) {
+      console.error('Export failed:', error);
+    }
+  };
+
+  const renderExportButton = () => (
+    <ActionButton onClick={handleExportHtml} title={t.exportHtml || 'Export as HTML'}>
+      {showExportSuccess ? (t.exportSuccess || 'Copied!') : (t.exportHtml || 'Export HTML')}
+    </ActionButton>
+  );
+
   return (
     <EditorWrapper>
       <Container>
@@ -771,7 +1031,7 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
           <EditorMain>
             <EditorHeader>
               <h2>{currentFile ? currentFile.name : t.markdownEditorTitle}</h2>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <HeaderActions>
                 <select 
                   value={language} 
                   onChange={e => setLanguage(e.target.value)} 
@@ -803,7 +1063,8 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
                 </ModeButton>
                 {renderLayoutControls()}
                 {renderThemeSwitcher()}
-              </div>
+                {renderExportButton()}
+              </HeaderActions>
             </EditorHeader>
             <EditorContent>
               {splitMode === LAYOUT_TYPES.SPLIT_HORIZONTAL && (

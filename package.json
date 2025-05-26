@@ -10,16 +10,20 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "emoji-toolkit": "^9.0.1",
     "gif.js": "^0.2.0",
     "html2canvas": "^1.4.1",
     "katex": "^0.16.22",
+    "marked": "^15.0.12",
     "react": "^19.1.0",
     "react-color": "^2.19.3",
     "react-dom": "^19.1.0",
     "react-markdown": "^10.1.0",
     "react-router-dom": "^7.6.0",
     "rehype-katex": "^7.0.1",
+    "remark-emoji": "^5.0.1",
     "remark-gfm": "^4.0.1",
+    "remark-mark": "^0.0.0",
     "remark-math": "^6.0.0",
     "styled-components": "^6.1.18"
   },
