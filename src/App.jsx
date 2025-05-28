@@ -14,6 +14,8 @@ import { ThemeProvider } from './theme/ThemeContext';
 import { ThemeProvider as StyledThemeProvider } from 'styled-components';
 import { useTheme } from './theme/ThemeContext';
 import { GlobalStyle } from './styles/globalStyle';
+import Profile from './pages/Profile/Profile';
+import Settings from './pages/Settings/Settings';
 
 // 安全存储实现
 const secureStorage = {
@@ -240,6 +242,8 @@ function AppContent() {
                 <ApiTester language={language} setLanguage={setLanguage} />
               </ProtectedRoute>
             } />
+            <Route path="/profile" element={<Profile language={language} />} />
+            <Route path="/settings" element={<Settings language={language} />} />
           </Routes>
         </div>
       </Router>

@@ -16,6 +16,7 @@ import './MarkdownEditor.css';
 import { useTheme } from '../../theme/ThemeContext';
 import { marked } from 'marked';
 import emoji from 'emoji-toolkit';
+import ProfileButton from '../ProfileButton/ProfileButton';
 
 // 配置 emoji-toolkit
 emoji.allow_native = true;
@@ -159,6 +160,7 @@ const HeaderActions = styled.div`
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-left: auto;
 `;
 
 const EditorContent = styled.div`
@@ -852,7 +854,7 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
   );
 
   const renderThemeSwitcher = () => (
-    <div style={{ marginLeft: 'auto', marginRight: 0, display: 'flex', alignItems: 'center' }}>
+    <div style={{ display: 'flex', alignItems: 'center' }}>
       <ThemeSelector
         value={markdownTheme}
         onChange={(e) => setMarkdownTheme(e.target.value)}
@@ -1145,6 +1147,7 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
                 {renderLayoutControls()}
                 {renderThemeSwitcher()}
                 {renderExportButton()}
+                <ProfileButton language={language} />
               </HeaderActions>
             </EditorHeader>
             <EditorContent>
