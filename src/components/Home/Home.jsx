@@ -44,6 +44,10 @@ const Home = ({ user, onLogout, onNavigate, language, setLanguage }) => {
             <h3>{t.jsonFormatter}</h3>
             <p>{t.formatAndValidateJson}</p>
           </div>
+          <div className="app-card" onClick={() => onNavigate('api')}>
+            <h3>API Tester</h3>
+            <p>Test and debug API endpoints</p>
+          </div>
         </div>
         <button onClick={handleLogout} className="logout-button">
           {t.logout}

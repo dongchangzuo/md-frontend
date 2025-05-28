@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import styled from 'styled-components';
 import { lang } from '../../i18n/lang';
 import { useTheme } from '../../theme/ThemeContext';
+import { useNavigate } from 'react-router-dom';
 import './Login.css';
 import { authAPI } from '../../services/api';
 
@@ -10,6 +11,7 @@ const Login = ({ onLogin, onSwitchToSignup, language, setLanguage }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const t = lang[language];
 
@@ -23,9 +25,12 @@ const Login = ({ onLogin, onSwitchToSignup, language, setLanguage }) => {
     }
 
     try {
-      await onLogin(email, password);
+      const response = await authAPI.login({ email, password });
+      await onLogin(response);
+      navigate('/home');
     } catch (err) {
-      setError(t.loginFailed);
+      console.error('Login error:', err);
+      setError(err.message || t.loginFailed);
     }
   };
 

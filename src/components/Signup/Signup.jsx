@@ -3,8 +3,9 @@ import styled from 'styled-components';
 import { lang } from '../../i18n/lang';
 import { useTheme } from '../../theme/ThemeContext';
 import './Signup.css';
+import { authAPI } from '../../services/api';
 
-const Signup = ({ onSignup, language, setLanguage }) => {
+const Signup = ({ onSignup, onSwitchToLogin, language, setLanguage }) => {
   const { theme, themeMode, toggleTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -29,9 +30,12 @@ const Signup = ({ onSignup, language, setLanguage }) => {
     }
 
     try {
-      await onSignup(email, username, password);
+      const response = await authAPI.signup({ email, username, password });
+      await onSignup(response);
+      onSwitchToLogin();
     } catch (err) {
-      setError(t.signupFailed);
+      console.error('Signup error:', err);
+      setError(err.message || t.signupFailed);
     }
   };
 
@@ -102,6 +106,12 @@ const Signup = ({ onSignup, language, setLanguage }) => {
             {t.signup}
           </button>
         </form>
+        <div className="switch-auth">
+          <span>{t.alreadyHaveAccount}</span>
+          <button onClick={onSwitchToLogin} className="switch-button">
+            {t.switchToLogin}
+          </button>
+        </div>
       </div>
     </div>
   );

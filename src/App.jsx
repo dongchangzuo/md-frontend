@@ -8,6 +8,7 @@ import MarkdownEditor from './components/MarkdownEditor/MarkdownEditor'
 import OCR from './components/OCR/OCR'
 import ShapeEditor from './components/ShapeEditor'
 import JsonFormat from './components/JsonFormat/JsonFormat'
+import ApiTester from './components/ApiTester/ApiTester'
 import { authAPI, tokenManager } from './services/api'
 import { ThemeProvider } from './theme/ThemeContext';
 import { ThemeProvider as StyledThemeProvider } from 'styled-components';
@@ -71,6 +72,14 @@ const secureStorage = {
   }
 };
 
+// 添加一个受保护的路由组件
+const ProtectedRoute = ({ children, user }) => {
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+  return children;
+};
+
 function AppContent() {
   const { theme, themeMode, toggleTheme } = useTheme();
   const [user, setUser] = useState(null);
@@ -88,8 +97,11 @@ function AppContent() {
         if (token) {
           const storedUser = secureStorage.getItem('user');
           if (storedUser) {
-            setUser(JSON.parse(storedUser));
+            const userInfo = JSON.parse(storedUser);
+            setUser(userInfo);
             setAuthToken(token);
+          } else {
+            handleLogout();
           }
         } else {
           handleLogout();
@@ -147,51 +159,9 @@ function AppContent() {
     setCurrentPage(page);
   };
 
-  // Render the appropriate component based on authentication and current page
-  const renderContent = () => {
-    console.log('Current page:', currentPage);
-    console.log('User:', user);
-    
-    if (isLoading) {
-      return <div className="loading">Loading...</div>;
-    }
-
-    if (!user) {
-      return showSignup ? (
-        <Signup onSignup={handleSignup} onSwitchToLogin={toggleAuthMode} language={language} setLanguage={setLanguage} />
-      ) : (
-        <Login onLogin={handleLogin} onSwitchToSignup={toggleAuthMode} language={language} setLanguage={setLanguage} />
-      );
-    }
-
-    // User is authenticated, show the appropriate page
-    switch (currentPage) {
-      case 'markdown':
-        console.log('Rendering MarkdownEditor');
-        return <MarkdownEditor language={language} setLanguage={setLanguage} />;
-      case 'ocr':
-        console.log('Rendering OCR');
-        return <OCR language={language} setLanguage={setLanguage} />;
-      case 'shapes':
-        console.log('Rendering ShapeEditor');
-        return <ShapeEditor language={language} setLanguage={setLanguage} />;
-      case 'json':
-        console.log('Rendering JsonFormat');
-        return <JsonFormat language={language} />;
-      case 'home':
-      default:
-        console.log('Rendering Home');
-        return (
-          <Home 
-            user={user} 
-            onLogout={handleLogout} 
-            onNavigate={navigateTo}
-            language={language}
-            setLanguage={setLanguage}
-          />
-        );
-    }
-  };
+  if (isLoading) {
+    return <div className="loading">Loading...</div>;
+  }
 
   return (
     <StyledThemeProvider theme={theme}>
@@ -199,16 +169,77 @@ function AppContent() {
       <Router>
         <div className="app">
           <Routes>
-            <Route path="/login" element={<Login onLogin={handleLogin} language={language} setLanguage={setLanguage} />} />
-            <Route path="/signup" element={<Signup onSignup={handleSignup} language={language} setLanguage={setLanguage} />} />
-            <Route path="/" element={renderContent()} />
-            <Route path="/editor" element={<ShapeEditor language={language} setLanguage={setLanguage} />} />
-            <Route path="/editor/map" element={<ShapeEditor defaultTab="map" language={language} setLanguage={setLanguage} />} />
-            <Route path="/editor/tree" element={<ShapeEditor defaultTab="tree" language={language} setLanguage={setLanguage} />} />
-            <Route path="/markdown" element={<MarkdownEditor language={language} setLanguage={setLanguage} />} />
-            <Route path="/ocr" element={<OCR language={language} setLanguage={setLanguage} />} />
-            <Route path="/json" element={<JsonFormat language={language} />} />
-            <Route path="/home" element={<Home user={user} onLogout={handleLogout} onNavigate={navigateTo} language={language} setLanguage={setLanguage} />} />
+            <Route path="/login" element={
+              user ? <Navigate to="/home" replace /> : (
+                showSignup ? (
+                  <Signup onSignup={handleSignup} onSwitchToLogin={toggleAuthMode} language={language} setLanguage={setLanguage} />
+                ) : (
+                  <Login onLogin={handleLogin} onSwitchToSignup={toggleAuthMode} language={language} setLanguage={setLanguage} />
+                )
+              )
+            } />
+            <Route path="/signup" element={
+              user ? <Navigate to="/home" replace /> : (
+                <Signup onSignup={handleSignup} onSwitchToLogin={toggleAuthMode} language={language} setLanguage={setLanguage} />
+              )
+            } />
+            <Route path="/" element={
+              <ProtectedRoute user={user}>
+                <Home 
+                  user={user} 
+                  onLogout={handleLogout} 
+                  onNavigate={navigateTo}
+                  language={language}
+                  setLanguage={setLanguage}
+                />
+              </ProtectedRoute>
+            } />
+            <Route path="/home" element={
+              <ProtectedRoute user={user}>
+                <Home 
+                  user={user} 
+                  onLogout={handleLogout} 
+                  onNavigate={navigateTo}
+                  language={language}
+                  setLanguage={setLanguage}
+                />
+              </ProtectedRoute>
+            } />
+            <Route path="/markdown" element={
+              <ProtectedRoute user={user}>
+                <MarkdownEditor language={language} setLanguage={setLanguage} />
+              </ProtectedRoute>
+            } />
+            <Route path="/ocr" element={
+              <ProtectedRoute user={user}>
+                <OCR language={language} setLanguage={setLanguage} />
+              </ProtectedRoute>
+            } />
+            <Route path="/editor" element={
+              <ProtectedRoute user={user}>
+                <ShapeEditor language={language} setLanguage={setLanguage} />
+              </ProtectedRoute>
+            } />
+            <Route path="/editor/map" element={
+              <ProtectedRoute user={user}>
+                <ShapeEditor defaultTab="map" language={language} setLanguage={setLanguage} />
+              </ProtectedRoute>
+            } />
+            <Route path="/editor/tree" element={
+              <ProtectedRoute user={user}>
+                <ShapeEditor defaultTab="tree" language={language} setLanguage={setLanguage} />
+              </ProtectedRoute>
+            } />
+            <Route path="/json" element={
+              <ProtectedRoute user={user}>
+                <JsonFormat language={language} />
+              </ProtectedRoute>
+            } />
+            <Route path="/api" element={
+              <ProtectedRoute user={user}>
+                <ApiTester language={language} setLanguage={setLanguage} />
+              </ProtectedRoute>
+            } />
           </Routes>
         </div>
       </Router>
