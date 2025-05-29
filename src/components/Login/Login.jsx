@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { lang } from '../../i18n/lang';
-import { useTheme } from '../../theme/ThemeContext';
 import { useNavigate } from 'react-router-dom';
 import './Login.css';
 import { authAPI } from '../../services/api';
@@ -173,7 +172,6 @@ const ErrorMessage = styled.div`
 `;
 
 const Login = ({ onLogin, onSwitchToSignup, language, setLanguage }) => {
-  const { theme, themeMode, toggleTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -230,7 +228,7 @@ const Login = ({ onLogin, onSwitchToSignup, language, setLanguage }) => {
             </InputIcon>
             <Input
               type="email"
-              placeholder={t.email || 'Email'}
+              placeholder={t.email}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -246,7 +244,7 @@ const Login = ({ onLogin, onSwitchToSignup, language, setLanguage }) => {
             </InputIcon>
             <Input
               type="password"
-              placeholder={t.password || 'Password'}
+              placeholder={t.password}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               required
