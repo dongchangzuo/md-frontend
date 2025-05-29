@@ -17,6 +17,7 @@ import { GlobalStyle } from './styles/globalStyle';
 import Profile from './pages/Profile/Profile';
 import Settings from './pages/Settings/Settings';
 import Membership from './pages/Membership/Membership';
+import Admin from './pages/Admin/Admin';
 
 // 安全存储实现
 const secureStorage = {
@@ -248,6 +249,11 @@ function AppContent() {
             <Route path="/membership" element={
               <ProtectedRoute user={user}>
                 <Membership language={language} />
+              </ProtectedRoute>
+            } />
+            <Route path="/admin" element={
+              <ProtectedRoute user={user}>
+                <Admin language={language} />
               </ProtectedRoute>
             } />
           </Routes>
