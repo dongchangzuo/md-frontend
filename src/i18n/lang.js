@@ -170,6 +170,17 @@ export const lang = {
     jsonIdentifierError: 'JSON 标识符错误',
     line: '行',
     column: '列',
+
+    // JSON Formatter
+    jsonFormatTitle: 'JSON 格式化工具',
+    format: '格式化',
+    minify: '压缩',
+    copy: '复制',
+    clear: '清空',
+    input: '输入',
+    output: '输出',
+    jsonPlaceholder: '在此粘贴 JSON...',
+    jsonOutputPlaceholder: '格式化后的 JSON 将显示在这里...',
   },
   en: {
     // Common
@@ -343,14 +354,15 @@ export const lang = {
     error: 'Error',
 
     // JSON Formatter
-    jsonFormatError: 'Invalid JSON format',
+    jsonFormatTitle: 'JSON Formatter',
     format: 'Format',
     minify: 'Minify',
     copy: 'Copy',
     clear: 'Clear',
     input: 'Input',
     output: 'Output',
-    jsonFormatTitle: 'JSON Formatter',
+    jsonPlaceholder: 'Paste your JSON here...',
+    jsonOutputPlaceholder: 'Formatted JSON will appear here...',
     jsonParseError: 'JSON Parse Error',
     jsonIncompleteError: 'Incomplete JSON data',
     jsonNumberError: 'Invalid JSON number format',
