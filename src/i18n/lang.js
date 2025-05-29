@@ -162,7 +162,14 @@ export const lang = {
 
     // FileTree
     enterFileName: '请输入文件名：',
-    enterFolderName: '请输入文件夹名：'
+    enterFolderName: '请输入文件夹名：',
+    jsonParseError: 'JSON 解析错误',
+    jsonIncompleteError: 'JSON 数据不完整',
+    jsonNumberError: 'JSON 数字格式错误',
+    jsonStringError: 'JSON 字符串格式错误',
+    jsonIdentifierError: 'JSON 标识符错误',
+    line: '行',
+    column: '列',
   },
   en: {
     // Common
@@ -343,6 +350,13 @@ export const lang = {
     clear: 'Clear',
     input: 'Input',
     output: 'Output',
-    jsonFormatTitle: 'JSON Formatter'
+    jsonFormatTitle: 'JSON Formatter',
+    jsonParseError: 'JSON Parse Error',
+    jsonIncompleteError: 'Incomplete JSON data',
+    jsonNumberError: 'Invalid JSON number format',
+    jsonStringError: 'Invalid JSON string format',
+    jsonIdentifierError: 'Invalid JSON identifier',
+    line: 'Line',
+    column: 'Column',
   }
 }; 

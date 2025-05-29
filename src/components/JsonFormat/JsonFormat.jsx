@@ -149,7 +149,30 @@ const JsonFormat = () => {
       setOutput(formatted);
       setError('');
     } catch (err) {
-      setError(t.jsonFormatError);
+      // 提取具体的错误信息
+      let errorMessage = err.message;
+      
+      // 处理常见的 JSON 解析错误
+      if (errorMessage.includes('Unexpected token')) {
+        const position = errorMessage.match(/position (\d+)/);
+        if (position) {
+          const pos = parseInt(position[1]);
+          const lines = jsonString.slice(0, pos).split('\n');
+          const lineNumber = lines.length;
+          const columnNumber = lines[lines.length - 1].length + 1;
+          errorMessage = `${t.jsonParseError} (${t.line}: ${lineNumber}, ${t.column}: ${columnNumber})`;
+        }
+      } else if (errorMessage.includes('Unexpected end of JSON input')) {
+        errorMessage = t.jsonIncompleteError;
+      } else if (errorMessage.includes('Unexpected number')) {
+        errorMessage = t.jsonNumberError;
+      } else if (errorMessage.includes('Unexpected string')) {
+        errorMessage = t.jsonStringError;
+      } else if (errorMessage.includes('Unexpected identifier')) {
+        errorMessage = t.jsonIdentifierError;
+      }
+      
+      setError(errorMessage);
       setOutput('');
     }
   };
