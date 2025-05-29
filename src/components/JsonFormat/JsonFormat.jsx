@@ -19,34 +19,36 @@ const JsonFormatContainer = styled.div`
   display: flex;
   flex-direction: column;
   background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
-  padding: 2rem;
+  padding: 0.5rem;
 `;
 
 const ContentCard = styled.div`
   background: rgba(255, 255, 255, 0.1);
   backdrop-filter: blur(10px);
-  border-radius: 20px;
-  padding: 2rem;
+  border-radius: 12px;
+  padding: 0.75rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   animation: ${fadeIn} 0.5s ease-out;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 0.5rem;
 `;
 
 const Title = styled.h1`
   color: white;
   text-align: center;
-  margin-bottom: 2rem;
-  font-size: 2rem;
+  margin: 0;
+  font-size: 1.25rem;
+  padding: 0.25rem 0;
 `;
 
 const EditorContainer = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 2rem;
+  gap: 0.5rem;
   flex: 1;
+  min-height: calc(100vh - 100px);
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
@@ -56,19 +58,21 @@ const EditorContainer = styled.div`
 const EditorSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.25rem;
+  height: 100%;
 `;
 
 const SectionLabel = styled.label`
   color: white;
-  font-size: 1.1rem;
-  margin-bottom: 0.5rem;
+  font-size: 0.9rem;
+  margin: 0;
+  padding: 0 0.25rem;
 `;
 
 const TextArea = styled.textarea`
   flex: 1;
-  padding: 1rem;
-  border-radius: 10px;
+  padding: 0.5rem;
+  border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(255, 255, 255, 0.1);
   color: white;
@@ -78,6 +82,7 @@ const TextArea = styled.textarea`
   resize: none;
   outline: none;
   transition: all 0.3s ease;
+  min-height: 400px;
 
   &:focus {
     border-color: rgba(255, 255, 255, 0.5);
@@ -91,23 +96,23 @@ const TextArea = styled.textarea`
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 1rem;
+  gap: 0.5rem;
   justify-content: center;
-  margin-top: 1rem;
+  margin-top: 0.5rem;
 `;
 
 const Button = styled.button`
-  padding: 0.8rem 1.5rem;
+  padding: 0.4rem 0.8rem;
   border: none;
-  border-radius: 8px;
+  border-radius: 6px;
   background: ${props => props.secondary ? 'rgba(255, 255, 255, 0.1)' : 'white'};
   color: ${props => props.secondary ? 'white' : '#1a1a2e'};
-  font-size: 1rem;
+  font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.25rem;
 
   &:hover {
     transform: translateY(-2px);
@@ -125,10 +130,11 @@ const Button = styled.button`
 const ErrorMessage = styled.div`
   color: #ff4d4f;
   background: rgba(255, 77, 79, 0.1);
-  padding: 1rem;
-  border-radius: 8px;
-  margin-top: 1rem;
+  padding: 0.5rem;
+  border-radius: 6px;
+  margin-top: 0.5rem;
   text-align: center;
+  font-size: 0.9rem;
 `;
 
 const JsonFormat = () => {
