@@ -118,8 +118,8 @@ const Button = styled.button`
   padding: 0.4rem 0.8rem;
   border: none;
   border-radius: 6px;
-  background: ${props => props.secondary ? 'rgba(255, 255, 255, 0.1)' : 'white'};
-  color: ${props => props.secondary ? 'white' : '#1a1a2e'};
+  background: ${props => props.$secondary ? 'rgba(255, 255, 255, 0.1)' : 'white'};
+  color: ${props => props.$secondary ? 'white' : '#1a1a2e'};
   font-size: 0.85rem;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -130,7 +130,7 @@ const Button = styled.button`
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    background: ${props => props.secondary ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.9)'};
+    background: ${props => props.$secondary ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.9)'};
   }
 
   &:disabled {
@@ -296,7 +296,7 @@ const JsonFormat = () => {
             <Button onClick={handleFormat}>{t.format}</Button>
             <Button onClick={handleMinify}>{t.minify}</Button>
             <Button onClick={handleCopy} disabled={!output}>{t.copy}</Button>
-            <Button onClick={handleClear} secondary>{t.clear}</Button>
+            <Button onClick={handleClear} $secondary>{t.clear}</Button>
           </ButtonGroup>
         </Header>
         <EditorContainer>
