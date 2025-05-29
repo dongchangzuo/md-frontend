@@ -254,14 +254,14 @@ const Login = ({ onLogin, onSwitchToSignup, language, setLanguage }) => {
           </InputGroup>
 
           <Button type="submit">
-            {t.signIn || 'Sign In'}
+            {t.login}
           </Button>
         </Form>
 
         <SwitchText>
-          {t.noAccount || "Don't have an account?"}{' '}
+          {t.noAccount}{' '}
           <span onClick={onSwitchToSignup}>
-            {t.signUp || 'Sign Up'}
+            {t.signup}
           </span>
         </SwitchText>
       </LoginCard>
