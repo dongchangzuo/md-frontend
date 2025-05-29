@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { lang } from '../../i18n/lang';
 import { useNavigate } from 'react-router-dom';
-import './Login.css';
 import { authAPI } from '../../services/api';
 
 const fadeIn = keyframes`
