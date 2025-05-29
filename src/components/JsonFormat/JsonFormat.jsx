@@ -35,6 +35,13 @@ const ContentCard = styled.div`
   gap: 0.5rem;
 `;
 
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+`;
+
 const Title = styled.h1`
   color: white;
   text-align: left;
@@ -98,8 +105,7 @@ const TextArea = styled.textarea`
 const ButtonGroup = styled.div`
   display: flex;
   gap: 0.5rem;
-  justify-content: center;
-  margin-top: 0.5rem;
+  align-items: center;
 `;
 
 const Button = styled.button`
@@ -222,7 +228,15 @@ const JsonFormat = () => {
   return (
     <JsonFormatContainer>
       <ContentCard>
-        <Title>{t.jsonFormatTitle}</Title>
+        <Header>
+          <Title>{t.jsonFormatTitle}</Title>
+          <ButtonGroup>
+            <Button onClick={handleFormat}>{t.format}</Button>
+            <Button onClick={handleMinify}>{t.minify}</Button>
+            <Button onClick={handleCopy} disabled={!output}>{t.copy}</Button>
+            <Button onClick={handleClear} secondary>{t.clear}</Button>
+          </ButtonGroup>
+        </Header>
         <EditorContainer>
           <EditorSection>
             <SectionLabel>{t.input}</SectionLabel>
@@ -241,12 +255,6 @@ const JsonFormat = () => {
             />
           </EditorSection>
         </EditorContainer>
-        <ButtonGroup>
-          <Button onClick={handleFormat}>{t.format}</Button>
-          <Button onClick={handleMinify}>{t.minify}</Button>
-          <Button onClick={handleCopy} disabled={!output}>{t.copy}</Button>
-          <Button onClick={handleClear} secondary>{t.clear}</Button>
-        </ButtonGroup>
         {error && <ErrorMessage>{error}</ErrorMessage>}
       </ContentCard>
     </JsonFormatContainer>
