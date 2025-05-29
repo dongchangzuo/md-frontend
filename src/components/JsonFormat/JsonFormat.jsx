@@ -1,192 +1,153 @@
-import React, { useState, useEffect } from 'react';
-import styled from 'styled-components';
-import { useTheme } from '../../theme/ThemeContext';
+import React, { useState } from 'react';
+import styled, { keyframes } from 'styled-components';
+import { useNavigate } from 'react-router-dom';
 import { lang } from '../../i18n/lang';
-import './JsonFormat.css';
 
-const Container = styled.div`
-  display: flex;
-  flex-direction: column;
-  height: 100vh;
-  background: ${({ theme }) => theme.bg};
-  color: ${({ theme }) => theme.text};
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 `;
 
-const Header = styled.div`
+const JsonFormatContainer = styled.div`
+  min-height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 16px 24px;
-  border-bottom: 1px solid ${({ theme }) => theme.border};
-  background: ${({ theme }) => theme.card};
+  flex-direction: column;
+  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  padding: 2rem;
+`;
+
+const ContentCard = styled.div`
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  animation: ${fadeIn} 0.5s ease-out;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 `;
 
 const Title = styled.h1`
-  margin: 0;
-  font-size: 1.5rem;
-  color: ${({ theme }) => theme.text};
+  color: white;
+  text-align: center;
+  margin-bottom: 2rem;
+  font-size: 2rem;
 `;
 
-const Actions = styled.div`
-  display: flex;
-  gap: 12px;
-`;
-
-const Button = styled.button`
-  padding: 8px 16px;
-  border-radius: 6px;
-  border: 1px solid ${({ theme }) => theme.border};
-  background: ${({ theme }) => theme.card};
-  color: ${({ theme }) => theme.text};
-  cursor: pointer;
-  font-size: 14px;
-  transition: all 0.2s;
-
-  &:hover {
-    background: ${({ theme }) => theme.primary};
-    color: white;
-    border-color: ${({ theme }) => theme.primary};
-  }
-
-  &:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-`;
-
-const MainContent = styled.div`
-  display: flex;
+const EditorContainer = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
   flex: 1;
-  padding: 24px;
-  gap: 24px;
-  overflow: hidden;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
 `;
 
 const EditorSection = styled.div`
-  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 1rem;
 `;
 
-const PreviewSection = styled.div`
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-`;
-
-const SectionTitle = styled.h2`
-  margin: 0;
+const SectionLabel = styled.label`
+  color: white;
   font-size: 1.1rem;
-  color: ${({ theme }) => theme.text};
+  margin-bottom: 0.5rem;
 `;
 
 const TextArea = styled.textarea`
   flex: 1;
-  padding: 16px;
-  border-radius: 8px;
-  border: 1px solid ${({ theme }) => theme.border};
-  background: ${({ theme }) => theme.card};
-  color: ${({ theme }) => theme.text};
+  padding: 1rem;
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
   font-family: 'Fira Code', monospace;
   font-size: 14px;
   line-height: 1.5;
   resize: none;
   outline: none;
-  tab-size: 2;
-  -moz-tab-size: 2;
-  white-space: pre;
-  word-wrap: normal;
-  overflow-x: auto;
+  transition: all 0.3s ease;
 
   &:focus {
-    border-color: ${({ theme }) => theme.primary};
-    box-shadow: 0 0 0 2px ${({ theme }) => theme.primary}20;
+    border-color: rgba(255, 255, 255, 0.5);
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
   }
 
-  &::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: ${({ theme }) => theme.card};
-    border-radius: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme.border};
-    border-radius: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: ${({ theme }) => theme.primary};
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.5);
   }
 `;
 
-const PreviewArea = styled.div`
-  flex: 1;
-  padding: 16px;
+const ButtonGroup = styled.div`
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  margin-top: 1rem;
+`;
+
+const Button = styled.button`
+  padding: 0.8rem 1.5rem;
+  border: none;
   border-radius: 8px;
-  border: 1px solid ${({ theme }) => theme.border};
-  background: ${({ theme }) => theme.card};
-  color: ${({ theme }) => theme.text};
-  font-family: 'Fira Code', monospace;
-  font-size: 14px;
-  line-height: 1.5;
-  overflow: auto;
-  white-space: pre-wrap;
+  background: ${props => props.secondary ? 'rgba(255, 255, 255, 0.1)' : 'white'};
+  color: ${props => props.secondary ? 'white' : '#1a1a2e'};
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 
-  .json-key {
-    color: #61dafb;
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    background: ${props => props.secondary ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.9)'};
   }
 
-  .json-string {
-    color: #ff7b72;
-  }
-
-  .json-number {
-    color: #79c0ff;
-  }
-
-  .json-boolean {
-    color: #ff7b72;
-  }
-
-  .json-null {
-    color: #ff7b72;
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
   }
 `;
 
 const ErrorMessage = styled.div`
   color: #ff4d4f;
-  font-size: 14px;
-  margin-top: 8px;
+  background: rgba(255, 77, 79, 0.1);
+  padding: 1rem;
+  border-radius: 8px;
+  margin-top: 1rem;
+  text-align: center;
 `;
 
-const JsonFormat = ({ language: propLanguage }) => {
-  const { theme } = useTheme();
+const JsonFormat = () => {
+  const navigate = useNavigate();
   const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
   const [error, setError] = useState('');
-  const [isMinified, setIsMinified] = useState(false);
-  const language = propLanguage || 'en';
+  const language = 'zh'; // 默认使用中文
   const t = lang[language];
 
   const formatJson = (jsonString, minify = false) => {
     try {
-      // 先尝试解析 JSON
       const parsed = JSON.parse(jsonString);
-      
-      // 根据 minify 参数决定格式化方式
       const formatted = minify 
         ? JSON.stringify(parsed)
         : JSON.stringify(parsed, null, 2);
       
       setOutput(formatted);
       setError('');
-      setIsMinified(minify);
     } catch (err) {
       setError(t.jsonFormatError);
       setOutput('');
@@ -197,7 +158,7 @@ const JsonFormat = ({ language: propLanguage }) => {
     const value = e.target.value;
     setInput(value);
     if (value.trim()) {
-      formatJson(value, isMinified);
+      formatJson(value, false);
     } else {
       setOutput('');
       setError('');
@@ -228,59 +189,37 @@ const JsonFormat = ({ language: propLanguage }) => {
     setError('');
   };
 
-  // 语法高亮函数
-  const highlightJson = (json) => {
-    if (!json) return '';
-    
-    return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, (match) => {
-      let cls = 'json-number';
-      if (/^"/.test(match)) {
-        if (/:$/.test(match)) {
-          cls = 'json-key';
-        } else {
-          cls = 'json-string';
-        }
-      } else if (/true|false/.test(match)) {
-        cls = 'json-boolean';
-      } else if (/null/.test(match)) {
-        cls = 'json-null';
-      }
-      return `<span class="${cls}">${match}</span>`;
-    });
-  };
-
   return (
-    <Container>
-      <Header>
+    <JsonFormatContainer>
+      <ContentCard>
         <Title>{t.jsonFormatTitle}</Title>
-        <Actions>
+        <EditorContainer>
+          <EditorSection>
+            <SectionLabel>{t.input}</SectionLabel>
+            <TextArea
+              value={input}
+              onChange={handleInputChange}
+              placeholder={t.jsonPlaceholder}
+            />
+          </EditorSection>
+          <EditorSection>
+            <SectionLabel>{t.output}</SectionLabel>
+            <TextArea
+              value={output}
+              readOnly
+              placeholder={t.jsonOutputPlaceholder}
+            />
+          </EditorSection>
+        </EditorContainer>
+        <ButtonGroup>
           <Button onClick={handleFormat}>{t.format}</Button>
           <Button onClick={handleMinify}>{t.minify}</Button>
           <Button onClick={handleCopy} disabled={!output}>{t.copy}</Button>
-          <Button onClick={handleClear}>{t.clear}</Button>
-        </Actions>
-      </Header>
-      <MainContent>
-        <EditorSection>
-          <SectionTitle>{t.input}</SectionTitle>
-          <TextArea
-            value={input}
-            onChange={handleInputChange}
-            placeholder="Paste your JSON here..."
-          />
-        </EditorSection>
-        <PreviewSection>
-          <SectionTitle>{t.output}</SectionTitle>
-          <PreviewArea>
-            {error ? (
-              <ErrorMessage>{error}</ErrorMessage>
-            ) : (
-              <pre dangerouslySetInnerHTML={{ __html: highlightJson(output) }} />
-            )}
-          </PreviewArea>
-        </PreviewSection>
-      </MainContent>
-    </Container>
+          <Button onClick={handleClear} secondary>{t.clear}</Button>
+        </ButtonGroup>
+        {error && <ErrorMessage>{error}</ErrorMessage>}
+      </ContentCard>
+    </JsonFormatContainer>
   );
 };
 
