@@ -41,20 +41,6 @@ const LoginCard = styled.div`
 const Logo = styled.div`
   text-align: center;
   margin-bottom: 32px;
-  
-  img {
-    width: 64px;
-    height: 64px;
-    margin-bottom: 16px;
-  }
-`;
-
-const Title = styled.h1`
-  color: white;
-  font-size: 28px;
-  font-weight: 600;
-  text-align: center;
-  margin-bottom: 8px;
 `;
 
 const Subtitle = styled.p`
@@ -232,12 +218,6 @@ const Login = ({ onLogin, onSwitchToSignup, language, setLanguage }) => {
       </LanguageSwitch>
 
       <LoginCard>
-        <Logo>
-          <img src="/logo.png" alt="Logo" />
-          <Title>{t.welcomeBack || 'Welcome Back'}</Title>
-          <Subtitle>{t.loginSubtitle || 'Please sign in to continue'}</Subtitle>
-        </Logo>
-
         {error && <ErrorMessage>{error}</ErrorMessage>}
 
         <Form onSubmit={handleSubmit}>
