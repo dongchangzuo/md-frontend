@@ -37,7 +37,7 @@ const ContentCard = styled.div`
 
 const Title = styled.h1`
   color: white;
-  text-align: center;
+  text-align: left;
   margin: 0;
   font-size: 1.25rem;
   padding: 0.25rem 0;
@@ -49,6 +49,7 @@ const EditorContainer = styled.div`
   gap: 0.5rem;
   flex: 1;
   min-height: calc(100vh - 100px);
+  margin-top: 0.5rem;
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
