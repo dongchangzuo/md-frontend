@@ -188,7 +188,11 @@ const Signup = ({ onSignup, onSwitchToLogin, language, setLanguage }) => {
       onSwitchToLogin();
     } catch (err) {
       console.error('Signup error:', err);
-      setError(err.message || t.signupFailed);
+      if (err.message === 'Email is already in use!') {
+        setError(t.emailAlreadyInUse || '邮箱已被使用');
+      } else {
+        setError(t.signupFailed);
+      }
     }
   };
 

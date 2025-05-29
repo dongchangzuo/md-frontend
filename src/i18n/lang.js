@@ -58,6 +58,7 @@ export const lang = {
     noAccount: '没有账号？',
     switchToLogin: '切换到登录',
     switchToSignup: '切换到注册',
+    emailAlreadyInUse: '该邮箱已被注册',
 
     // 主页
     welcome: username => `欢迎，${username || '用户'}！`,
@@ -222,6 +223,7 @@ export const lang = {
     noAccount: 'Don\'t have an account?',
     switchToLogin: 'Switch to Login',
     switchToSignup: 'Switch to Sign Up',
+    emailAlreadyInUse: 'Email is already in use',
 
     // Home
     welcome: username => `Welcome, ${username || 'User'}!`,
