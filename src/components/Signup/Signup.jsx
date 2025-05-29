@@ -1,17 +1,170 @@
 import React, { useState } from 'react';
-import styled from 'styled-components';
+import styled, { keyframes } from 'styled-components';
 import { lang } from '../../i18n/lang';
-import { useTheme } from '../../theme/ThemeContext';
-import './Signup.css';
 import { authAPI } from '../../services/api';
+import { useNavigate } from 'react-router-dom';
+
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+`;
+
+const SignupContainer = styled.div`
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+`;
+
+const SignupCard = styled.div`
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: 24px;
+  padding: 40px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  animation: ${fadeIn} 0.6s ease-out;
+`;
+
+const Form = styled.form`
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+`;
+
+const InputGroup = styled.div`
+  position: relative;
+`;
+
+const Input = styled.input`
+  width: 100%;
+  padding: 16px;
+  padding-left: 48px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 12px;
+  color: white;
+  font-size: 16px;
+  transition: all 0.3s ease;
+
+  &::placeholder {
+    color: rgba(255, 255, 255, 0.6);
+  }
+
+  &:focus {
+    outline: none;
+    background: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+`;
+
+const InputIcon = styled.div`
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+`;
+
+const Button = styled.button`
+  width: 100%;
+  padding: 16px;
+  background: white;
+  color: #764ba2;
+  border: none;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  margin-top: 8px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  &:active {
+    transform: translateY(0);
+  }
+`;
+
+const SwitchText = styled.p`
+  color: rgba(255, 255, 255, 0.8);
+  text-align: center;
+  margin-top: 24px;
+  font-size: 14px;
+
+  span {
+    color: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      text-decoration: underline;
+    }
+  }
+`;
+
+const LanguageSwitch = styled.div`
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  gap: 8px;
+`;
+
+const LangButton = styled.button`
+  padding: 8px 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: white;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: rgba(255, 255, 255, 0.2);
+  }
+
+  &.active {
+    background: white;
+    color: #764ba2;
+  }
+`;
+
+const ErrorMessage = styled.div`
+  color: #ff4d4f;
+  background: rgba(255, 77, 79, 0.1);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  text-align: center;
+`;
 
 const Signup = ({ onSignup, onSwitchToLogin, language, setLanguage }) => {
-  const { theme, themeMode, toggleTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
+  const navigate = useNavigate();
 
   const t = lang[language];
 
@@ -40,80 +193,103 @@ const Signup = ({ onSignup, onSwitchToLogin, language, setLanguage }) => {
   };
 
   return (
-    <div className="signup">
-      <div className="signup-container">
-        <div className="signup-header">
-          <h1>{t.signup}</h1>
-          <div className="controls">
-            <button onClick={toggleTheme}>
-              {themeMode === 'dark' ? t.lightMode : t.darkMode}
-            </button>
-            <select value={language} onChange={(e) => setLanguage(e.target.value)}>
-              <option value="zh">中文</option>
-              <option value="en">English</option>
-            </select>
-          </div>
-        </div>
+    <SignupContainer>
+      <LanguageSwitch>
+        <LangButton
+          className={language === 'zh' ? 'active' : ''}
+          onClick={() => setLanguage('zh')}
+        >
+          中文
+        </LangButton>
+        <LangButton
+          className={language === 'en' ? 'active' : ''}
+          onClick={() => setLanguage('en')}
+        >
+          English
+        </LangButton>
+      </LanguageSwitch>
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-group">
-            <label htmlFor="email">{t.email}</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder={t.emailPlaceholder}
-            />
-          </div>
+      <SignupCard>
+        {error && <ErrorMessage>{error}</ErrorMessage>}
 
-          <div className="form-group">
-            <label htmlFor="username">{t.username}</label>
-            <input
+        <Form onSubmit={handleSubmit}>
+          <InputGroup>
+            <InputIcon>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </InputIcon>
+            <Input
               type="text"
-              id="username"
+              placeholder={t.username}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              placeholder={t.usernamePlaceholder}
+              required
             />
-          </div>
+          </InputGroup>
 
-          <div className="form-group">
-            <label htmlFor="password">{t.password}</label>
-            <input
+          <InputGroup>
+            <InputIcon>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+                <polyline points="22,6 12,13 2,6" />
+              </svg>
+            </InputIcon>
+            <Input
+              type="email"
+              placeholder={t.email}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+            />
+          </InputGroup>
+
+          <InputGroup>
+            <InputIcon>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </InputIcon>
+            <Input
               type="password"
-              id="password"
+              placeholder={t.password}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder={t.passwordPlaceholder}
+              required
             />
-          </div>
+          </InputGroup>
 
-          <div className="form-group">
-            <label htmlFor="confirmPassword">{t.confirmPassword}</label>
-            <input
+          <InputGroup>
+            <InputIcon>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+                <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+              </svg>
+            </InputIcon>
+            <Input
               type="password"
-              id="confirmPassword"
+              placeholder={t.confirmPassword}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder={t.confirmPasswordPlaceholder}
+              required
             />
-          </div>
+          </InputGroup>
 
-          {error && <div className="error">{error}</div>}
-
-          <button type="submit" className="submit-button">
+          <Button type="submit">
             {t.signup}
-          </button>
-        </form>
-        <div className="switch-auth">
-          <span>{t.alreadyHaveAccount}</span>
-          <button onClick={onSwitchToLogin} className="switch-button">
-            {t.switchToLogin}
-          </button>
-        </div>
-      </div>
-    </div>
+          </Button>
+        </Form>
+
+        <SwitchText>
+          {t.alreadyHaveAccount}{' '}
+          <span onClick={onSwitchToLogin}>
+            {t.login}
+          </span>
+        </SwitchText>
+      </SignupCard>
+    </SignupContainer>
   );
 };
 
