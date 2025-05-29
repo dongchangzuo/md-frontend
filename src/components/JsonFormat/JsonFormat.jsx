@@ -2,6 +2,12 @@ import React, { useState } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { lang } from '../../i18n/lang';
+import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
+import json from 'react-syntax-highlighter/dist/esm/languages/hljs/json';
+import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+
+// 注册 JSON 语言
+SyntaxHighlighter.registerLanguage('json', json);
 
 const fadeIn = keyframes`
   from {
@@ -144,6 +150,62 @@ const ErrorMessage = styled.div`
   font-size: 0.9rem;
 `;
 
+const OutputContainer = styled.div`
+  flex: 1;
+  border-radius: 8px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.1);
+  overflow: auto;
+  position: relative;
+
+  .hljs {
+    background: transparent !important;
+    padding: 0.5rem;
+    margin: 0;
+    font-family: 'Fira Code', monospace;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .hljs-string {
+    color: #ffd700 !important;
+  }
+
+  .hljs-number {
+    color: #00ff00 !important;
+  }
+
+  .hljs-literal {
+    color: #ff69b4 !important;
+  }
+
+  .hljs-keyword {
+    color: #ff69b4 !important;
+  }
+
+  .hljs-property,
+  .hljs-attr {
+    color: #ffffff !important;
+  }
+
+  .hljs-punctuation {
+    color: #ffffff !important;
+  }
+
+  .hljs-operator {
+    color: #ff69b4 !important;
+  }
+
+  .hljs-comment {
+    color: #808080 !important;
+  }
+
+  .hljs .hljs-property,
+  .hljs .hljs-attr {
+    color: #ffffff !important;
+  }
+`;
+
 const JsonFormat = () => {
   const navigate = useNavigate();
   const [input, setInput] = useState('');
@@ -248,14 +310,38 @@ const JsonFormat = () => {
           </EditorSection>
           <EditorSection>
             <SectionLabel>{t.output}</SectionLabel>
-            <TextArea
-              value={output}
-              readOnly
-              placeholder={t.jsonOutputPlaceholder}
-            />
+            <OutputContainer>
+              {error ? (
+                <ErrorMessage>{error}</ErrorMessage>
+              ) : output ? (
+                <SyntaxHighlighter
+                  language="json"
+                  style={docco}
+                  customStyle={{
+                    background: 'transparent',
+                    padding: '0.5rem',
+                    margin: 0,
+                    fontSize: '14px',
+                    lineHeight: '1.5',
+                    fontFamily: "'Fira Code', monospace",
+                  }}
+                  wrapLines={true}
+                  wrapLongLines={true}
+                  useInlineStyles={false}
+                  showLineNumbers={false}
+                >
+                  {output}
+                </SyntaxHighlighter>
+              ) : (
+                <TextArea
+                  readOnly
+                  placeholder={t.jsonOutputPlaceholder}
+                  style={{ border: 'none', background: 'transparent' }}
+                />
+              )}
+            </OutputContainer>
           </EditorSection>
         </EditorContainer>
-        {error && <ErrorMessage>{error}</ErrorMessage>}
       </ContentCard>
     </JsonFormatContainer>
   );
