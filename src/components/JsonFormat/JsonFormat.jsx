@@ -64,7 +64,7 @@ const EditorContainer = styled.div`
   grid-template-columns: 1fr 1fr;
   gap: 1rem;
   flex: 1;
-  min-height: calc(100vh - 100px);
+  height: calc(100vh - 120px);
   margin-top: 0.5rem;
 
   @media (max-width: 768px) {
@@ -77,6 +77,7 @@ const EditorSection = styled.div`
   flex-direction: column;
   gap: 0.5rem;
   height: 100%;
+  overflow: hidden;
 `;
 
 const SectionLabel = styled.label`
@@ -100,8 +101,8 @@ const TextArea = styled.textarea`
   resize: none;
   outline: none;
   transition: all 0.3s ease;
-  min-height: 400px;
-  overflow-y: scroll;
+  height: 100%;
+  overflow-y: auto;
 
   &:focus {
     border-color: #00acc1;
