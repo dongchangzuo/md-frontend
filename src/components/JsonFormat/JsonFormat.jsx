@@ -21,11 +21,12 @@ const fadeIn = keyframes`
 `;
 
 const JsonFormatContainer = styled.div`
-  min-height: 100vh;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
   padding: 0.5rem;
+  overflow: hidden;
 `;
 
 const ContentCard = styled.div`
@@ -39,6 +40,7 @@ const ContentCard = styled.div`
   display: flex;
   flex-direction: column;
   gap: 1rem;
+  overflow: hidden;
 `;
 
 const Header = styled.div`
