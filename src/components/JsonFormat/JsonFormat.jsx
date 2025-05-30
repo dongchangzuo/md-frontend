@@ -9,6 +9,69 @@ import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 // 注册 JSON 语言
 SyntaxHighlighter.registerLanguage('json', json);
 
+// 随机数据生成函数
+const generateRandomData = (type) => {
+  // 处理特殊类型标记
+  if (type.startsWith('string (')) {
+    const subtype = type.slice(8, -1);
+    if (subtype === 'ISO 8601') {
+      return new Date().toISOString();
+    }
+    if (subtype === 'enum') {
+      const enums = ['option1', 'option2', 'option3', 'option4', 'option5'];
+      return enums[Math.floor(Math.random() * enums.length)];
+    }
+  }
+
+  // 处理基本类型
+  switch (type) {
+    case 'string':
+      return `"${Math.random().toString(36).substring(7)}"`;
+    case 'number':
+      return (Math.random() * 1000).toFixed(2);
+    case 'integer':
+      return Math.floor(Math.random() * 1000);
+    case 'boolean':
+      return Math.random() > 0.5;
+    case 'null':
+      return null;
+    case 'object':
+      return {};
+    case 'array':
+      return [];
+    default:
+      return '""';
+  }
+};
+
+// 根据模板生成 JSON
+const generateJsonFromTemplate = (template) => {
+  const generateValue = (value) => {
+    if (Array.isArray(value)) {
+      // 处理数组
+      if (value.length === 0) return [];
+      const itemType = value[0];
+      const length = Math.floor(Math.random() * 3) + 1; // 1-3 个元素
+      return Array(length).fill(null).map(() => generateValue(itemType));
+    }
+    
+    if (typeof value === 'object' && value !== null) {
+      // 处理对象
+      if (Object.keys(value).length === 0) return {};
+      const obj = {};
+      for (const [key, type] of Object.entries(value)) {
+        obj[key] = generateValue(type);
+      }
+      return obj;
+    }
+    
+    // 处理基本类型
+    return generateRandomData(value);
+  };
+
+  return JSON.stringify(generateValue(template), null, 2);
+};
+
 const fadeIn = keyframes`
   from {
     opacity: 0;
@@ -124,8 +187,8 @@ const Button = styled.button`
   padding: 0.5rem 1rem;
   border: none;
   border-radius: 8px;
-  background: ${props => props.$secondary ? '#e0f7fa' : '#00acc1'};
-  color: ${props => props.$secondary ? '#006064' : 'white'};
+  background: ${props => props.$active ? '#00acc1' : props.$secondary ? '#e0f7fa' : '#00acc1'};
+  color: ${props => props.$active || !props.$secondary ? 'white' : '#006064'};
   font-size: 0.9rem;
   font-weight: 500;
   cursor: pointer;
@@ -133,11 +196,13 @@ const Button = styled.button`
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 80px;
+  justify-content: center;
 
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    background: ${props => props.$secondary ? '#b2ebf2' : '#0097a7'};
+    background: ${props => props.$active ? '#0097a7' : props.$secondary ? '#b2ebf2' : '#0097a7'};
   }
 
   &:disabled {
@@ -213,8 +278,32 @@ const JsonFormat = () => {
   const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
   const [error, setError] = useState('');
-  const language = 'zh'; // 默认使用中文
+  const [isTemplateMode, setIsTemplateMode] = useState(false);
+  const language = 'zh';
   const t = lang[language];
+
+  const handleTemplateClick = () => {
+    setIsTemplateMode(!isTemplateMode);
+    if (!isTemplateMode) {
+      // 切换到模板模式时，清空输入和输出
+      setInput('');
+      setOutput('');
+      setError('');
+    }
+  };
+
+  const handleGenerate = () => {
+    if (!isTemplateMode) return;
+    
+    try {
+      const template = JSON.parse(input);
+      const generatedJson = generateJsonFromTemplate(template);
+      setOutput(generatedJson);
+      setError('');
+    } catch (err) {
+      setError(t.jsonParseError);
+    }
+  };
 
   const formatJson = (jsonString, minify = false) => {
     try {
@@ -226,10 +315,8 @@ const JsonFormat = () => {
       setOutput(formatted);
       setError('');
     } catch (err) {
-      // 提取具体的错误信息
       let errorMessage = err.message;
       
-      // 处理常见的 JSON 解析错误
       if (errorMessage.includes('Unexpected token')) {
         const position = errorMessage.match(/position (\d+)/);
         if (position) {
@@ -257,7 +344,7 @@ const JsonFormat = () => {
   const handleInputChange = (e) => {
     const value = e.target.value;
     setInput(value);
-    if (value.trim()) {
+    if (value.trim() && !isTemplateMode) {
       formatJson(value, false);
     } else {
       setOutput('');
@@ -266,13 +353,13 @@ const JsonFormat = () => {
   };
 
   const handleFormat = () => {
-    if (input.trim()) {
+    if (input.trim() && !isTemplateMode) {
       formatJson(input, false);
     }
   };
 
   const handleMinify = () => {
-    if (input.trim()) {
+    if (input.trim() && !isTemplateMode) {
       formatJson(input, true);
     }
   };
@@ -295,19 +382,40 @@ const JsonFormat = () => {
         <Header>
           <Title>{t.jsonFormatTitle}</Title>
           <ButtonGroup>
-            <Button onClick={handleFormat}>{t.format}</Button>
-            <Button onClick={handleMinify}>{t.minify}</Button>
+            <Button 
+              onClick={handleTemplateClick} 
+              $active={isTemplateMode}
+            >
+              {t.template}
+            </Button>
+            <Button 
+              onClick={handleGenerate}
+              disabled={!isTemplateMode}
+            >
+              {t.generate}
+            </Button>
+            {!isTemplateMode && (
+              <>
+                <Button onClick={handleFormat}>{t.format}</Button>
+                <Button onClick={handleMinify}>{t.minify}</Button>
+              </>
+            )}
             <Button onClick={handleCopy} disabled={!output}>{t.copy}</Button>
             <Button onClick={handleClear} $secondary>{t.clear}</Button>
           </ButtonGroup>
         </Header>
         <EditorContainer>
           <EditorSection>
-            <SectionLabel>{t.input}</SectionLabel>
+            <SectionLabel>{isTemplateMode ? t.template : t.input}</SectionLabel>
             <TextArea
               value={input}
               onChange={handleInputChange}
-              placeholder={t.jsonPlaceholder}
+              placeholder={isTemplateMode ? t.templatePlaceholder : t.jsonPlaceholder}
+              style={{
+                fontFamily: 'monospace',
+                whiteSpace: 'pre',
+                tabSize: 2
+              }}
             />
           </EditorSection>
           <EditorSection>
@@ -321,24 +429,30 @@ const JsonFormat = () => {
                   style={docco}
                   customStyle={{
                     background: 'transparent',
-                    padding: '0.5rem',
+                    padding: '1rem',
                     margin: 0,
                     fontSize: '14px',
-                    lineHeight: '1.5',
+                    lineHeight: '1.6',
                     fontFamily: "'Fira Code', monospace",
                   }}
                   wrapLines={true}
                   wrapLongLines={true}
                   useInlineStyles={false}
-                  showLineNumbers={false}
+                  showLineNumbers={true}
                 >
                   {output}
                 </SyntaxHighlighter>
               ) : (
                 <TextArea
                   readOnly
-                  placeholder={t.jsonOutputPlaceholder}
-                  style={{ border: 'none', background: 'transparent' }}
+                  placeholder={isTemplateMode ? t.templateOutputPlaceholder : t.jsonOutputPlaceholder}
+                  style={{ 
+                    border: 'none', 
+                    background: 'transparent',
+                    fontFamily: 'monospace',
+                    whiteSpace: 'pre',
+                    tabSize: 2
+                  }}
                 />
               )}
             </OutputContainer>
