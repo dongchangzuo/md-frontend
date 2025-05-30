@@ -26,9 +26,9 @@ const generateRandomData = (type) => {
   // 处理基本类型
   switch (type) {
     case 'string':
-      return `"${Math.random().toString(36).substring(7)}"`;
+      return Math.random().toString(36).substring(7);
     case 'number':
-      return (Math.random() * 1000).toFixed(2);
+      return Number((Math.random() * 1000).toFixed(2));
     case 'integer':
       return Math.floor(Math.random() * 1000);
     case 'boolean':
@@ -40,7 +40,7 @@ const generateRandomData = (type) => {
     case 'array':
       return [];
     default:
-      return '""';
+      return '';
   }
 };
 
@@ -50,9 +50,8 @@ const generateJsonFromTemplate = (template) => {
     if (Array.isArray(value)) {
       // 处理数组
       if (value.length === 0) return [];
-      const itemType = value[0];
-      const length = Math.floor(Math.random() * 3) + 1; // 1-3 个元素
-      return Array(length).fill(null).map(() => generateValue(itemType));
+      // 对于混合类型数组，直接使用数组中的类型标记
+      return value.map(type => generateValue(type));
     }
     
     if (typeof value === 'object' && value !== null) {
