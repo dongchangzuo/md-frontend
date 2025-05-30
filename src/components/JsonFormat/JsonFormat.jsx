@@ -24,42 +24,43 @@ const JsonFormatContainer = styled.div`
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+  background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
   padding: 0.5rem;
 `;
 
 const ContentCard = styled.div`
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.9);
   backdrop-filter: blur(10px);
-  border-radius: 12px;
-  padding: 0.75rem;
+  border-radius: 16px;
+  padding: 1.5rem;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
   animation: ${fadeIn} 0.5s ease-out;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 1rem;
 `;
 
 const Header = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
+  margin-bottom: 1rem;
 `;
 
 const Title = styled.h1`
-  color: white;
+  color: #006064;
   text-align: left;
   margin: 0;
-  font-size: 1.25rem;
+  font-size: 1.5rem;
+  font-weight: 600;
   padding: 0.25rem 0;
 `;
 
 const EditorContainer = styled.div`
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 0.5rem;
+  gap: 1rem;
   flex: 1;
   min-height: calc(100vh - 100px);
   margin-top: 0.5rem;
@@ -72,65 +73,68 @@ const EditorContainer = styled.div`
 const EditorSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.25rem;
+  gap: 0.5rem;
   height: 100%;
 `;
 
 const SectionLabel = styled.label`
-  color: white;
-  font-size: 0.9rem;
+  color: #006064;
+  font-size: 1rem;
+  font-weight: 500;
   margin: 0;
   padding: 0 0.25rem;
 `;
 
 const TextArea = styled.textarea`
   flex: 1;
-  padding: 0.5rem;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
-  color: white;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 2px solid #b2ebf2;
+  background: white;
+  color: #006064;
   font-family: 'Fira Code', monospace;
   font-size: 14px;
-  line-height: 1.5;
+  line-height: 1.6;
   resize: none;
   outline: none;
   transition: all 0.3s ease;
   min-height: 400px;
+  overflow-y: scroll;
 
   &:focus {
-    border-color: rgba(255, 255, 255, 0.5);
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.1);
+    border-color: #00acc1;
+    box-shadow: 0 0 0 3px rgba(0, 172, 193, 0.1);
   }
 
   &::placeholder {
-    color: rgba(255, 255, 255, 0.5);
+    color: #80deea;
   }
 `;
 
 const ButtonGroup = styled.div`
   display: flex;
-  gap: 0.5rem;
+  gap: 0.75rem;
   align-items: center;
 `;
 
 const Button = styled.button`
-  padding: 0.4rem 0.8rem;
+  padding: 0.5rem 1rem;
   border: none;
-  border-radius: 6px;
-  background: ${props => props.$secondary ? 'rgba(255, 255, 255, 0.1)' : 'white'};
-  color: ${props => props.$secondary ? 'white' : '#1a1a2e'};
-  font-size: 0.85rem;
+  border-radius: 8px;
+  background: ${props => props.$secondary ? '#e0f7fa' : '#00acc1'};
+  color: ${props => props.$secondary ? '#006064' : 'white'};
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.5rem;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    background: ${props => props.$secondary ? 'rgba(255, 255, 255, 0.2)' : 'rgba(255, 255, 255, 0.9)'};
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: ${props => props.$secondary ? '#b2ebf2' : '#0097a7'};
   }
 
   &:disabled {
@@ -141,68 +145,63 @@ const Button = styled.button`
 `;
 
 const ErrorMessage = styled.div`
-  color: #ff4d4f;
-  background: rgba(255, 77, 79, 0.1);
-  padding: 0.5rem;
-  border-radius: 6px;
+  color: #d32f2f;
+  background: rgba(211, 47, 47, 0.1);
+  padding: 0.75rem;
+  border-radius: 8px;
   margin-top: 0.5rem;
   text-align: center;
   font-size: 0.9rem;
+  border: 1px solid rgba(211, 47, 47, 0.2);
 `;
 
 const OutputContainer = styled.div`
   flex: 1;
-  border-radius: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  border: 2px solid #b2ebf2;
+  background: white;
   overflow: auto;
   position: relative;
 
   .hljs {
     background: transparent !important;
-    padding: 0.5rem;
+    padding: 1rem;
     margin: 0;
     font-family: 'Fira Code', monospace;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.6;
   }
 
   .hljs-string {
-    color: #ffd700 !important;
+    color: #00897b !important;
   }
 
   .hljs-number {
-    color: #00ff00 !important;
+    color: #f57c00 !important;
   }
 
   .hljs-literal {
-    color: #ff69b4 !important;
+    color: #7b1fa2 !important;
   }
 
   .hljs-keyword {
-    color: #ff69b4 !important;
+    color: #7b1fa2 !important;
   }
 
-  .hljs-property,
-  .hljs-attr {
-    color: #ffffff !important;
+  .hljs-property {
+    color: #006064 !important;
   }
 
   .hljs-punctuation {
-    color: #ffffff !important;
+    color: #006064 !important;
   }
 
   .hljs-operator {
-    color: #ff69b4 !important;
+    color: #7b1fa2 !important;
   }
 
   .hljs-comment {
-    color: #808080 !important;
-  }
-
-  .hljs .hljs-property,
-  .hljs .hljs-attr {
-    color: #ffffff !important;
+    color: #78909c !important;
   }
 `;
 
