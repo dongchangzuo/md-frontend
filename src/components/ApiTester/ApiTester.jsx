@@ -122,13 +122,15 @@ const RequestItemHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 0.5rem;
 `;
 
 const RequestName = styled.div`
   font-weight: 500;
   color: #006064;
   font-size: 0.85rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 `;
 
 const RequestMethod = styled.span`
@@ -1082,7 +1084,10 @@ const ApiTester = () => {
                       onClick={() => handleRequestClick(request)}
                     >
                       <RequestItemHeader>
-                        <RequestName>{request.name}</RequestName>
+                        <RequestName>
+                          {request.name}
+                          <RequestMethod $method={request.method}>{request.method}</RequestMethod>
+                        </RequestName>
                         <DeleteButton onClick={(e) => handleDeleteRequest(request.id, e)}>
                           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="18" y1="6" x2="6" y2="18" />
@@ -1090,8 +1095,6 @@ const ApiTester = () => {
                           </svg>
                         </DeleteButton>
                       </RequestItemHeader>
-                      <RequestMethod $method={request.method}>{request.method}</RequestMethod>
-                      <RequestUrl>{request.url}</RequestUrl>
                     </RequestItem>
                   ))}
               </CollectionRequests>
