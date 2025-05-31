@@ -402,6 +402,7 @@ const ApiTester = () => {
   const t = lang[language];
 
   const contentTypes = [
+    { value: 'none', label: 'None' },
     { value: 'application/json', label: 'JSON' },
     { value: 'application/xml', label: 'XML' },
     { value: 'text/plain', label: 'Text' },
@@ -432,10 +433,8 @@ const ApiTester = () => {
   const handleContentTypeChange = (newType) => {
     setContentType(newType);
     // 更新 Content-Type header
-    const newHeaders = headers.map(header => 
-      header.key === 'Content-Type' ? { ...header, value: newType } : header
-    );
-    if (!newHeaders.some(header => header.key === 'Content-Type')) {
+    const newHeaders = headers.filter(header => header.key !== 'Content-Type');
+    if (newType !== 'none') {
       newHeaders.push({ key: 'Content-Type', value: newType });
     }
     setHeaders(newHeaders);
@@ -460,7 +459,7 @@ const ApiTester = () => {
         headers: headersObj,
       };
 
-      if (method !== 'GET' && requestBody) {
+      if (method !== 'GET' && requestBody && contentType !== 'none') {
         options.body = requestBody;
       }
 
