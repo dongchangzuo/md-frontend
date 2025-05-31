@@ -1110,6 +1110,89 @@ const ApiTester = () => {
     }
   };
 
+  const resolveSchema = (schema, spec) => {
+    if (!schema) return null;
+
+    // 处理引用
+    if (schema.$ref) {
+      const refPath = schema.$ref.replace('#/', '').split('/');
+      let resolved = spec;
+      for (const part of refPath) {
+        resolved = resolved[part];
+      }
+      return resolved;
+    }
+
+    // 处理数组
+    if (schema.type === 'array') {
+      const items = resolveSchema(schema.items, spec);
+      return {
+        type: 'array',
+        items: items
+      };
+    }
+
+    // 处理对象
+    if (schema.type === 'object' || schema.properties) {
+      const properties = {};
+      if (schema.properties) {
+        Object.entries(schema.properties).forEach(([key, value]) => {
+          properties[key] = resolveSchema(value, spec);
+        });
+      }
+      return {
+        type: 'object',
+        properties: properties,
+        required: schema.required || []
+      };
+    }
+
+    // 处理基本类型
+    return {
+      type: schema.type || 'string',
+      format: schema.format,
+      example: schema.example,
+      default: schema.default,
+      enum: schema.enum
+    };
+  };
+
+  const generateExampleValue = (schema) => {
+    if (!schema) return null;
+
+    switch (schema.type) {
+      case 'string':
+        if (schema.enum) return schema.enum[0];
+        if (schema.format === 'date-time') return new Date().toISOString();
+        if (schema.format === 'date') return new Date().toISOString().split('T')[0];
+        if (schema.format === 'email') return 'example@email.com';
+        if (schema.format === 'uuid') return '123e4567-e89b-12d3-a456-426614174000';
+        return schema.example || 'string';
+      
+      case 'number':
+      case 'integer':
+        return schema.example || 0;
+      
+      case 'boolean':
+        return schema.example || false;
+      
+      case 'array':
+        const itemExample = generateExampleValue(schema.items);
+        return itemExample ? [itemExample] : [];
+      
+      case 'object':
+        if (!schema.properties) return {};
+        const example = {};
+        Object.entries(schema.properties).forEach(([key, value]) => {
+          example[key] = generateExampleValue(value);
+        });
+        return example;
+      
+      default:
+        return null;
+    }
+  };
+
   const parseOpenApiFile = async (content) => {
     setImporting(true);
     setImportError('');
@@ -1185,7 +1268,9 @@ const ApiTester = () => {
             // 构建请求体
             let body = '';
             if (operation.requestBody?.content?.['application/json']?.schema) {
-              body = JSON.stringify(operation.requestBody.content['application/json'].schema, null, 2);
+              const resolvedSchema = resolveSchema(operation.requestBody.content['application/json'].schema, spec);
+              const exampleValue = generateExampleValue(resolvedSchema);
+              body = JSON.stringify(exampleValue, null, 2);
             }
 
             requests.push({
