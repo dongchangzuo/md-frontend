@@ -1061,57 +1061,6 @@ const ApiTester = () => {
     setResponse(null);
   };
 
-  const parseOpenApiContent = (content) => {
-    try {
-      // 尝试解析为 JSON
-      return JSON.parse(content);
-    } catch (e) {
-      try {
-        // 如果不是 JSON，尝试解析为 YAML
-        return parse(content);
-      } catch (e) {
-        throw new Error('Invalid OpenAPI specification format. Please provide valid JSON or YAML.');
-      }
-    }
-  };
-
-  const extractSecuritySchemes = (spec) => {
-    const schemes = {};
-    if (spec.components?.securitySchemes) {
-      Object.entries(spec.components.securitySchemes).forEach(([name, scheme]) => {
-        schemes[name] = {
-          type: scheme.type,
-          name: name,
-          description: scheme.description,
-          in: scheme.in,
-          scheme: scheme.scheme,
-          bearerFormat: scheme.bearerFormat,
-          flows: scheme.flows
-        };
-      });
-    }
-    return schemes;
-  };
-
-  const createAuthHeader = (scheme) => {
-    switch (scheme.type) {
-      case 'http':
-        if (scheme.scheme === 'bearer') {
-          return { key: 'Authorization', value: 'Bearer YOUR_TOKEN' };
-        }
-        if (scheme.scheme === 'basic') {
-          return { key: 'Authorization', value: 'Basic YOUR_CREDENTIALS' };
-        }
-        break;
-      case 'apiKey':
-        return { key: scheme.name, value: 'YOUR_API_KEY' };
-      case 'oauth2':
-        return { key: 'Authorization', value: 'Bearer YOUR_ACCESS_TOKEN' };
-      default:
-        return null;
-    }
-  };
-
   const resolveSchema = (schema, spec) => {
     if (!schema) return null;
 
@@ -1119,9 +1068,26 @@ const ApiTester = () => {
     if (schema.$ref) {
       const refPath = schema.$ref.replace('#/', '').split('/');
       let resolved = spec;
-      for (const part of refPath) {
-        resolved = resolved[part];
+      
+      // 处理 Swagger 2.0 和 OpenAPI 3.0 的不同路径
+      if (refPath[0] === 'definitions') {
+        // Swagger 2.0 格式
+        resolved = spec.definitions?.[refPath[1]];
+      } else if (refPath[0] === 'components' && refPath[1] === 'schemas') {
+        // OpenAPI 3.0 格式
+        resolved = spec.components?.schemas?.[refPath[2]];
+      } else {
+        // 其他情况，尝试直接访问
+        for (const part of refPath) {
+          resolved = resolved?.[part];
+        }
       }
+
+      if (!resolved) {
+        console.warn(`Schema reference not found: ${schema.$ref}`);
+        return schema;
+      }
+
       // 递归解析引用的 schema
       return resolveSchema(resolved, spec);
     }
@@ -1165,6 +1131,72 @@ const ApiTester = () => {
     };
   };
 
+  const convertSwaggerToOpenAPI = (swagger) => {
+    // 创建基本的 OpenAPI 3.0 结构
+    const openapi = {
+      openapi: '3.0.0',
+      info: swagger.info,
+      servers: [{ 
+        url: swagger.host ? 
+          `${swagger.schemes?.[0] || 'http'}://${swagger.host}${swagger.basePath || ''}` : 
+          '/'
+      }],
+      paths: {},
+      components: {
+        schemas: {},
+        securitySchemes: {}
+      }
+    };
+
+    // 转换定义
+    if (swagger.definitions) {
+      openapi.components.schemas = swagger.definitions;
+    }
+
+    // 转换路径
+    Object.entries(swagger.paths).forEach(([path, pathItem]) => {
+      openapi.paths[path] = {};
+      Object.entries(pathItem).forEach(([method, operation]) => {
+        if (['get', 'post', 'put', 'delete', 'patch'].includes(method)) {
+          const newOperation = {
+            ...operation,
+            responses: {}
+          };
+
+          // 转换响应
+          Object.entries(operation.responses || {}).forEach(([code, response]) => {
+            newOperation.responses[code] = {
+              description: response.description,
+              content: response.schema ? {
+                'application/json': {
+                  schema: response.schema
+                }
+              } : undefined
+            };
+          });
+
+          // 转换请求体
+          if (operation.parameters) {
+            const bodyParam = operation.parameters.find(p => p.in === 'body');
+            if (bodyParam) {
+              newOperation.requestBody = {
+                content: {
+                  'application/json': {
+                    schema: bodyParam.schema
+                  }
+                }
+              };
+            }
+          }
+
+          openapi.paths[path][method] = newOperation;
+        }
+      });
+    });
+
+    return openapi;
+  };
+
   const generateExampleValue = (schema) => {
     if (!schema) return null;
 
@@ -1204,6 +1236,71 @@ const ApiTester = () => {
     }
   };
 
+  const extractSecuritySchemes = (spec) => {
+    const schemes = {};
+    if (spec.components?.securitySchemes) {
+      Object.entries(spec.components.securitySchemes).forEach(([name, scheme]) => {
+        schemes[name] = {
+          type: scheme.type,
+          name: name,
+          description: scheme.description,
+          in: scheme.in,
+          scheme: scheme.scheme,
+          bearerFormat: scheme.bearerFormat,
+          flows: scheme.flows
+        };
+      });
+    }
+    return schemes;
+  };
+
+  const createAuthHeader = (scheme) => {
+    switch (scheme.type) {
+      case 'http':
+        if (scheme.scheme === 'bearer') {
+          return { key: 'Authorization', value: 'Bearer YOUR_TOKEN' };
+        }
+        if (scheme.scheme === 'basic') {
+          return { key: 'Authorization', value: 'Basic YOUR_CREDENTIALS' };
+        }
+        break;
+      case 'apiKey':
+        return { key: scheme.name, value: 'YOUR_API_KEY' };
+      case 'oauth2':
+        return { key: 'Authorization', value: 'Bearer YOUR_ACCESS_TOKEN' };
+      default:
+        return null;
+    }
+  };
+
+  const parseOpenApiContent = (content) => {
+    try {
+      // 尝试解析为 JSON
+      const spec = JSON.parse(content);
+      
+      // 检查版本
+      if (spec.swagger === '2.0') {
+        return convertSwaggerToOpenAPI(spec);
+      }
+      
+      return spec;
+    } catch (e) {
+      try {
+        // 如果不是 JSON，尝试解析为 YAML
+        const spec = parse(content);
+        
+        // 检查版本
+        if (spec.swagger === '2.0') {
+          return convertSwaggerToOpenAPI(spec);
+        }
+        
+        return spec;
+      } catch (e) {
+        throw new Error('Invalid OpenAPI specification format. Please provide valid JSON or YAML.');
+      }
+    }
+  };
+
   const fetchOpenApiFromUrl = async (url) => {
     try {
       const response = await fetch(url);
@@ -1212,7 +1309,8 @@ const ApiTester = () => {
       }
       const contentType = response.headers.get('content-type');
       if (contentType?.includes('application/json')) {
-        return await response.json();
+        const spec = await response.json();
+        return spec.swagger === '2.0' ? convertSwaggerToOpenAPI(spec) : spec;
       } else {
         const text = await response.text();
         return parseOpenApiContent(text);
@@ -1722,7 +1820,12 @@ const ApiTester = () => {
             <div style={{ marginBottom: '1rem' }}>
               <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
                 <button
-                  onClick={() => setImportType('text')}
+                  onClick={() => {
+                    setImportType('text');
+                    setImportError('');
+                    setImportProgress(0);
+                    setImporting(false);
+                  }}
                   style={{
                     padding: '0.5rem 1rem',
                     border: 'none',
@@ -1736,7 +1839,12 @@ const ApiTester = () => {
                   Paste Content
                 </button>
                 <button
-                  onClick={() => setImportType('url')}
+                  onClick={() => {
+                    setImportType('url');
+                    setImportError('');
+                    setImportProgress(0);
+                    setImporting(false);
+                  }}
                   style={{
                     padding: '0.5rem 1rem',
                     border: 'none',
@@ -1821,6 +1929,7 @@ const ApiTester = () => {
                   setImportUrl('');
                   setImportError('');
                   setImportProgress(0);
+                  setImporting(false);
                   setImportType('text');
                 }}
               >
