@@ -1090,6 +1090,76 @@ const ApiTester = () => {
     setResponse(null);
   };
 
+  const resolveSchema = (schema, spec) => {
+    if (!schema) return null;
+
+    // 处理引用
+    if (schema.$ref) {
+      const refPath = schema.$ref.replace('#/', '').split('/');
+      let resolved = spec;
+      
+      // 处理 OpenAPI 2.0 路径
+      if (refPath[0] === 'definitions') {
+        resolved = spec.definitions?.[refPath[1]];
+      }
+      // 处理 OpenAPI 3.0 路径
+      else if (refPath[0] === 'components' && refPath[1] === 'schemas') {
+        resolved = spec.components?.schemas?.[refPath[2]];
+      } else {
+        // 其他情况，尝试直接访问
+        for (const part of refPath) {
+          resolved = resolved?.[part];
+        }
+      }
+
+      if (!resolved) {
+        console.warn(`Schema reference not found: ${schema.$ref}`);
+        return schema;
+      }
+
+      // 递归解析引用的 schema
+      return resolveSchema(resolved, spec);
+    }
+
+    // 处理数组
+    if (schema.type === 'array') {
+      const items = resolveSchema(schema.items, spec);
+      return {
+        type: 'array',
+        items: items,
+        xml: schema.xml
+      };
+    }
+
+    // 处理对象
+    if (schema.type === 'object' || schema.properties) {
+      const properties = {};
+      if (schema.properties) {
+        Object.entries(schema.properties).forEach(([key, value]) => {
+          // 递归解析每个属性
+          properties[key] = resolveSchema(value, spec);
+        });
+      }
+      return {
+        type: 'object',
+        properties: properties,
+        required: schema.required || [],
+        xml: schema.xml
+      };
+    }
+
+    // 处理基本类型
+    return {
+      type: schema.type || 'string',
+      format: schema.format,
+      example: schema.example,
+      default: schema.default,
+      enum: schema.enum,
+      description: schema.description,
+      xml: schema.xml
+    };
+  };
+
   const generateExampleValue = (schema) => {
     if (!schema) return null;
 
@@ -1164,70 +1234,140 @@ const ApiTester = () => {
     }
   };
 
-  const resolveSchema = (schema, spec) => {
-    if (!schema) return null;
-
-    // 处理引用
-    if (schema.$ref) {
-      const refPath = schema.$ref.replace('#/', '').split('/');
-      let resolved = spec;
-      
-      // 处理 OpenAPI 3.0 路径
-      if (refPath[0] === 'components' && refPath[1] === 'schemas') {
-        resolved = spec.components?.schemas?.[refPath[2]];
-      } else {
-        // 其他情况，尝试直接访问
-        for (const part of refPath) {
-          resolved = resolved?.[part];
+  const convertSwaggerToOpenAPI = (swagger) => {
+    const openapi = {
+      openapi: '3.0.0',
+      info: swagger.info,
+      servers: [
+        {
+          url: swagger.host ? `http${swagger.schemes?.includes('https') ? 's' : ''}://${swagger.host}${swagger.basePath || ''}` : '/',
+          description: 'Converted from Swagger 2.0'
         }
+      ],
+      paths: {},
+      components: {
+        schemas: {},
+        securitySchemes: {}
       }
-
-      if (!resolved) {
-        console.warn(`Schema reference not found: ${schema.$ref}`);
-        return schema;
-      }
-
-      // 递归解析引用的 schema
-      return resolveSchema(resolved, spec);
-    }
-
-    // 处理数组
-    if (schema.type === 'array') {
-      const items = resolveSchema(schema.items, spec);
-      return {
-        type: 'array',
-        items: items,
-        xml: schema.xml
-      };
-    }
-
-    // 处理对象
-    if (schema.type === 'object' || schema.properties) {
-      const properties = {};
-      if (schema.properties) {
-        Object.entries(schema.properties).forEach(([key, value]) => {
-          // 递归解析每个属性
-          properties[key] = resolveSchema(value, spec);
-        });
-      }
-      return {
-        type: 'object',
-        properties: properties,
-        required: schema.required || [],
-        xml: schema.xml
-      };
-    }
-
-    // 处理基本类型
-    return {
-      type: schema.type || 'string',
-      format: schema.format,
-      example: schema.example,
-      default: schema.default,
-      enum: schema.enum,
-      description: schema.description,
-      xml: schema.xml
     };
+
+    // 转换 definitions 到 components.schemas
+    if (swagger.definitions) {
+      openapi.components.schemas = swagger.definitions;
+    }
+
+    // 转换 securityDefinitions 到 components.securitySchemes
+    if (swagger.securityDefinitions) {
+      Object.entries(swagger.securityDefinitions).forEach(([name, scheme]) => {
+        openapi.components.securitySchemes[name] = {
+          type: scheme.type,
+          description: scheme.description,
+          name: scheme.name,
+          in: scheme.in,
+          scheme: scheme.scheme,
+          bearerFormat: scheme.bearerFormat,
+          flows: scheme.flows
+        };
+      });
+    }
+
+    // 转换路径
+    Object.entries(swagger.paths || {}).forEach(([path, pathItem]) => {
+      openapi.paths[path] = {};
+      Object.entries(pathItem).forEach(([method, operation]) => {
+        if (['get', 'post', 'put', 'delete', 'patch', 'options', 'head'].includes(method)) {
+          const newOperation = {
+            ...operation,
+            responses: {}
+          };
+
+          // 转换响应
+          Object.entries(operation.responses || {}).forEach(([code, response]) => {
+            newOperation.responses[code] = {
+              description: response.description,
+              content: {}
+            };
+
+            if (response.schema) {
+              const resolvedSchema = resolveSchema(response.schema, swagger);
+              newOperation.responses[code].content['application/json'] = {
+                schema: resolvedSchema
+              };
+            }
+          });
+
+          // 转换请求体
+          if (operation.parameters) {
+            const bodyParam = operation.parameters.find(p => p.in === 'body');
+            if (bodyParam) {
+              const resolvedSchema = resolveSchema(bodyParam.schema, swagger);
+              const exampleValue = generateExampleValue(resolvedSchema);
+              newOperation.requestBody = {
+                required: bodyParam.required || false,
+                content: {
+                  'application/json': {
+                    schema: resolvedSchema,
+                    example: exampleValue
+                  }
+                }
+              };
+            }
+
+            // 处理其他参数（query, path, header）
+            const otherParams = operation.parameters.filter(p => p.in !== 'body');
+            if (otherParams.length > 0) {
+              newOperation.parameters = otherParams.map(param => {
+                const resolvedSchema = resolveSchema(param.schema || { type: param.type, format: param.format }, swagger);
+                return {
+                  name: param.name,
+                  in: param.in,
+                  description: param.description,
+                  required: param.required || false,
+                  schema: resolvedSchema
+                };
+              });
+            }
+          }
+
+          // 处理 consumes
+          if (operation.consumes && operation.consumes.length > 0) {
+            if (!newOperation.requestBody) {
+              newOperation.requestBody = {
+                content: {}
+              };
+            }
+            operation.consumes.forEach(contentType => {
+              if (!newOperation.requestBody.content[contentType]) {
+                newOperation.requestBody.content[contentType] = {
+                  schema: {
+                    type: 'object'
+                  }
+                };
+              }
+            });
+          }
+
+          // 处理 produces
+          if (operation.produces && operation.produces.length > 0) {
+            Object.keys(newOperation.responses).forEach(code => {
+              operation.produces.forEach(contentType => {
+                if (contentType !== '*/*' && !newOperation.responses[code].content[contentType]) {
+                  newOperation.responses[code].content[contentType] = {
+                    schema: newOperation.responses[code].content['application/json']?.schema || {
+                      type: 'object'
+                    }
+                  };
+                }
+              });
+            });
+          }
+
+          openapi.paths[path][method] = newOperation;
+        }
+      });
+    });
+
+    return openapi;
   };
 
   const parseOpenApiContent = (content) => {
@@ -1236,7 +1376,10 @@ const ApiTester = () => {
       const spec = JSON.parse(content);
       
       // 检查版本
-      if (!spec.openapi) {
+      if (spec.swagger === '2.0') {
+        // 如果是 Swagger 2.0，转换为 OpenAPI 3.0
+        return convertSwaggerToOpenAPI(spec);
+      } else if (!spec.openapi) {
         throw new Error('Invalid OpenAPI specification: missing openapi version');
       }
       
@@ -1247,7 +1390,10 @@ const ApiTester = () => {
         const spec = parse(content);
         
         // 检查版本
-        if (!spec.openapi) {
+        if (spec.swagger === '2.0') {
+          // 如果是 Swagger 2.0，转换为 OpenAPI 3.0
+          return convertSwaggerToOpenAPI(spec);
+        } else if (!spec.openapi) {
           throw new Error('Invalid OpenAPI specification: missing openapi version');
         }
         
@@ -1267,7 +1413,9 @@ const ApiTester = () => {
       const contentType = response.headers.get('content-type');
       if (contentType?.includes('application/json')) {
         const spec = await response.json();
-        if (!spec.openapi) {
+        if (spec.swagger === '2.0') {
+          return convertSwaggerToOpenAPI(spec);
+        } else if (!spec.openapi) {
           throw new Error('Invalid OpenAPI specification: missing openapi version');
         }
         return spec;
