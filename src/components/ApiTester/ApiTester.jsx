@@ -633,6 +633,7 @@ const DialogContent = styled.div`
   width: 400px;
   max-width: 90%;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-sizing: border-box;
 `;
 
 const DialogTitle = styled.h3`
@@ -653,6 +654,7 @@ const DialogInput = styled.input`
   outline: none;
   transition: all 0.3s ease;
   margin-bottom: 1rem;
+  box-sizing: border-box;
 
   &:focus {
     border-color: #00acc1;
@@ -1816,7 +1818,7 @@ const ApiTester = () => {
         <Dialog>
           <DialogContent>
             <DialogTitle>Import OpenAPI Specification</DialogTitle>
-            <div style={{ marginBottom: '1rem' }}>
+            <div style={{ marginBottom: '1rem', width: '100%' }}>
               <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
                 <button
                   onClick={() => {
@@ -1868,7 +1870,9 @@ const ApiTester = () => {
                   style={{
                     height: '300px',
                     marginBottom: '1rem',
-                    fontFamily: 'monospace'
+                    fontFamily: 'monospace',
+                    width: '100%',
+                    boxSizing: 'border-box'
                   }}
                 />
               ) : (
