@@ -710,6 +710,41 @@ const CollectionHeader = styled.div`
   }
 `;
 
+const CollectionControls = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+`;
+
+const AddRequestButton = styled.button`
+  padding: 0.25rem;
+  border: none;
+  background: transparent;
+  color: #00acc1;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+
+  &:hover {
+    background: #b2ebf2;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
+  }
+`;
+
 const CollectionName = styled.div`
   font-weight: 500;
   color: #006064;
@@ -934,6 +969,44 @@ const ApiTester = () => {
     }));
   };
 
+  const handleAddRequestToCollection = (collectionId) => {
+    if (!requestName || !url) return;
+
+    const requestData = {
+      name: requestName,
+      method,
+      url,
+      headers,
+      body: requestBody,
+      contentType,
+      timestamp: new Date().toISOString()
+    };
+
+    // 更新请求列表
+    const updatedRequests = [...savedRequests];
+    const existingIndex = updatedRequests.findIndex(req => req.name === requestName);
+    if (existingIndex !== -1) {
+      updatedRequests[existingIndex] = requestData;
+    } else {
+      updatedRequests.push(requestData);
+    }
+    localStorage.setItem('savedRequests', JSON.stringify(updatedRequests));
+    setSavedRequests(updatedRequests);
+
+    // 更新集合
+    const updatedCollections = collections.map(collection => {
+      if (collection.id === collectionId) {
+        return {
+          ...collection,
+          requests: [...new Set([...collection.requests, requestName])]
+        };
+      }
+      return collection;
+    });
+    localStorage.setItem('collections', JSON.stringify(updatedCollections));
+    setCollections(updatedCollections);
+  };
+
   return (
     <Container>
       <Sidebar>
@@ -957,17 +1030,32 @@ const ApiTester = () => {
                   </svg>
                   {collection.name}
                 </CollectionName>
-                <DeleteButton onClick={(e) => {
-                  e.stopPropagation();
-                  const updatedCollections = collections.filter(c => c.id !== collection.id);
-                  localStorage.setItem('collections', JSON.stringify(updatedCollections));
-                  setCollections(updatedCollections);
-                }}>
-                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </DeleteButton>
+                <CollectionControls>
+                  <AddRequestButton 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleAddRequestToCollection(collection.id);
+                    }}
+                    disabled={!requestName || !url}
+                    title="Add Current Request"
+                  >
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                  </AddRequestButton>
+                  <DeleteButton onClick={(e) => {
+                    e.stopPropagation();
+                    const updatedCollections = collections.filter(c => c.id !== collection.id);
+                    localStorage.setItem('collections', JSON.stringify(updatedCollections));
+                    setCollections(updatedCollections);
+                  }}>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="18" y1="6" x2="6" y2="18" />
+                      <line x1="6" y1="6" x2="18" y2="18" />
+                    </svg>
+                  </DeleteButton>
+                </CollectionControls>
               </CollectionHeader>
               <CollectionRequests $expanded={expandedCollections[collection.id]}>
                 {savedRequests
