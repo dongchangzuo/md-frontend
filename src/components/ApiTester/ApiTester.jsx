@@ -47,15 +47,26 @@ const Header = styled.div`
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #b2ebf2;
 `;
 
 const Title = styled.h1`
   color: #006064;
   text-align: left;
   margin: 0;
-  font-size: 1.5rem;
+  font-size: 1.8rem;
   font-weight: 600;
   padding: 0.25rem 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  svg {
+    width: 28px;
+    height: 28px;
+    color: #00acc1;
+  }
 `;
 
 const RequestSection = styled.div`
@@ -319,7 +330,14 @@ const ApiTester = () => {
     <ApiTesterContainer>
       <ContentCard>
         <Header>
-          <Title>{t.apiTesterTitle}</Title>
+          <Title>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+              <line x1="12" y1="22.08" x2="12" y2="12" />
+            </svg>
+            {t.apiTester.title}
+          </Title>
         </Header>
         <RequestSection>
           <UrlBar>
