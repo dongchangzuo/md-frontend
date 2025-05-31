@@ -1343,6 +1343,11 @@ const ApiTester = () => {
             
             // 构建请求参数
             const parameters = [];
+            const headers = [
+              { key: 'Content-Type', value: 'application/json' }
+            ];
+
+            // 处理参数
             if (operation.parameters) {
               operation.parameters.forEach(param => {
                 if (param.in === 'query') {
@@ -1350,14 +1355,18 @@ const ApiTester = () => {
                     key: param.name,
                     value: param.schema?.default || ''
                   });
+                } else if (param.in === 'header') {
+                  // 检查是否已存在相同的 header
+                  const existingHeaderIndex = headers.findIndex(h => h.key.toLowerCase() === param.name.toLowerCase());
+                  if (existingHeaderIndex === -1) {
+                    headers.push({
+                      key: param.name,
+                      value: param.schema?.default || ''
+                    });
+                  }
                 }
               });
             }
-
-            // 构建请求头
-            const headers = [
-              { key: 'Content-Type', value: 'application/json' }
-            ];
 
             // 添加安全认证头
             if (operation.security) {
@@ -1367,7 +1376,11 @@ const ApiTester = () => {
                   if (scheme) {
                     const authHeader = createAuthHeader(scheme);
                     if (authHeader) {
-                      headers.push(authHeader);
+                      // 检查是否已存在相同的 header
+                      const existingHeaderIndex = headers.findIndex(h => h.key.toLowerCase() === authHeader.key.toLowerCase());
+                      if (existingHeaderIndex === -1) {
+                        headers.push(authHeader);
+                      }
                     }
                   }
                 });
