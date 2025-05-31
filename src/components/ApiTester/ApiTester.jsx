@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
 import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import json from 'react-syntax-highlighter/dist/esm/languages/hljs/json';
@@ -19,12 +19,149 @@ const fadeIn = keyframes`
   }
 `;
 
-const ApiTesterContainer = styled.div`
-  height: 100vh;
+const Container = styled.div`
   display: flex;
-  flex-direction: column;
+  height: 100vh;
   background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
   padding: 0.5rem;
+  gap: 0.5rem;
+  overflow: hidden;
+`;
+
+const Sidebar = styled.div`
+  width: 280px;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 1rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow: hidden;
+`;
+
+const SidebarHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #b2ebf2;
+`;
+
+const SidebarTitle = styled.h2`
+  color: #006064;
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+`;
+
+const RequestList = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  flex: 1;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #b2ebf2;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #00acc1;
+  }
+`;
+
+const RequestItem = styled.div`
+  padding: 0.75rem;
+  border-radius: 8px;
+  background: ${props => props.$active ? '#e0f7fa' : 'white'};
+  border: 2px solid ${props => props.$active ? '#00acc1' : '#b2ebf2'};
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #e0f7fa;
+    border-color: #00acc1;
+  }
+`;
+
+const RequestItemHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
+`;
+
+const RequestName = styled.div`
+  font-weight: 500;
+  color: #006064;
+  font-size: 0.9rem;
+`;
+
+const RequestMethod = styled.span`
+  font-size: 0.8rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  background: ${props => {
+    switch (props.$method) {
+      case 'GET': return '#e3f2fd';
+      case 'POST': return '#e8f5e9';
+      case 'PUT': return '#fff3e0';
+      case 'DELETE': return '#ffebee';
+      default: return '#f5f5f5';
+    }
+  }};
+  color: ${props => {
+    switch (props.$method) {
+      case 'GET': return '#1976d2';
+      case 'POST': return '#2e7d32';
+      case 'PUT': return '#f57c00';
+      case 'DELETE': return '#c62828';
+      default: return '#616161';
+    }
+  }};
+`;
+
+const RequestUrl = styled.div`
+  font-size: 0.8rem;
+  color: #78909c;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+`;
+
+const DeleteButton = styled.button`
+  padding: 0.25rem;
+  border: none;
+  background: transparent;
+  color: #b0bec5;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &:hover {
+    color: #ef5350;
+  }
+`;
+
+const ApiTesterContainer = styled.div`
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
   overflow: hidden;
 `;
 
@@ -40,6 +177,7 @@ const ContentCard = styled.div`
   flex-direction: column;
   gap: 1rem;
   overflow: hidden;
+  min-width: 0;
 `;
 
 const Header = styled.div`
@@ -75,6 +213,8 @@ const RequestSection = styled.div`
   gap: 1rem;
   flex: 1;
   min-height: 0;
+  min-width: 0;
+  overflow: hidden;
 `;
 
 const RequestNameContainer = styled.div`
@@ -208,6 +348,7 @@ const EditorContainer = styled.div`
   flex: 1;
   min-height: 0;
   overflow: hidden;
+  min-width: 0;
 `;
 
 const EditorSection = styled.div`
@@ -457,8 +598,16 @@ const ApiTester = () => {
   const [response, setResponse] = useState(null);
   const [loading, setLoading] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [savedRequests, setSavedRequests] = useState([]);
+  const [activeRequest, setActiveRequest] = useState(null);
   const language = 'zh';
   const t = lang[language];
+
+  // 加载保存的请求
+  useEffect(() => {
+    const requests = JSON.parse(localStorage.getItem('savedRequests') || '[]');
+    setSavedRequests(requests);
+  }, []);
 
   const contentTypes = [
     { value: 'none', label: 'None' },
@@ -565,189 +714,241 @@ const ApiTester = () => {
       timestamp: new Date().toISOString()
     };
 
-    // 获取已保存的请求列表
-    const savedRequests = JSON.parse(localStorage.getItem('savedRequests') || '[]');
-    
-    // 检查是否已存在同名请求
-    const existingIndex = savedRequests.findIndex(req => req.name === requestName);
+    const updatedRequests = [...savedRequests];
+    const existingIndex = updatedRequests.findIndex(req => req.name === requestName);
     
     if (existingIndex !== -1) {
-      // 更新已存在的请求
-      savedRequests[existingIndex] = requestData;
+      updatedRequests[existingIndex] = requestData;
     } else {
-      // 添加新请求
-      savedRequests.push(requestData);
+      updatedRequests.push(requestData);
     }
 
-    // 保存到 localStorage
-    localStorage.setItem('savedRequests', JSON.stringify(savedRequests));
+    localStorage.setItem('savedRequests', JSON.stringify(updatedRequests));
+    setSavedRequests(updatedRequests);
     setSaved(true);
-
-    // 3秒后重置保存状态
     setTimeout(() => setSaved(false), 3000);
   };
 
+  const handleDeleteRequest = (name, e) => {
+    e.stopPropagation();
+    const updatedRequests = savedRequests.filter(req => req.name !== name);
+    localStorage.setItem('savedRequests', JSON.stringify(updatedRequests));
+    setSavedRequests(updatedRequests);
+    if (activeRequest === name) {
+      setActiveRequest(null);
+      resetForm();
+    }
+  };
+
+  const handleRequestClick = (request) => {
+    setActiveRequest(request.name);
+    setRequestName(request.name);
+    setMethod(request.method);
+    setUrl(request.url);
+    setHeaders(request.headers);
+    setRequestBody(request.body);
+    setContentType(request.contentType);
+  };
+
+  const resetForm = () => {
+    setRequestName('Untitled');
+    setMethod('GET');
+    setUrl('');
+    setHeaders([{ key: 'Content-Type', value: 'application/json' }]);
+    setRequestBody('');
+    setContentType('application/json');
+    setResponse(null);
+  };
+
   return (
-    <ApiTesterContainer>
-      <ContentCard>
-        <Header>
-          <Title>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
-              <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
-              <line x1="12" y1="22.08" x2="12" y2="12" />
-            </svg>
-            {t.apiTester.title}
-          </Title>
-        </Header>
-        <RequestSection>
-          <RequestNameContainer>
-            <RequestNameInput
-              value={requestName}
-              onChange={(e) => setRequestName(e.target.value)}
-              placeholder="Request Name"
-            />
-            <SaveButton onClick={handleSave} disabled={saved}>
-              {saved ? 'Saved!' : 'Save'}
-            </SaveButton>
-          </RequestNameContainer>
-          <UrlBar>
-            <MethodSelect value={method} onChange={(e) => setMethod(e.target.value)}>
-              <option value="GET">GET</option>
-              <option value="POST">POST</option>
-              <option value="PUT">PUT</option>
-              <option value="DELETE">DELETE</option>
-              <option value="PATCH">PATCH</option>
-              <option value="HEAD">HEAD</option>
-              <option value="OPTIONS">OPTIONS</option>
-            </MethodSelect>
-            <UrlInput
-              value={url}
-              onChange={(e) => setUrl(e.target.value)}
-              placeholder={t.apiTester.urlPlaceholder}
-            />
-            <SendButton onClick={handleSend} disabled={loading || !url}>
-              {loading ? t.apiTester.sending : t.apiTester.send}
-            </SendButton>
-          </UrlBar>
-
-          <TabsContainer>
-            <Tab
-              $active={activeTab === 'headers'}
-              onClick={() => setActiveTab('headers')}
+    <Container>
+      <Sidebar>
+        <SidebarHeader>
+          <SidebarTitle>Collections</SidebarTitle>
+        </SidebarHeader>
+        <RequestList>
+          {savedRequests.map((request) => (
+            <RequestItem
+              key={request.name}
+              $active={activeRequest === request.name}
+              onClick={() => handleRequestClick(request)}
             >
-              {t.apiTester.headers}
-            </Tab>
-            <Tab
-              $active={activeTab === 'body'}
-              onClick={() => setActiveTab('body')}
-            >
-              {t.apiTester.requestBody}
-            </Tab>
-          </TabsContainer>
+              <RequestItemHeader>
+                <RequestName>{request.name}</RequestName>
+                <DeleteButton onClick={(e) => handleDeleteRequest(request.name, e)}>
+                  <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                    <line x1="18" y1="6" x2="6" y2="18" />
+                    <line x1="6" y1="6" x2="18" y2="18" />
+                  </svg>
+                </DeleteButton>
+              </RequestItemHeader>
+              <RequestMethod $method={request.method}>{request.method}</RequestMethod>
+              <RequestUrl>{request.url}</RequestUrl>
+            </RequestItem>
+          ))}
+        </RequestList>
+      </Sidebar>
+      <ApiTesterContainer>
+        <ContentCard>
+          <Header>
+            <Title>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z" />
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96" />
+                <line x1="12" y1="22.08" x2="12" y2="12" />
+              </svg>
+              {t.apiTester.title}
+            </Title>
+          </Header>
+          <RequestSection>
+            <RequestNameContainer>
+              <RequestNameInput
+                value={requestName}
+                onChange={(e) => setRequestName(e.target.value)}
+                placeholder="Request Name"
+              />
+              <SaveButton onClick={handleSave} disabled={saved}>
+                {saved ? 'Saved!' : 'Save'}
+              </SaveButton>
+            </RequestNameContainer>
+            <UrlBar>
+              <MethodSelect value={method} onChange={(e) => setMethod(e.target.value)}>
+                <option value="GET">GET</option>
+                <option value="POST">POST</option>
+                <option value="PUT">PUT</option>
+                <option value="DELETE">DELETE</option>
+                <option value="PATCH">PATCH</option>
+                <option value="HEAD">HEAD</option>
+                <option value="OPTIONS">OPTIONS</option>
+              </MethodSelect>
+              <UrlInput
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder={t.apiTester.urlPlaceholder}
+              />
+              <SendButton onClick={handleSend} disabled={loading || !url}>
+                {loading ? t.apiTester.sending : t.apiTester.send}
+              </SendButton>
+            </UrlBar>
 
-          <EditorContainer>
-            <EditorSection $isResponse={false}>
-              <SectionHeader>
-                <SectionLabel>
-                  {activeTab === 'body' ? t.apiTester.requestBody : t.apiTester.headers}
-                </SectionLabel>
-                {activeTab === 'body' && (
-                  <ContentTypeSelect
-                    value={contentType}
-                    onChange={(e) => handleContentTypeChange(e.target.value)}
-                  >
-                    {contentTypes.map(type => (
-                      <option key={type.value} value={type.value}>
-                        {type.label}
-                      </option>
-                    ))}
-                  </ContentTypeSelect>
-                )}
-              </SectionHeader>
-              {activeTab === 'body' ? (
-                <TextArea
-                  value={requestBody}
-                  onChange={(e) => setRequestBody(e.target.value)}
-                  placeholder={t.apiTester.requestBodyPlaceholder}
-                  style={{
-                    fontFamily: 'monospace',
-                    whiteSpace: 'pre',
-                    tabSize: 2
-                  }}
-                />
-              ) : (
-                <HeadersGrid>
-                  {headers.map((header, index) => (
-                    <HeaderRow key={index}>
-                      <HeaderInput
-                        value={header.key}
-                        onChange={(e) => handleHeaderChange(index, 'key', e.target.value)}
-                        placeholder="Key"
-                      />
-                      <HeaderInput
-                        value={header.value}
-                        onChange={(e) => handleHeaderChange(index, 'value', e.target.value)}
-                        placeholder="Value"
-                      />
-                      <RemoveButton onClick={() => removeHeader(index)}>
-                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                          <line x1="18" y1="6" x2="6" y2="18" />
-                          <line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                      </RemoveButton>
-                    </HeaderRow>
-                  ))}
-                  <AddHeaderButton onClick={addHeader}>
-                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
-                      <line x1="12" y1="5" x2="12" y2="19" />
-                      <line x1="5" y1="12" x2="19" y2="12" />
-                    </svg>
-                    Add Header
-                  </AddHeaderButton>
-                </HeadersGrid>
-              )}
-            </EditorSection>
+            <TabsContainer>
+              <Tab
+                $active={activeTab === 'headers'}
+                onClick={() => setActiveTab('headers')}
+              >
+                {t.apiTester.headers}
+              </Tab>
+              <Tab
+                $active={activeTab === 'body'}
+                onClick={() => setActiveTab('body')}
+              >
+                {t.apiTester.requestBody}
+              </Tab>
+            </TabsContainer>
 
-            <EditorSection $isResponse={true}>
-              <SectionHeader>
-                <SectionLabel>{t.apiTester.response}</SectionLabel>
-              </SectionHeader>
-              <ResponseContainer>
-                {response && (
-                  <>
-                    <StatusBar>
-                      <StatusCode $code={response.status}>
-                        {response.status} {response.statusText}
-                      </StatusCode>
-                      <ResponseTime>{response.time}ms</ResponseTime>
-                    </StatusBar>
-                    <SyntaxHighlighter
-                      language="json"
-                      style={docco}
-                      customStyle={{
-                        background: 'transparent',
-                        padding: 0,
-                        margin: 0,
-                        fontSize: '14px',
-                        lineHeight: '1.6',
-                        fontFamily: "'Fira Code', monospace",
-                      }}
-                      wrapLines={true}
-                      wrapLongLines={true}
-                      useInlineStyles={false}
-                      showLineNumbers={true}
+            <EditorContainer>
+              <EditorSection $isResponse={false}>
+                <SectionHeader>
+                  <SectionLabel>
+                    {activeTab === 'body' ? t.apiTester.requestBody : t.apiTester.headers}
+                  </SectionLabel>
+                  {activeTab === 'body' && (
+                    <ContentTypeSelect
+                      value={contentType}
+                      onChange={(e) => handleContentTypeChange(e.target.value)}
                     >
-                      {response.body}
-                    </SyntaxHighlighter>
-                  </>
+                      {contentTypes.map(type => (
+                        <option key={type.value} value={type.value}>
+                          {type.label}
+                        </option>
+                      ))}
+                    </ContentTypeSelect>
+                  )}
+                </SectionHeader>
+                {activeTab === 'body' ? (
+                  <TextArea
+                    value={requestBody}
+                    onChange={(e) => setRequestBody(e.target.value)}
+                    placeholder={t.apiTester.requestBodyPlaceholder}
+                    style={{
+                      fontFamily: 'monospace',
+                      whiteSpace: 'pre',
+                      tabSize: 2
+                    }}
+                  />
+                ) : (
+                  <HeadersGrid>
+                    {headers.map((header, index) => (
+                      <HeaderRow key={index}>
+                        <HeaderInput
+                          value={header.key}
+                          onChange={(e) => handleHeaderChange(index, 'key', e.target.value)}
+                          placeholder="Key"
+                        />
+                        <HeaderInput
+                          value={header.value}
+                          onChange={(e) => handleHeaderChange(index, 'value', e.target.value)}
+                          placeholder="Value"
+                        />
+                        <RemoveButton onClick={() => removeHeader(index)}>
+                          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </RemoveButton>
+                      </HeaderRow>
+                    ))}
+                    <AddHeaderButton onClick={addHeader}>
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                      Add Header
+                    </AddHeaderButton>
+                  </HeadersGrid>
                 )}
-              </ResponseContainer>
-            </EditorSection>
-          </EditorContainer>
-        </RequestSection>
-      </ContentCard>
-    </ApiTesterContainer>
+              </EditorSection>
+
+              <EditorSection $isResponse={true}>
+                <SectionHeader>
+                  <SectionLabel>{t.apiTester.response}</SectionLabel>
+                </SectionHeader>
+                <ResponseContainer>
+                  {response && (
+                    <>
+                      <StatusBar>
+                        <StatusCode $code={response.status}>
+                          {response.status} {response.statusText}
+                        </StatusCode>
+                        <ResponseTime>{response.time}ms</ResponseTime>
+                      </StatusBar>
+                      <SyntaxHighlighter
+                        language="json"
+                        style={docco}
+                        customStyle={{
+                          background: 'transparent',
+                          padding: 0,
+                          margin: 0,
+                          fontSize: '14px',
+                          lineHeight: '1.6',
+                          fontFamily: "'Fira Code', monospace",
+                        }}
+                        wrapLines={true}
+                        wrapLongLines={true}
+                        useInlineStyles={false}
+                        showLineNumbers={true}
+                      >
+                        {response.body}
+                      </SyntaxHighlighter>
+                    </>
+                  )}
+                </ResponseContainer>
+              </EditorSection>
+            </EditorContainer>
+          </RequestSection>
+        </ContentCard>
+      </ApiTesterContainer>
+    </Container>
   );
 };
 
