@@ -368,16 +368,16 @@ const ApiTester = () => {
 
           <TabsContainer>
             <Tab
-              $active={activeTab === 'body'}
-              onClick={() => setActiveTab('body')}
-            >
-              {t.requestBody}
-            </Tab>
-            <Tab
               $active={activeTab === 'headers'}
               onClick={() => setActiveTab('headers')}
             >
-              {t.headers}
+              {t.apiTester.headers}
+            </Tab>
+            <Tab
+              $active={activeTab === 'body'}
+              onClick={() => setActiveTab('body')}
+            >
+              {t.apiTester.requestBody}
             </Tab>
           </TabsContainer>
 
