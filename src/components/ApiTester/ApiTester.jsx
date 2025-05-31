@@ -56,6 +56,28 @@ const SidebarTitle = styled.h2`
   font-weight: 600;
 `;
 
+const NewCollectionButton = styled.button`
+  padding: 0.5rem;
+  border: none;
+  background: transparent;
+  color: #00acc1;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.9rem;
+
+  &:hover {
+    color: #0097a7;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+`;
+
 const RequestList = styled.div`
   display: flex;
   flex-direction: column;
@@ -587,6 +609,87 @@ const SaveButton = styled.button`
   }
 `;
 
+const Dialog = styled.div`
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+`;
+
+const DialogContent = styled.div`
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  width: 400px;
+  max-width: 90%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+`;
+
+const DialogTitle = styled.h3`
+  color: #006064;
+  margin: 0 0 1rem 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+`;
+
+const DialogInput = styled.input`
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #b2ebf2;
+  border-radius: 8px;
+  background: white;
+  color: #006064;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease;
+  margin-bottom: 1rem;
+
+  &:focus {
+    border-color: #00acc1;
+    box-shadow: 0 0 0 3px rgba(0, 172, 193, 0.1);
+  }
+`;
+
+const DialogButtons = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.5rem;
+`;
+
+const DialogButton = styled.button`
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &.primary {
+    background: #00acc1;
+    color: white;
+
+    &:hover {
+      background: #0097a7;
+    }
+  }
+
+  &.secondary {
+    background: #e0f7fa;
+    color: #006064;
+
+    &:hover {
+      background: #b2ebf2;
+    }
+  }
+`;
+
 const ApiTester = () => {
   const [method, setMethod] = useState('GET');
   const [url, setUrl] = useState('');
@@ -600,6 +703,9 @@ const ApiTester = () => {
   const [saved, setSaved] = useState(false);
   const [savedRequests, setSavedRequests] = useState([]);
   const [activeRequest, setActiveRequest] = useState(null);
+  const [showNewCollectionDialog, setShowNewCollectionDialog] = useState(false);
+  const [newCollectionName, setNewCollectionName] = useState('');
+  const [collections, setCollections] = useState([]);
   const language = 'zh';
   const t = lang[language];
 
@@ -607,6 +713,12 @@ const ApiTester = () => {
   useEffect(() => {
     const requests = JSON.parse(localStorage.getItem('savedRequests') || '[]');
     setSavedRequests(requests);
+  }, []);
+
+  // 加载保存的集合
+  useEffect(() => {
+    const savedCollections = JSON.parse(localStorage.getItem('collections') || '[]');
+    setCollections(savedCollections);
   }, []);
 
   const contentTypes = [
@@ -760,11 +872,34 @@ const ApiTester = () => {
     setResponse(null);
   };
 
+  const handleCreateCollection = () => {
+    if (!newCollectionName.trim()) return;
+
+    const newCollection = {
+      id: Date.now().toString(),
+      name: newCollectionName.trim(),
+      requests: []
+    };
+
+    const updatedCollections = [...collections, newCollection];
+    localStorage.setItem('collections', JSON.stringify(updatedCollections));
+    setCollections(updatedCollections);
+    setNewCollectionName('');
+    setShowNewCollectionDialog(false);
+  };
+
   return (
     <Container>
       <Sidebar>
         <SidebarHeader>
           <SidebarTitle>Collections</SidebarTitle>
+          <NewCollectionButton onClick={() => setShowNewCollectionDialog(true)}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+            New Collection
+          </NewCollectionButton>
         </SidebarHeader>
         <RequestList>
           {savedRequests.map((request) => (
@@ -948,6 +1083,35 @@ const ApiTester = () => {
           </RequestSection>
         </ContentCard>
       </ApiTesterContainer>
+
+      {showNewCollectionDialog && (
+        <Dialog>
+          <DialogContent>
+            <DialogTitle>New Collection</DialogTitle>
+            <DialogInput
+              value={newCollectionName}
+              onChange={(e) => setNewCollectionName(e.target.value)}
+              placeholder="Collection Name"
+              autoFocus
+            />
+            <DialogButtons>
+              <DialogButton
+                className="secondary"
+                onClick={() => setShowNewCollectionDialog(false)}
+              >
+                Cancel
+              </DialogButton>
+              <DialogButton
+                className="primary"
+                onClick={handleCreateCollection}
+                disabled={!newCollectionName.trim()}
+              >
+                Create
+              </DialogButton>
+            </DialogButtons>
+          </DialogContent>
+        </Dialog>
+      )}
     </Container>
   );
 };
