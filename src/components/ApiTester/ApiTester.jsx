@@ -416,6 +416,36 @@ const ContentTypeSelect = styled.select`
   }
 `;
 
+const SaveButton = styled.button`
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  background: #4caf50;
+  color: white;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 100px;
+  justify-content: center;
+  height: 42px;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: #43a047;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
+`;
+
 const ApiTester = () => {
   const [method, setMethod] = useState('GET');
   const [url, setUrl] = useState('');
@@ -426,6 +456,7 @@ const ApiTester = () => {
   const [headers, setHeaders] = useState([{ key: 'Content-Type', value: 'application/json' }]);
   const [response, setResponse] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [saved, setSaved] = useState(false);
   const language = 'zh';
   const t = lang[language];
 
@@ -523,6 +554,39 @@ const ApiTester = () => {
     }
   };
 
+  const handleSave = () => {
+    const requestData = {
+      name: requestName,
+      method,
+      url,
+      headers,
+      body: requestBody,
+      contentType,
+      timestamp: new Date().toISOString()
+    };
+
+    // 获取已保存的请求列表
+    const savedRequests = JSON.parse(localStorage.getItem('savedRequests') || '[]');
+    
+    // 检查是否已存在同名请求
+    const existingIndex = savedRequests.findIndex(req => req.name === requestName);
+    
+    if (existingIndex !== -1) {
+      // 更新已存在的请求
+      savedRequests[existingIndex] = requestData;
+    } else {
+      // 添加新请求
+      savedRequests.push(requestData);
+    }
+
+    // 保存到 localStorage
+    localStorage.setItem('savedRequests', JSON.stringify(savedRequests));
+    setSaved(true);
+
+    // 3秒后重置保存状态
+    setTimeout(() => setSaved(false), 3000);
+  };
+
   return (
     <ApiTesterContainer>
       <ContentCard>
@@ -543,6 +607,9 @@ const ApiTester = () => {
               onChange={(e) => setRequestName(e.target.value)}
               placeholder="Request Name"
             />
+            <SaveButton onClick={handleSave} disabled={saved}>
+              {saved ? 'Saved!' : 'Save'}
+            </SaveButton>
           </RequestNameContainer>
           <UrlBar>
             <MethodSelect value={method} onChange={(e) => setMethod(e.target.value)}>
