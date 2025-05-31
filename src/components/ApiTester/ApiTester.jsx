@@ -81,22 +81,22 @@ const NewCollectionButton = styled.button`
 const RequestList = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.15rem;
   overflow-y: auto;
   flex: 1;
 
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
   }
 
   &::-webkit-scrollbar-track {
     background: #f1f1f1;
-    border-radius: 3px;
+    border-radius: 2px;
   }
 
   &::-webkit-scrollbar-thumb {
     background: #b2ebf2;
-    border-radius: 3px;
+    border-radius: 2px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
@@ -105,10 +105,10 @@ const RequestList = styled.div`
 `;
 
 const RequestItem = styled.div`
-  padding: 0.75rem;
-  border-radius: 8px;
+  padding: 0.35rem 0.5rem;
+  border-radius: 6px;
   background: ${props => props.$active ? '#e0f7fa' : 'white'};
-  border: 2px solid ${props => props.$active ? '#00acc1' : '#b2ebf2'};
+  border: 1px solid ${props => props.$active ? '#00acc1' : '#b2ebf2'};
   cursor: pointer;
   transition: all 0.3s ease;
 
@@ -128,13 +128,13 @@ const RequestItemHeader = styled.div`
 const RequestName = styled.div`
   font-weight: 500;
   color: #006064;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
 `;
 
 const RequestMethod = styled.span`
-  font-size: 0.8rem;
-  padding: 0.25rem 0.5rem;
-  border-radius: 4px;
+  font-size: 0.75rem;
+  padding: 0.15rem 0.35rem;
+  border-radius: 3px;
   background: ${props => {
     switch (props.$method) {
       case 'GET': return '#e3f2fd';
@@ -156,11 +156,12 @@ const RequestMethod = styled.span`
 `;
 
 const RequestUrl = styled.div`
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   color: #78909c;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  margin-top: 0.15rem;
 `;
 
 const DeleteButton = styled.button`
@@ -691,16 +692,16 @@ const DialogButton = styled.button`
 `;
 
 const CollectionItem = styled.div`
-  margin-bottom: 1rem;
+  margin-bottom: 0.25rem;
 `;
 
 const CollectionHeader = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0.5rem;
+  padding: 0.35rem 0.5rem;
   background: #e0f7fa;
-  border-radius: 8px;
+  border-radius: 6px;
   cursor: pointer;
   transition: all 0.3s ease;
 
@@ -712,22 +713,22 @@ const CollectionHeader = styled.div`
 const CollectionName = styled.div`
   font-weight: 500;
   color: #006064;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: 0.35rem;
 
   svg {
-    width: 16px;
-    height: 16px;
+    width: 14px;
+    height: 14px;
     transition: transform 0.3s ease;
     transform: rotate(${props => props.$expanded ? '90deg' : '0deg'});
   }
 `;
 
 const CollectionRequests = styled.div`
-  margin-top: 0.5rem;
-  padding-left: 1rem;
+  margin-top: 0.15rem;
+  padding-left: 0.75rem;
   display: ${props => props.$expanded ? 'block' : 'none'};
 `;
 
