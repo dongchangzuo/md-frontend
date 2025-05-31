@@ -175,22 +175,20 @@ const Tab = styled.button`
 `;
 
 const EditorContainer = styled.div`
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
   flex: 1;
   min-height: 0;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
+  overflow: hidden;
 `;
 
 const EditorSection = styled.div`
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
-  height: 100%;
+  height: ${props => props.$isResponse ? '80%' : '20%'};
+  min-height: ${props => props.$isResponse ? '300px' : '150px'};
   overflow: hidden;
 `;
 
@@ -200,6 +198,13 @@ const SectionLabel = styled.label`
   font-weight: 500;
   margin: 0;
   padding: 0 0.25rem;
+`;
+
+const SectionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 0.5rem;
 `;
 
 const TextArea = styled.textarea`
@@ -215,6 +220,7 @@ const TextArea = styled.textarea`
   resize: none;
   outline: none;
   transition: all 0.3s ease;
+  min-height: 120px;
 
   &:focus {
     border-color: #00acc1;
@@ -234,6 +240,7 @@ const ResponseContainer = styled.div`
   overflow: auto;
   position: relative;
   padding: 1rem;
+  min-height: 300px;
 
   .hljs {
     background: transparent !important;
@@ -272,16 +279,167 @@ const ResponseTime = styled.span`
   color: #006064;
 `;
 
+const HeadersGrid = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  overflow-y: auto;
+  flex: 1;
+  padding-right: 0.5rem;
+  min-height: 120px;
+
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb {
+    background: #b2ebf2;
+    border-radius: 3px;
+  }
+
+  &::-webkit-scrollbar-thumb:hover {
+    background: #00acc1;
+  }
+`;
+
+const HeaderRow = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 0.5rem;
+  align-items: center;
+`;
+
+const HeaderInput = styled.input`
+  padding: 0.5rem;
+  border: 2px solid #b2ebf2;
+  border-radius: 8px;
+  background: white;
+  color: #006064;
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.3s ease;
+
+  &:focus {
+    border-color: #00acc1;
+    box-shadow: 0 0 0 3px rgba(0, 172, 193, 0.1);
+  }
+`;
+
+const RemoveButton = styled.button`
+  padding: 0.5rem;
+  border: none;
+  border-radius: 8px;
+  background: #ffebee;
+  color: #d32f2f;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+
+  &:hover {
+    background: #ffcdd2;
+  }
+`;
+
+const AddHeaderButton = styled.button`
+  padding: 0.5rem;
+  border: 2px dashed #b2ebf2;
+  border-radius: 8px;
+  background: transparent;
+  color: #00acc1;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+
+  &:hover {
+    background: #e0f7fa;
+    border-color: #00acc1;
+  }
+`;
+
+const ContentTypeSelect = styled.select`
+  padding: 0.5rem;
+  border: 2px solid #b2ebf2;
+  border-radius: 8px;
+  background: white;
+  color: #006064;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s ease;
+  width: 180px;
+
+  &:focus {
+    border-color: #00acc1;
+    box-shadow: 0 0 0 3px rgba(0, 172, 193, 0.1);
+  }
+`;
+
 const ApiTester = () => {
   const [method, setMethod] = useState('GET');
   const [url, setUrl] = useState('');
-  const [activeTab, setActiveTab] = useState('body');
+  const [activeTab, setActiveTab] = useState('headers');
   const [requestBody, setRequestBody] = useState('');
-  const [headers, setHeaders] = useState('{\n  "Content-Type": "application/json"\n}');
+  const [contentType, setContentType] = useState('application/json');
+  const [headers, setHeaders] = useState([{ key: 'Content-Type', value: 'application/json' }]);
   const [response, setResponse] = useState(null);
   const [loading, setLoading] = useState(false);
   const language = 'zh';
   const t = lang[language];
+
+  const contentTypes = [
+    { value: 'application/json', label: 'JSON' },
+    { value: 'application/xml', label: 'XML' },
+    { value: 'text/plain', label: 'Text' },
+    { value: 'application/x-www-form-urlencoded', label: 'Form URL Encoded' },
+    { value: 'multipart/form-data', label: 'Form Data' },
+    { value: 'application/javascript', label: 'JavaScript' },
+    { value: 'text/html', label: 'HTML' },
+    { value: 'text/css', label: 'CSS' },
+    { value: 'text/markdown', label: 'Markdown' },
+    { value: 'application/yaml', label: 'YAML' },
+  ];
+
+  const handleHeaderChange = (index, field, value) => {
+    const newHeaders = [...headers];
+    newHeaders[index] = { ...newHeaders[index], [field]: value };
+    setHeaders(newHeaders);
+  };
+
+  const addHeader = () => {
+    setHeaders([...headers, { key: '', value: '' }]);
+  };
+
+  const removeHeader = (index) => {
+    const newHeaders = headers.filter((_, i) => i !== index);
+    setHeaders(newHeaders);
+  };
+
+  const handleContentTypeChange = (newType) => {
+    setContentType(newType);
+    // 更新 Content-Type header
+    const newHeaders = headers.map(header => 
+      header.key === 'Content-Type' ? { ...header, value: newType } : header
+    );
+    if (!newHeaders.some(header => header.key === 'Content-Type')) {
+      newHeaders.push({ key: 'Content-Type', value: newType });
+    }
+    setHeaders(newHeaders);
+  };
 
   const handleSend = async () => {
     if (!url) return;
@@ -290,7 +448,13 @@ const ApiTester = () => {
     const startTime = Date.now();
 
     try {
-      const headersObj = JSON.parse(headers);
+      const headersObj = headers.reduce((acc, { key, value }) => {
+        if (key && value) {
+          acc[key] = value;
+        }
+        return acc;
+      }, {});
+
       const options = {
         method,
         headers: headersObj,
@@ -359,7 +523,7 @@ const ApiTester = () => {
             <UrlInput
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              placeholder={t.urlPlaceholder}
+              placeholder={t.apiTester.urlPlaceholder}
             />
             <SendButton onClick={handleSend} disabled={loading || !url}>
               {loading ? t.apiTester.sending : t.apiTester.send}
@@ -382,34 +546,72 @@ const ApiTester = () => {
           </TabsContainer>
 
           <EditorContainer>
-            <EditorSection>
-              <SectionLabel>
-                {activeTab === 'body' ? t.requestBody : t.headers}
-              </SectionLabel>
-              <TextArea
-                value={activeTab === 'body' ? requestBody : headers}
-                onChange={(e) => {
-                  if (activeTab === 'body') {
-                    setRequestBody(e.target.value);
-                  } else {
-                    setHeaders(e.target.value);
-                  }
-                }}
-                placeholder={
-                  activeTab === 'body'
-                    ? t.requestBodyPlaceholder
-                    : t.headersPlaceholder
-                }
-                style={{
-                  fontFamily: 'monospace',
-                  whiteSpace: 'pre',
-                  tabSize: 2
-                }}
-              />
+            <EditorSection $isResponse={false}>
+              <SectionHeader>
+                <SectionLabel>
+                  {activeTab === 'body' ? t.apiTester.requestBody : t.apiTester.headers}
+                </SectionLabel>
+                {activeTab === 'body' && (
+                  <ContentTypeSelect
+                    value={contentType}
+                    onChange={(e) => handleContentTypeChange(e.target.value)}
+                  >
+                    {contentTypes.map(type => (
+                      <option key={type.value} value={type.value}>
+                        {type.label}
+                      </option>
+                    ))}
+                  </ContentTypeSelect>
+                )}
+              </SectionHeader>
+              {activeTab === 'body' ? (
+                <TextArea
+                  value={requestBody}
+                  onChange={(e) => setRequestBody(e.target.value)}
+                  placeholder={t.apiTester.requestBodyPlaceholder}
+                  style={{
+                    fontFamily: 'monospace',
+                    whiteSpace: 'pre',
+                    tabSize: 2
+                  }}
+                />
+              ) : (
+                <HeadersGrid>
+                  {headers.map((header, index) => (
+                    <HeaderRow key={index}>
+                      <HeaderInput
+                        value={header.key}
+                        onChange={(e) => handleHeaderChange(index, 'key', e.target.value)}
+                        placeholder="Key"
+                      />
+                      <HeaderInput
+                        value={header.value}
+                        onChange={(e) => handleHeaderChange(index, 'value', e.target.value)}
+                        placeholder="Value"
+                      />
+                      <RemoveButton onClick={() => removeHeader(index)}>
+                        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                          <line x1="18" y1="6" x2="6" y2="18" />
+                          <line x1="6" y1="6" x2="18" y2="18" />
+                        </svg>
+                      </RemoveButton>
+                    </HeaderRow>
+                  ))}
+                  <AddHeaderButton onClick={addHeader}>
+                    <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                      <line x1="12" y1="5" x2="12" y2="19" />
+                      <line x1="5" y1="12" x2="19" y2="12" />
+                    </svg>
+                    Add Header
+                  </AddHeaderButton>
+                </HeadersGrid>
+              )}
             </EditorSection>
 
-            <EditorSection>
-              <SectionLabel>{t.response}</SectionLabel>
+            <EditorSection $isResponse={true}>
+              <SectionHeader>
+                <SectionLabel>{t.apiTester.response}</SectionLabel>
+              </SectionHeader>
               <ResponseContainer>
                 {response && (
                   <>
