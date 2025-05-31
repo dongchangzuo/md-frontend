@@ -1120,7 +1120,8 @@ const ApiTester = () => {
       for (const part of refPath) {
         resolved = resolved[part];
       }
-      return resolved;
+      // 递归解析引用的 schema
+      return resolveSchema(resolved, spec);
     }
 
     // 处理数组
@@ -1128,7 +1129,8 @@ const ApiTester = () => {
       const items = resolveSchema(schema.items, spec);
       return {
         type: 'array',
-        items: items
+        items: items,
+        xml: schema.xml
       };
     }
 
@@ -1137,13 +1139,15 @@ const ApiTester = () => {
       const properties = {};
       if (schema.properties) {
         Object.entries(schema.properties).forEach(([key, value]) => {
+          // 递归解析每个属性
           properties[key] = resolveSchema(value, spec);
         });
       }
       return {
         type: 'object',
         properties: properties,
-        required: schema.required || []
+        required: schema.required || [],
+        xml: schema.xml
       };
     }
 
@@ -1153,7 +1157,9 @@ const ApiTester = () => {
       format: schema.format,
       example: schema.example,
       default: schema.default,
-      enum: schema.enum
+      enum: schema.enum,
+      description: schema.description,
+      xml: schema.xml
     };
   };
 
@@ -1171,6 +1177,7 @@ const ApiTester = () => {
       
       case 'number':
       case 'integer':
+        if (schema.format === 'int64') return schema.example || 9223372036854775807;
         return schema.example || 0;
       
       case 'boolean':
@@ -1178,11 +1185,13 @@ const ApiTester = () => {
       
       case 'array':
         const itemExample = generateExampleValue(schema.items);
+        // 对于必需字段，生成至少一个示例值
         return itemExample ? [itemExample] : [];
       
       case 'object':
         if (!schema.properties) return {};
         const example = {};
+        // 处理所有属性，不再只处理必需字段
         Object.entries(schema.properties).forEach(([key, value]) => {
           example[key] = generateExampleValue(value);
         });
@@ -1204,6 +1213,13 @@ const ApiTester = () => {
       // 验证基本结构
       if (!spec.openapi && !spec.swagger) {
         throw new Error('Invalid OpenAPI specification: missing openapi/swagger version');
+      }
+
+      // 预处理所有 schema 引用
+      if (spec.components?.schemas) {
+        Object.entries(spec.components.schemas).forEach(([name, schema]) => {
+          spec.components.schemas[name] = resolveSchema(schema, spec);
+        });
       }
 
       // 提取安全方案
@@ -1270,6 +1286,14 @@ const ApiTester = () => {
             if (operation.requestBody?.content?.['application/json']?.schema) {
               const resolvedSchema = resolveSchema(operation.requestBody.content['application/json'].schema, spec);
               const exampleValue = generateExampleValue(resolvedSchema);
+              // 确保必需字段存在
+              if (resolvedSchema.required) {
+                resolvedSchema.required.forEach(field => {
+                  if (!exampleValue[field]) {
+                    exampleValue[field] = generateExampleValue(resolvedSchema.properties[field]);
+                  }
+                });
+              }
               body = JSON.stringify(exampleValue, null, 2);
             }
 
