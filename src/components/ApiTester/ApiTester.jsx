@@ -690,6 +690,47 @@ const DialogButton = styled.button`
   }
 `;
 
+const CollectionItem = styled.div`
+  margin-bottom: 1rem;
+`;
+
+const CollectionHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: #e0f7fa;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: #b2ebf2;
+  }
+`;
+
+const CollectionName = styled.div`
+  font-weight: 500;
+  color: #006064;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  svg {
+    width: 16px;
+    height: 16px;
+    transition: transform 0.3s ease;
+    transform: rotate(${props => props.$expanded ? '90deg' : '0deg'});
+  }
+`;
+
+const CollectionRequests = styled.div`
+  margin-top: 0.5rem;
+  padding-left: 1rem;
+  display: ${props => props.$expanded ? 'block' : 'none'};
+`;
+
 const ApiTester = () => {
   const [method, setMethod] = useState('GET');
   const [url, setUrl] = useState('');
@@ -706,19 +747,16 @@ const ApiTester = () => {
   const [showNewCollectionDialog, setShowNewCollectionDialog] = useState(false);
   const [newCollectionName, setNewCollectionName] = useState('');
   const [collections, setCollections] = useState([]);
+  const [expandedCollections, setExpandedCollections] = useState({});
   const language = 'zh';
   const t = lang[language];
 
-  // 加载保存的请求
-  useEffect(() => {
-    const requests = JSON.parse(localStorage.getItem('savedRequests') || '[]');
-    setSavedRequests(requests);
-  }, []);
-
-  // 加载保存的集合
+  // 加载保存的集合和请求
   useEffect(() => {
     const savedCollections = JSON.parse(localStorage.getItem('collections') || '[]');
+    const savedRequests = JSON.parse(localStorage.getItem('savedRequests') || '[]');
     setCollections(savedCollections);
+    setSavedRequests(savedRequests);
   }, []);
 
   const contentTypes = [
@@ -888,6 +926,13 @@ const ApiTester = () => {
     setShowNewCollectionDialog(false);
   };
 
+  const toggleCollection = (collectionId) => {
+    setExpandedCollections(prev => ({
+      ...prev,
+      [collectionId]: !prev[collectionId]
+    }));
+  };
+
   return (
     <Container>
       <Sidebar>
@@ -902,24 +947,51 @@ const ApiTester = () => {
           </NewCollectionButton>
         </SidebarHeader>
         <RequestList>
-          {savedRequests.map((request) => (
-            <RequestItem
-              key={request.name}
-              $active={activeRequest === request.name}
-              onClick={() => handleRequestClick(request)}
-            >
-              <RequestItemHeader>
-                <RequestName>{request.name}</RequestName>
-                <DeleteButton onClick={(e) => handleDeleteRequest(request.name, e)}>
+          {collections.map((collection) => (
+            <CollectionItem key={collection.id}>
+              <CollectionHeader onClick={() => toggleCollection(collection.id)}>
+                <CollectionName $expanded={expandedCollections[collection.id]}>
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <polyline points="9 18 15 12 9 6" />
+                  </svg>
+                  {collection.name}
+                </CollectionName>
+                <DeleteButton onClick={(e) => {
+                  e.stopPropagation();
+                  const updatedCollections = collections.filter(c => c.id !== collection.id);
+                  localStorage.setItem('collections', JSON.stringify(updatedCollections));
+                  setCollections(updatedCollections);
+                }}>
                   <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
                     <line x1="18" y1="6" x2="6" y2="18" />
                     <line x1="6" y1="6" x2="18" y2="18" />
                   </svg>
                 </DeleteButton>
-              </RequestItemHeader>
-              <RequestMethod $method={request.method}>{request.method}</RequestMethod>
-              <RequestUrl>{request.url}</RequestUrl>
-            </RequestItem>
+              </CollectionHeader>
+              <CollectionRequests $expanded={expandedCollections[collection.id]}>
+                {savedRequests
+                  .filter(request => collection.requests.includes(request.name))
+                  .map((request) => (
+                    <RequestItem
+                      key={request.name}
+                      $active={activeRequest === request.name}
+                      onClick={() => handleRequestClick(request)}
+                    >
+                      <RequestItemHeader>
+                        <RequestName>{request.name}</RequestName>
+                        <DeleteButton onClick={(e) => handleDeleteRequest(request.name, e)}>
+                          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </DeleteButton>
+                      </RequestItemHeader>
+                      <RequestMethod $method={request.method}>{request.method}</RequestMethod>
+                      <RequestUrl>{request.url}</RequestUrl>
+                    </RequestItem>
+                  ))}
+              </CollectionRequests>
+            </CollectionItem>
           ))}
         </RequestList>
       </Sidebar>
