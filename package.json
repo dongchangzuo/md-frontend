@@ -28,7 +28,8 @@
     "remark-gfm": "^4.0.1",
     "remark-mark": "^0.0.0",
     "remark-math": "^6.0.0",
-    "styled-components": "^6.1.18"
+    "styled-components": "^6.1.18",
+    "yaml": "^2.8.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",

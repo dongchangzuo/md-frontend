@@ -4,6 +4,7 @@ import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
 import json from 'react-syntax-highlighter/dist/esm/languages/hljs/json';
 import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
 import { lang } from '../../i18n/lang';
+import { parse } from 'yaml';
 
 // 注册 JSON 语言
 SyntaxHighlighter.registerLanguage('json', json);
@@ -787,6 +788,11 @@ const ApiTester = () => {
   const [collections, setCollections] = useState([]);
   const [expandedCollections, setExpandedCollections] = useState({});
   const [parameters, setParameters] = useState([]);
+  const [showImportDialog, setShowImportDialog] = useState(false);
+  const [importContent, setImportContent] = useState('');
+  const [importError, setImportError] = useState('');
+  const [importProgress, setImportProgress] = useState(0);
+  const [importing, setImporting] = useState(false);
   const language = 'zh';
   const t = lang[language];
 
@@ -1053,18 +1059,214 @@ const ApiTester = () => {
     setResponse(null);
   };
 
+  const parseOpenApiContent = (content) => {
+    try {
+      // 尝试解析为 JSON
+      return JSON.parse(content);
+    } catch (e) {
+      try {
+        // 如果不是 JSON，尝试解析为 YAML
+        return parse(content);
+      } catch (e) {
+        throw new Error('Invalid OpenAPI specification format. Please provide valid JSON or YAML.');
+      }
+    }
+  };
+
+  const extractSecuritySchemes = (spec) => {
+    const schemes = {};
+    if (spec.components?.securitySchemes) {
+      Object.entries(spec.components.securitySchemes).forEach(([name, scheme]) => {
+        schemes[name] = {
+          type: scheme.type,
+          name: name,
+          description: scheme.description,
+          in: scheme.in,
+          scheme: scheme.scheme,
+          bearerFormat: scheme.bearerFormat,
+          flows: scheme.flows
+        };
+      });
+    }
+    return schemes;
+  };
+
+  const createAuthHeader = (scheme) => {
+    switch (scheme.type) {
+      case 'http':
+        if (scheme.scheme === 'bearer') {
+          return { key: 'Authorization', value: 'Bearer YOUR_TOKEN' };
+        }
+        if (scheme.scheme === 'basic') {
+          return { key: 'Authorization', value: 'Basic YOUR_CREDENTIALS' };
+        }
+        break;
+      case 'apiKey':
+        return { key: scheme.name, value: 'YOUR_API_KEY' };
+      case 'oauth2':
+        return { key: 'Authorization', value: 'Bearer YOUR_ACCESS_TOKEN' };
+      default:
+        return null;
+    }
+  };
+
+  const parseOpenApiFile = async (content) => {
+    setImporting(true);
+    setImportError('');
+    setImportProgress(0);
+
+    try {
+      const spec = parseOpenApiContent(content);
+      
+      // 验证基本结构
+      if (!spec.openapi && !spec.swagger) {
+        throw new Error('Invalid OpenAPI specification: missing openapi/swagger version');
+      }
+
+      // 提取安全方案
+      const securitySchemes = extractSecuritySchemes(spec);
+      setImportProgress(10);
+
+      const collectionName = spec.info?.title || 'Imported API';
+      const collectionId = `collection_${Date.now()}`;
+      const requests = [];
+
+      // 获取所有路径和方法
+      const paths = Object.entries(spec.paths || {});
+      const totalOperations = paths.reduce((count, [_, pathItem]) => {
+        return count + Object.keys(pathItem).filter(method => 
+          ['get', 'post', 'put', 'delete', 'patch'].includes(method.toLowerCase())
+        ).length;
+      }, 0);
+
+      let processedOperations = 0;
+
+      // 遍历所有路径
+      for (const [path, pathItem] of paths) {
+        // 遍历每个路径的所有方法
+        for (const [method, operation] of Object.entries(pathItem)) {
+          if (['get', 'post', 'put', 'delete', 'patch'].includes(method.toLowerCase())) {
+            const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+            const requestName = operation.summary || operation.operationId || `${method.toUpperCase()} ${path}`;
+            
+            // 构建请求参数
+            const parameters = [];
+            if (operation.parameters) {
+              operation.parameters.forEach(param => {
+                if (param.in === 'query') {
+                  parameters.push({
+                    key: param.name,
+                    value: param.schema?.default || ''
+                  });
+                }
+              });
+            }
+
+            // 构建请求头
+            const headers = [
+              { key: 'Content-Type', value: 'application/json' }
+            ];
+
+            // 添加安全认证头
+            if (operation.security) {
+              operation.security.forEach(security => {
+                Object.entries(security).forEach(([schemeName, _]) => {
+                  const scheme = securitySchemes[schemeName];
+                  if (scheme) {
+                    const authHeader = createAuthHeader(scheme);
+                    if (authHeader) {
+                      headers.push(authHeader);
+                    }
+                  }
+                });
+              });
+            }
+
+            // 构建请求体
+            let body = '';
+            if (operation.requestBody?.content?.['application/json']?.schema) {
+              body = JSON.stringify(operation.requestBody.content['application/json'].schema, null, 2);
+            }
+
+            requests.push({
+              id: requestId,
+              name: requestName,
+              method: method.toUpperCase(),
+              url: path,
+              headers,
+              parameters,
+              body,
+              contentType: 'application/json',
+              timestamp: new Date().toISOString()
+            });
+
+            processedOperations++;
+            setImportProgress(10 + Math.floor((processedOperations / totalOperations) * 80));
+          }
+        }
+      }
+
+      // 创建新集合
+      const newCollection = {
+        id: collectionId,
+        name: collectionName,
+        requests: requests.map(req => req.id),
+        description: spec.info?.description || '',
+        version: spec.info?.version || '1.0.0'
+      };
+
+      setImportProgress(90);
+
+      // 更新状态
+      const updatedCollections = [...collections, newCollection];
+      const updatedRequests = [...savedRequests, ...requests];
+
+      localStorage.setItem('collections', JSON.stringify(updatedCollections));
+      localStorage.setItem('savedRequests', JSON.stringify(updatedRequests));
+      
+      setCollections(updatedCollections);
+      setSavedRequests(updatedRequests);
+      setImportProgress(100);
+
+      setTimeout(() => {
+        setShowImportDialog(false);
+        setImportContent('');
+        setImportProgress(0);
+        setImporting(false);
+      }, 500);
+
+      return true;
+    } catch (error) {
+      console.error('Error parsing OpenAPI file:', error);
+      setImportError(error.message);
+      setImportProgress(0);
+      setImporting(false);
+      return false;
+    }
+  };
+
   return (
     <Container>
       <Sidebar>
         <SidebarHeader>
           <SidebarTitle>Collections</SidebarTitle>
-          <NewCollectionButton onClick={() => setShowNewCollectionDialog(true)}>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <line x1="12" y1="5" x2="12" y2="19" />
-              <line x1="5" y1="12" x2="19" y2="12" />
-            </svg>
-            New Collection
-          </NewCollectionButton>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
+            <NewCollectionButton onClick={() => setShowImportDialog(true)}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              Import
+            </NewCollectionButton>
+            <NewCollectionButton onClick={() => setShowNewCollectionDialog(true)}>
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <line x1="12" y1="5" x2="12" y2="19" />
+                <line x1="5" y1="12" x2="19" y2="12" />
+              </svg>
+              New Collection
+            </NewCollectionButton>
+          </div>
         </SidebarHeader>
         <RequestList>
           {collections.map((collection) => (
@@ -1352,6 +1554,83 @@ const ApiTester = () => {
                 disabled={!newCollectionName.trim()}
               >
                 Create
+              </DialogButton>
+            </DialogButtons>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {showImportDialog && (
+        <Dialog>
+          <DialogContent>
+            <DialogTitle>Import OpenAPI Specification</DialogTitle>
+            <TextArea
+              value={importContent}
+              onChange={(e) => {
+                setImportContent(e.target.value);
+                setImportError('');
+              }}
+              placeholder="Paste your OpenAPI JSON or YAML content here..."
+              style={{
+                height: '300px',
+                marginBottom: '1rem',
+                fontFamily: 'monospace'
+              }}
+            />
+            {importError && (
+              <div style={{ 
+                color: '#d32f2f', 
+                marginBottom: '1rem', 
+                padding: '0.5rem',
+                backgroundColor: '#ffebee',
+                borderRadius: '4px'
+              }}>
+                {importError}
+              </div>
+            )}
+            {importing && (
+              <div style={{ marginBottom: '1rem' }}>
+                <div style={{ 
+                  height: '4px', 
+                  backgroundColor: '#e0f7fa',
+                  borderRadius: '2px',
+                  overflow: 'hidden'
+                }}>
+                  <div style={{
+                    height: '100%',
+                    backgroundColor: '#00acc1',
+                    width: `${importProgress}%`,
+                    transition: 'width 0.3s ease'
+                  }} />
+                </div>
+                <div style={{ 
+                  textAlign: 'center', 
+                  marginTop: '0.5rem',
+                  color: '#006064',
+                  fontSize: '0.9rem'
+                }}>
+                  Importing... {importProgress}%
+                </div>
+              </div>
+            )}
+            <DialogButtons>
+              <DialogButton
+                className="secondary"
+                onClick={() => {
+                  setShowImportDialog(false);
+                  setImportContent('');
+                  setImportError('');
+                  setImportProgress(0);
+                }}
+              >
+                Cancel
+              </DialogButton>
+              <DialogButton
+                className="primary"
+                onClick={() => parseOpenApiFile(importContent)}
+                disabled={!importContent.trim() || importing}
+              >
+                {importing ? 'Importing...' : 'Import'}
               </DialogButton>
             </DialogButtons>
           </DialogContent>
