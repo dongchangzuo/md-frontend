@@ -793,6 +793,8 @@ const ApiTester = () => {
   const [importError, setImportError] = useState('');
   const [importProgress, setImportProgress] = useState(0);
   const [importing, setImporting] = useState(false);
+  const [importUrl, setImportUrl] = useState('');
+  const [importType, setImportType] = useState('text'); // 'text' or 'url'
   const language = 'zh';
   const t = lang[language];
 
@@ -1202,14 +1204,43 @@ const ApiTester = () => {
     }
   };
 
-  const parseOpenApiFile = async (content) => {
+  const fetchOpenApiFromUrl = async (url) => {
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`Failed to fetch OpenAPI specification: ${response.statusText}`);
+      }
+      const contentType = response.headers.get('content-type');
+      if (contentType?.includes('application/json')) {
+        return await response.json();
+      } else {
+        const text = await response.text();
+        return parseOpenApiContent(text);
+      }
+    } catch (error) {
+      throw new Error(`Failed to fetch OpenAPI specification: ${error.message}`);
+    }
+  };
+
+  const handleImport = async () => {
     setImporting(true);
     setImportError('');
     setImportProgress(0);
 
     try {
-      const spec = parseOpenApiContent(content);
-      
+      let spec;
+      if (importType === 'url') {
+        if (!importUrl.trim()) {
+          throw new Error('Please enter a valid URL');
+        }
+        spec = await fetchOpenApiFromUrl(importUrl);
+      } else {
+        if (!importContent.trim()) {
+          throw new Error('Please enter OpenAPI specification content');
+        }
+        spec = parseOpenApiContent(importContent);
+      }
+
       // 验证基本结构
       if (!spec.openapi && !spec.swagger) {
         throw new Error('Invalid OpenAPI specification: missing openapi/swagger version');
@@ -1353,13 +1384,15 @@ const ApiTester = () => {
       setTimeout(() => {
         setShowImportDialog(false);
         setImportContent('');
+        setImportUrl('');
+        setImportError('');
         setImportProgress(0);
-        setImporting(false);
+        setImportType('text');
       }, 500);
 
       return true;
     } catch (error) {
-      console.error('Error parsing OpenAPI file:', error);
+      console.error('Error importing OpenAPI specification:', error);
       setImportError(error.message);
       setImportProgress(0);
       setImporting(false);
@@ -1686,19 +1719,63 @@ const ApiTester = () => {
         <Dialog>
           <DialogContent>
             <DialogTitle>Import OpenAPI Specification</DialogTitle>
-            <TextArea
-              value={importContent}
-              onChange={(e) => {
-                setImportContent(e.target.value);
-                setImportError('');
-              }}
-              placeholder="Paste your OpenAPI JSON or YAML content here..."
-              style={{
-                height: '300px',
-                marginBottom: '1rem',
-                fontFamily: 'monospace'
-              }}
-            />
+            <div style={{ marginBottom: '1rem' }}>
+              <div style={{ display: 'flex', gap: '1rem', marginBottom: '1rem' }}>
+                <button
+                  onClick={() => setImportType('text')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    border: 'none',
+                    borderRadius: '8px',
+                    background: importType === 'text' ? '#00acc1' : '#e0f7fa',
+                    color: importType === 'text' ? 'white' : '#006064',
+                    cursor: 'pointer',
+                    flex: 1
+                  }}
+                >
+                  Paste Content
+                </button>
+                <button
+                  onClick={() => setImportType('url')}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    border: 'none',
+                    borderRadius: '8px',
+                    background: importType === 'url' ? '#00acc1' : '#e0f7fa',
+                    color: importType === 'url' ? 'white' : '#006064',
+                    cursor: 'pointer',
+                    flex: 1
+                  }}
+                >
+                  Import from URL
+                </button>
+              </div>
+              {importType === 'text' ? (
+                <TextArea
+                  value={importContent}
+                  onChange={(e) => {
+                    setImportContent(e.target.value);
+                    setImportError('');
+                  }}
+                  placeholder="Paste your OpenAPI JSON or YAML content here..."
+                  style={{
+                    height: '300px',
+                    marginBottom: '1rem',
+                    fontFamily: 'monospace'
+                  }}
+                />
+              ) : (
+                <DialogInput
+                  value={importUrl}
+                  onChange={(e) => {
+                    setImportUrl(e.target.value);
+                    setImportError('');
+                  }}
+                  placeholder="Enter OpenAPI specification URL..."
+                  style={{ marginBottom: '1rem' }}
+                />
+              )}
+            </div>
             {importError && (
               <div style={{ 
                 color: '#d32f2f', 
@@ -1741,16 +1818,18 @@ const ApiTester = () => {
                 onClick={() => {
                   setShowImportDialog(false);
                   setImportContent('');
+                  setImportUrl('');
                   setImportError('');
                   setImportProgress(0);
+                  setImportType('text');
                 }}
               >
                 Cancel
               </DialogButton>
               <DialogButton
                 className="primary"
-                onClick={() => parseOpenApiFile(importContent)}
-                disabled={!importContent.trim() || importing}
+                onClick={handleImport}
+                disabled={importing || (importType === 'text' ? !importContent.trim() : !importUrl.trim())}
               >
                 {importing ? 'Importing...' : 'Import'}
               </DialogButton>
