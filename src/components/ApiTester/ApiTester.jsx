@@ -891,6 +891,7 @@ const ApiTester = () => {
 
   const handleSave = () => {
     const requestData = {
+      id: activeRequest || `req_${Date.now()}`,
       name: requestName,
       method,
       url,
@@ -901,7 +902,7 @@ const ApiTester = () => {
     };
 
     const updatedRequests = [...savedRequests];
-    const existingIndex = updatedRequests.findIndex(req => req.name === requestName);
+    const existingIndex = updatedRequests.findIndex(req => req.id === requestData.id);
     
     if (existingIndex !== -1) {
       updatedRequests[existingIndex] = requestData;
@@ -911,23 +912,33 @@ const ApiTester = () => {
 
     localStorage.setItem('savedRequests', JSON.stringify(updatedRequests));
     setSavedRequests(updatedRequests);
+    setActiveRequest(requestData.id);
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
 
-  const handleDeleteRequest = (name, e) => {
+  const handleDeleteRequest = (requestId, e) => {
     e.stopPropagation();
-    const updatedRequests = savedRequests.filter(req => req.name !== name);
+    const updatedRequests = savedRequests.filter(req => req.id !== requestId);
     localStorage.setItem('savedRequests', JSON.stringify(updatedRequests));
     setSavedRequests(updatedRequests);
-    if (activeRequest === name) {
+
+    // 从所有集合中移除该请求
+    const updatedCollections = collections.map(collection => ({
+      ...collection,
+      requests: collection.requests.filter(id => id !== requestId)
+    }));
+    localStorage.setItem('collections', JSON.stringify(updatedCollections));
+    setCollections(updatedCollections);
+
+    if (activeRequest === requestId) {
       setActiveRequest(null);
       resetForm();
     }
   };
 
   const handleRequestClick = (request) => {
-    setActiveRequest(request.name);
+    setActiveRequest(request.id);
     setRequestName(request.name);
     setMethod(request.method);
     setUrl(request.url);
@@ -971,8 +982,10 @@ const ApiTester = () => {
 
   const handleAddRequestToCollection = (collectionId) => {
     // 创建新的请求
+    const requestId = `req_${Date.now()}`;
     const newRequestName = `New Request ${Date.now()}`;
     const newRequest = {
+      id: requestId,
       name: newRequestName,
       method: 'GET',
       url: '',
@@ -992,7 +1005,7 @@ const ApiTester = () => {
       if (collection.id === collectionId) {
         return {
           ...collection,
-          requests: [...new Set([...collection.requests, newRequestName])]
+          requests: [...new Set([...collection.requests, requestId])]
         };
       }
       return collection;
@@ -1001,7 +1014,7 @@ const ApiTester = () => {
     setCollections(updatedCollections);
 
     // 激活新创建的请求
-    setActiveRequest(newRequestName);
+    setActiveRequest(requestId);
     setRequestName(newRequestName);
     setMethod('GET');
     setUrl('');
@@ -1062,16 +1075,16 @@ const ApiTester = () => {
               </CollectionHeader>
               <CollectionRequests $expanded={expandedCollections[collection.id]}>
                 {savedRequests
-                  .filter(request => collection.requests.includes(request.name))
+                  .filter(request => collection.requests.includes(request.id))
                   .map((request) => (
                     <RequestItem
-                      key={request.name}
-                      $active={activeRequest === request.name}
+                      key={request.id}
+                      $active={activeRequest === request.id}
                       onClick={() => handleRequestClick(request)}
                     >
                       <RequestItemHeader>
                         <RequestName>{request.name}</RequestName>
-                        <DeleteButton onClick={(e) => handleDeleteRequest(request.name, e)}>
+                        <DeleteButton onClick={(e) => handleDeleteRequest(request.id, e)}>
                           <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
                             <line x1="18" y1="6" x2="6" y2="18" />
                             <line x1="6" y1="6" x2="18" y2="18" />
