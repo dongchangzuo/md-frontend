@@ -773,7 +773,7 @@ const ApiTester = () => {
   const [method, setMethod] = useState('GET');
   const [url, setUrl] = useState('');
   const [requestName, setRequestName] = useState('Untitled');
-  const [activeTab, setActiveTab] = useState('headers');
+  const [activeTab, setActiveTab] = useState('parameters');
   const [requestBody, setRequestBody] = useState('');
   const [contentType, setContentType] = useState('application/json');
   const [headers, setHeaders] = useState([{ key: 'Content-Type', value: 'application/json' }]);
@@ -786,6 +786,7 @@ const ApiTester = () => {
   const [newCollectionName, setNewCollectionName] = useState('');
   const [collections, setCollections] = useState([]);
   const [expandedCollections, setExpandedCollections] = useState({});
+  const [parameters, setParameters] = useState([]);
   const language = 'zh';
   const t = lang[language];
 
@@ -836,6 +837,30 @@ const ApiTester = () => {
     setHeaders(newHeaders);
   };
 
+  const handleParameterChange = (index, field, value) => {
+    const newParameters = [...parameters];
+    newParameters[index] = { ...newParameters[index], [field]: value };
+    setParameters(newParameters);
+  };
+
+  const addParameter = () => {
+    setParameters([...parameters, { key: '', value: '' }]);
+  };
+
+  const removeParameter = (index) => {
+    const newParameters = parameters.filter((_, i) => i !== index);
+    setParameters(newParameters);
+  };
+
+  const buildUrlWithParameters = () => {
+    if (!parameters.length) return url;
+    const queryString = parameters
+      .filter(param => param.key && param.value)
+      .map(param => `${encodeURIComponent(param.key)}=${encodeURIComponent(param.value)}`)
+      .join('&');
+    return `${url}${url.includes('?') ? '&' : '?'}${queryString}`;
+  };
+
   const handleSend = async () => {
     if (!url) return;
 
@@ -859,7 +884,8 @@ const ApiTester = () => {
         options.body = requestBody;
       }
 
-      const response = await fetch(url, options);
+      const finalUrl = buildUrlWithParameters();
+      const response = await fetch(finalUrl, options);
       const endTime = Date.now();
       const responseTime = endTime - startTime;
 
@@ -898,6 +924,7 @@ const ApiTester = () => {
       method,
       url,
       headers,
+      parameters,
       body: requestBody,
       contentType,
       timestamp: new Date().toISOString()
@@ -945,6 +972,7 @@ const ApiTester = () => {
     setMethod(request.method);
     setUrl(request.url);
     setHeaders(request.headers);
+    setParameters(request.parameters || []);
     setRequestBody(request.body);
     setContentType(request.contentType);
   };
@@ -983,7 +1011,6 @@ const ApiTester = () => {
   };
 
   const handleAddRequestToCollection = (collectionId) => {
-    // 创建新的请求
     const requestId = `req_${Date.now()}`;
     const newRequest = {
       id: requestId,
@@ -991,6 +1018,7 @@ const ApiTester = () => {
       method: 'GET',
       url: '',
       headers: [{ key: 'Content-Type', value: 'application/json' }],
+      parameters: [],
       body: '',
       contentType: 'application/json',
       timestamp: new Date().toISOString()
@@ -1147,16 +1175,22 @@ const ApiTester = () => {
 
             <TabsContainer>
               <Tab
+                $active={activeTab === 'parameters'}
+                onClick={() => setActiveTab('parameters')}
+              >
+                Parameters
+              </Tab>
+              <Tab
                 $active={activeTab === 'headers'}
                 onClick={() => setActiveTab('headers')}
               >
-                {t.apiTester.headers}
+                Headers
               </Tab>
               <Tab
                 $active={activeTab === 'body'}
                 onClick={() => setActiveTab('body')}
               >
-                {t.apiTester.requestBody}
+                Body
               </Tab>
             </TabsContainer>
 
@@ -1164,7 +1198,9 @@ const ApiTester = () => {
               <EditorSection $isResponse={false}>
                 <SectionHeader>
                   <SectionLabel>
-                    {activeTab === 'body' ? t.apiTester.requestBody : t.apiTester.headers}
+                    {activeTab === 'parameters' ? 'Parameters' :
+                     activeTab === 'headers' ? 'Headers' :
+                     'Body'}
                   </SectionLabel>
                   {activeTab === 'body' && (
                     <ContentTypeSelect
@@ -1179,18 +1215,37 @@ const ApiTester = () => {
                     </ContentTypeSelect>
                   )}
                 </SectionHeader>
-                {activeTab === 'body' ? (
-                  <TextArea
-                    value={requestBody}
-                    onChange={(e) => setRequestBody(e.target.value)}
-                    placeholder={t.apiTester.requestBodyPlaceholder}
-                    style={{
-                      fontFamily: 'monospace',
-                      whiteSpace: 'pre',
-                      tabSize: 2
-                    }}
-                  />
-                ) : (
+                {activeTab === 'parameters' ? (
+                  <HeadersGrid>
+                    {parameters.map((param, index) => (
+                      <HeaderRow key={index}>
+                        <HeaderInput
+                          value={param.key}
+                          onChange={(e) => handleParameterChange(index, 'key', e.target.value)}
+                          placeholder="Key"
+                        />
+                        <HeaderInput
+                          value={param.value}
+                          onChange={(e) => handleParameterChange(index, 'value', e.target.value)}
+                          placeholder="Value"
+                        />
+                        <RemoveButton onClick={() => removeParameter(index)}>
+                          <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                            <line x1="18" y1="6" x2="6" y2="18" />
+                            <line x1="6" y1="6" x2="18" y2="18" />
+                          </svg>
+                        </RemoveButton>
+                      </HeaderRow>
+                    ))}
+                    <AddHeaderButton onClick={addParameter}>
+                      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="2">
+                        <line x1="12" y1="5" x2="12" y2="19" />
+                        <line x1="5" y1="12" x2="19" y2="12" />
+                      </svg>
+                      Add Parameter
+                    </AddHeaderButton>
+                  </HeadersGrid>
+                ) : activeTab === 'headers' ? (
                   <HeadersGrid>
                     {headers.map((header, index) => (
                       <HeaderRow key={index}>
@@ -1220,6 +1275,17 @@ const ApiTester = () => {
                       Add Header
                     </AddHeaderButton>
                   </HeadersGrid>
+                ) : (
+                  <TextArea
+                    value={requestBody}
+                    onChange={(e) => setRequestBody(e.target.value)}
+                    placeholder={t.apiTester.requestBodyPlaceholder}
+                    style={{
+                      fontFamily: 'monospace',
+                      whiteSpace: 'pre',
+                      tabSize: 2
+                    }}
+                  />
                 )}
               </EditorSection>
 
