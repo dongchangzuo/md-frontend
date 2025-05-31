@@ -970,26 +970,20 @@ const ApiTester = () => {
   };
 
   const handleAddRequestToCollection = (collectionId) => {
-    if (!requestName || !url) return;
-
-    const requestData = {
-      name: requestName,
-      method,
-      url,
-      headers,
-      body: requestBody,
-      contentType,
+    // 创建新的请求
+    const newRequestName = `New Request ${Date.now()}`;
+    const newRequest = {
+      name: newRequestName,
+      method: 'GET',
+      url: '',
+      headers: [{ key: 'Content-Type', value: 'application/json' }],
+      body: '',
+      contentType: 'application/json',
       timestamp: new Date().toISOString()
     };
 
     // 更新请求列表
-    const updatedRequests = [...savedRequests];
-    const existingIndex = updatedRequests.findIndex(req => req.name === requestName);
-    if (existingIndex !== -1) {
-      updatedRequests[existingIndex] = requestData;
-    } else {
-      updatedRequests.push(requestData);
-    }
+    const updatedRequests = [...savedRequests, newRequest];
     localStorage.setItem('savedRequests', JSON.stringify(updatedRequests));
     setSavedRequests(updatedRequests);
 
@@ -998,13 +992,23 @@ const ApiTester = () => {
       if (collection.id === collectionId) {
         return {
           ...collection,
-          requests: [...new Set([...collection.requests, requestName])]
+          requests: [...new Set([...collection.requests, newRequestName])]
         };
       }
       return collection;
     });
     localStorage.setItem('collections', JSON.stringify(updatedCollections));
     setCollections(updatedCollections);
+
+    // 激活新创建的请求
+    setActiveRequest(newRequestName);
+    setRequestName(newRequestName);
+    setMethod('GET');
+    setUrl('');
+    setHeaders([{ key: 'Content-Type', value: 'application/json' }]);
+    setRequestBody('');
+    setContentType('application/json');
+    setResponse(null);
   };
 
   return (
@@ -1036,8 +1040,7 @@ const ApiTester = () => {
                       e.stopPropagation();
                       handleAddRequestToCollection(collection.id);
                     }}
-                    disabled={!requestName || !url}
-                    title="Add Current Request"
+                    title="Create New Request"
                   >
                     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                       <line x1="12" y1="5" x2="12" y2="19" />
