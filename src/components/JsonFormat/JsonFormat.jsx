@@ -272,12 +272,100 @@ const OutputContainer = styled.div`
   }
 `;
 
+const JsonViewer = styled.div`
+  font-family: 'Fira Code', monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  color: #006064;
+  padding: 1rem;
+`;
+
+const JsonLine = styled.div`
+  display: flex;
+  align-items: flex-start;
+  padding: 2px 0;
+  padding-left: ${props => props.$level * 20}px;
+`;
+
+const JsonKey = styled.span`
+  color: #006064;
+  margin-right: 8px;
+  user-select: none;
+`;
+
+const JsonValue = styled.span`
+  color: ${props => {
+    if (props.$type === 'string') return '#2e7d32';
+    if (props.$type === 'number') return '#1976d2';
+    if (props.$type === 'boolean') return '#f57c00';
+    if (props.$type === 'null') return '#757575';
+    return '#006064';
+  }};
+`;
+
+const CollapseButton = styled.button`
+  background: none;
+  border: none;
+  color: #424242;
+  cursor: pointer;
+  padding: 0 4px;
+  margin-right: 4px;
+  font-size: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.2s ease;
+
+  &:hover {
+    color: #212121;
+  }
+
+  svg {
+    width: 12px;
+    height: 12px;
+    stroke: currentColor;
+    stroke-width: 2;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+`;
+
+const JsonArray = styled.div`
+  margin-left: 20px;
+`;
+
+const JsonObject = styled.div`
+  margin-left: 20px;
+`;
+
+const JsonString = styled.span`
+  color: #2e7d32;
+  &::before, &::after {
+    content: '"';
+  }
+`;
+
+const JsonNumber = styled.span`
+  color: #1976d2;
+`;
+
+const JsonBoolean = styled.span`
+  color: #f57c00;
+`;
+
+const JsonNull = styled.span`
+  color: #757575;
+`;
+
 const JsonFormat = () => {
   const navigate = useNavigate();
   const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
   const [error, setError] = useState('');
   const [isTemplateMode, setIsTemplateMode] = useState(false);
+  const [expandedNodes, setExpandedNodes] = useState(new Set());
   const language = 'zh';
   const t = lang[language];
 
@@ -375,6 +463,119 @@ const JsonFormat = () => {
     setError('');
   };
 
+  const toggleNode = (path) => {
+    setExpandedNodes(prev => {
+      const next = new Set(prev);
+      if (next.has(path)) {
+        next.delete(path);
+      } else {
+        next.add(path);
+      }
+      return next;
+    });
+  };
+
+  const renderJsonValue = (value, level = 0, path = '') => {
+    if (value === null) {
+      return <JsonNull>null</JsonNull>;
+    }
+
+    if (typeof value === 'boolean') {
+      return <JsonBoolean>{value.toString()}</JsonBoolean>;
+    }
+
+    if (typeof value === 'number') {
+      return <JsonNumber>{value}</JsonNumber>;
+    }
+
+    if (typeof value === 'string') {
+      return <JsonString>{value}</JsonString>;
+    }
+
+    if (Array.isArray(value)) {
+      const isExpanded = expandedNodes.has(path);
+      return (
+        <>
+          <CollapseButton
+            $expanded={isExpanded}
+            onClick={() => toggleNode(path)}
+          >
+            <svg viewBox="0 0 24 24" fill="none">
+              {isExpanded ? (
+                <path d="M6 12h12" />
+              ) : (
+                <>
+                  <path d="M12 6v12" />
+                  <path d="M6 12h12" />
+                </>
+              )}
+            </svg>
+          </CollapseButton>
+          <span>[</span>
+          {isExpanded ? (
+            <>
+              <JsonArray>
+                {value.map((item, index) => (
+                  <div key={index} style={{ marginLeft: '20px' }}>
+                    {renderJsonValue(item, level + 1, `${path}[${index}]`)}
+                    {index < value.length - 1 && <span>,</span>}
+                  </div>
+                ))}
+              </JsonArray>
+              <div style={{ marginLeft: '0px' }}>]</div>
+            </>
+          ) : (
+            <span>...</span>
+          )}
+          {!isExpanded && <span>]</span>}
+        </>
+      );
+    }
+
+    if (typeof value === 'object') {
+      const isExpanded = expandedNodes.has(path);
+      const entries = Object.entries(value);
+      return (
+        <>
+          <CollapseButton
+            $expanded={isExpanded}
+            onClick={() => toggleNode(path)}
+          >
+            <svg viewBox="0 0 24 24" fill="none">
+              {isExpanded ? (
+                <path d="M6 12h12" />
+              ) : (
+                <>
+                  <path d="M12 6v12" />
+                  <path d="M6 12h12" />
+                </>
+              )}
+            </svg>
+          </CollapseButton>
+          <span>{'{'}</span>
+          {isExpanded ? (
+            <>
+              <JsonObject>
+                {entries.map(([key, val], index) => (
+                  <div key={key} style={{ marginLeft: '20px' }}>
+                    <JsonKey>"{key}"</JsonKey>: {renderJsonValue(val, level + 1, `${path}.${key}`)}
+                    {index < entries.length - 1 && <span>,</span>}
+                  </div>
+                ))}
+              </JsonObject>
+              <div style={{ marginLeft: '0px' }}>{'}'}</div>
+            </>
+          ) : (
+            <span>...</span>
+          )}
+          {!isExpanded && <span>{'}'}</span>}
+        </>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <JsonFormatContainer>
       <ContentCard>
@@ -423,24 +624,39 @@ const JsonFormat = () => {
               {error ? (
                 <ErrorMessage>{error}</ErrorMessage>
               ) : output ? (
-                <SyntaxHighlighter
-                  language="json"
-                  style={docco}
-                  customStyle={{
-                    background: 'transparent',
-                    padding: '1rem',
-                    margin: 0,
-                    fontSize: '14px',
-                    lineHeight: '1.6',
-                    fontFamily: "'Fira Code', monospace",
-                  }}
-                  wrapLines={true}
-                  wrapLongLines={true}
-                  useInlineStyles={false}
-                  showLineNumbers={true}
-                >
-                  {output}
-                </SyntaxHighlighter>
+                <JsonViewer>
+                  {(() => {
+                    try {
+                      const jsonData = JSON.parse(output);
+                      return (
+                        <div style={{ 
+                          fontFamily: 'monospace',
+                          whiteSpace: 'pre',
+                          tabSize: 2
+                        }}>
+                          {renderJsonValue(jsonData)}
+                        </div>
+                      );
+                    } catch (e) {
+                      return (
+                        <SyntaxHighlighter
+                          language="json"
+                          style={docco}
+                          customStyle={{
+                            background: 'transparent',
+                            padding: 0,
+                            margin: 0,
+                            fontSize: '14px',
+                            lineHeight: '1.6',
+                            fontFamily: "'Fira Code', monospace",
+                          }}
+                        >
+                          {output}
+                        </SyntaxHighlighter>
+                      );
+                    }
+                  })()}
+                </JsonViewer>
               ) : (
                 <TextArea
                   readOnly
