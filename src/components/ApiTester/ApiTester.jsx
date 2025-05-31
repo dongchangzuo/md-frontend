@@ -809,17 +809,18 @@ const ApiTester = () => {
   }, []);
 
   const contentTypes = [
-    { value: 'none', label: 'None' },
-    { value: 'application/json', label: 'JSON' },
-    { value: 'application/xml', label: 'XML' },
-    { value: 'text/plain', label: 'Text' },
-    { value: 'application/x-www-form-urlencoded', label: 'Form URL Encoded' },
-    { value: 'multipart/form-data', label: 'Form Data' },
-    { value: 'application/javascript', label: 'JavaScript' },
-    { value: 'text/html', label: 'HTML' },
-    { value: 'text/css', label: 'CSS' },
-    { value: 'text/markdown', label: 'Markdown' },
-    { value: 'application/yaml', label: 'YAML' },
+    { value: 'none', label: 'none' },
+    { value: 'application/json', label: 'application/json' },
+    { value: 'application/xml', label: 'application/xml' },
+    { value: 'text/plain', label: 'text/plain' },
+    { value: 'application/x-www-form-urlencoded', label: 'application/x-www-form-urlencoded' },
+    { value: 'multipart/form-data', label: 'multipart/form-data' },
+    { value: 'application/javascript', label: 'application/javascript' },
+    { value: 'text/html', label: 'text/html' },
+    { value: 'text/css', label: 'text/css' },
+    { value: 'text/markdown', label: 'text/markdown' },
+    { value: 'application/yaml', label: 'application/yaml' },
+    { value: 'application/octet-stream', label: 'application/octet-stream' },
   ];
 
   const handleHeaderChange = (index, field, value) => {
@@ -890,8 +891,23 @@ const ApiTester = () => {
         headers: headersObj,
       };
 
-      if (method !== 'GET' && requestBody && contentType !== 'none') {
-        options.body = requestBody;
+      if (method !== 'GET' && requestBody) {
+        if (contentType === 'application/octet-stream') {
+          // 处理二进制数据
+          try {
+            // 尝试将输入解析为十六进制字符串
+            const hexString = requestBody.replace(/\s/g, '');
+            if (!/^[0-9A-Fa-f]*$/.test(hexString)) {
+              throw new Error('Invalid hex string');
+            }
+            const byteArray = new Uint8Array(hexString.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+            options.body = byteArray;
+          } catch (error) {
+            throw new Error('Invalid binary data format. Please provide valid hex string.');
+          }
+        } else if (contentType !== 'none') {
+          options.body = requestBody;
+        }
       }
 
       const finalUrl = buildUrlWithParameters();
@@ -899,19 +915,30 @@ const ApiTester = () => {
       const endTime = Date.now();
       const responseTime = endTime - startTime;
 
-      const responseData = await response.text();
-      let formattedResponse;
-      try {
-        formattedResponse = JSON.stringify(JSON.parse(responseData), null, 2);
-      } catch {
-        formattedResponse = responseData;
+      let responseData;
+      const responseContentType = response.headers.get('content-type');
+      
+      if (responseContentType?.includes('application/octet-stream')) {
+        // 处理二进制响应
+        const arrayBuffer = await response.arrayBuffer();
+        const bytes = new Uint8Array(arrayBuffer);
+        responseData = Array.from(bytes)
+          .map(b => b.toString(16).padStart(2, '0'))
+          .join(' ');
+      } else {
+        responseData = await response.text();
+        try {
+          responseData = JSON.stringify(JSON.parse(responseData), null, 2);
+        } catch {
+          // 如果不是 JSON，保持原样
+        }
       }
 
       setResponse({
         status: response.status,
         statusText: response.statusText,
         headers: Object.fromEntries(response.headers.entries()),
-        body: formattedResponse,
+        body: responseData,
         time: responseTime,
       });
     } catch (error) {
@@ -1661,9 +1688,13 @@ const ApiTester = () => {
                   <TextArea
                     value={requestBody}
                     onChange={(e) => setRequestBody(e.target.value)}
-                    placeholder={t.apiTester.requestBodyPlaceholder}
+                    placeholder={
+                      contentType === 'application/octet-stream' 
+                        ? 'Enter binary data as hex string (e.g., "48 65 6c 6c 6f")'
+                        : t.apiTester.requestBodyPlaceholder
+                    }
                     style={{
-                      fontFamily: 'monospace',
+                      fontFamily: contentType === 'application/octet-stream' ? 'monospace' : 'inherit',
                       whiteSpace: 'pre',
                       tabSize: 2
                     }}
