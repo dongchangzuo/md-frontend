@@ -1063,6 +1063,80 @@ const ApiTester = () => {
     setResponse(null);
   };
 
+  const generateExampleValue = (schema) => {
+    if (!schema) return null;
+
+    switch (schema.type) {
+      case 'string':
+        if (schema.enum) return schema.enum[0];
+        if (schema.format === 'date-time') return new Date().toISOString();
+        if (schema.format === 'date') return new Date().toISOString().split('T')[0];
+        if (schema.format === 'email') return 'example@email.com';
+        if (schema.format === 'uuid') return '123e4567-e89b-12d3-a456-426614174000';
+        return schema.example || 'string';
+      
+      case 'number':
+      case 'integer':
+        if (schema.format === 'int64') return schema.example || 9223372036854775807;
+        return schema.example || 0;
+      
+      case 'boolean':
+        return schema.example || false;
+      
+      case 'array':
+        const itemExample = generateExampleValue(schema.items);
+        return itemExample ? [itemExample] : [];
+      
+      case 'object':
+        if (!schema.properties) return {};
+        const example = {};
+        Object.entries(schema.properties).forEach(([key, value]) => {
+          example[key] = generateExampleValue(value);
+        });
+        return example;
+      
+      default:
+        return null;
+    }
+  };
+
+  const extractSecuritySchemes = (spec) => {
+    const schemes = {};
+    if (spec.components?.securitySchemes) {
+      Object.entries(spec.components.securitySchemes).forEach(([name, scheme]) => {
+        schemes[name] = {
+          type: scheme.type,
+          name: name,
+          description: scheme.description,
+          in: scheme.in,
+          scheme: scheme.scheme,
+          bearerFormat: scheme.bearerFormat,
+          flows: scheme.flows
+        };
+      });
+    }
+    return schemes;
+  };
+
+  const createAuthHeader = (scheme) => {
+    switch (scheme.type) {
+      case 'http':
+        if (scheme.scheme === 'bearer') {
+          return { key: 'Authorization', value: 'Bearer YOUR_TOKEN' };
+        }
+        if (scheme.scheme === 'basic') {
+          return { key: 'Authorization', value: 'Basic YOUR_CREDENTIALS' };
+        }
+        break;
+      case 'apiKey':
+        return { key: scheme.name, value: 'YOUR_API_KEY' };
+      case 'oauth2':
+        return { key: 'Authorization', value: 'Bearer YOUR_ACCESS_TOKEN' };
+      default:
+        return null;
+    }
+  };
+
   const resolveSchema = (schema, spec) => {
     if (!schema) return null;
 
@@ -1071,12 +1145,8 @@ const ApiTester = () => {
       const refPath = schema.$ref.replace('#/', '').split('/');
       let resolved = spec;
       
-      // 处理 Swagger 2.0 和 OpenAPI 3.0 的不同路径
-      if (refPath[0] === 'definitions') {
-        // Swagger 2.0 格式
-        resolved = spec.definitions?.[refPath[1]];
-      } else if (refPath[0] === 'components' && refPath[1] === 'schemas') {
-        // OpenAPI 3.0 格式
+      // 处理 OpenAPI 3.0 路径
+      if (refPath[0] === 'components' && refPath[1] === 'schemas') {
         resolved = spec.components?.schemas?.[refPath[2]];
       } else {
         // 其他情况，尝试直接访问
@@ -1133,156 +1203,14 @@ const ApiTester = () => {
     };
   };
 
-  const convertSwaggerToOpenAPI = (swagger) => {
-    // 创建基本的 OpenAPI 3.0 结构
-    const openapi = {
-      openapi: '3.0.0',
-      info: swagger.info,
-      servers: [{ 
-        url: swagger.host ? 
-          `${swagger.schemes?.[0] || 'http'}://${swagger.host}${swagger.basePath || ''}` : 
-          '/'
-      }],
-      paths: {},
-      components: {
-        schemas: {},
-        securitySchemes: {}
-      }
-    };
-
-    // 转换定义
-    if (swagger.definitions) {
-      openapi.components.schemas = swagger.definitions;
-    }
-
-    // 转换路径
-    Object.entries(swagger.paths).forEach(([path, pathItem]) => {
-      openapi.paths[path] = {};
-      Object.entries(pathItem).forEach(([method, operation]) => {
-        if (['get', 'post', 'put', 'delete', 'patch'].includes(method)) {
-          const newOperation = {
-            ...operation,
-            responses: {}
-          };
-
-          // 转换响应
-          Object.entries(operation.responses || {}).forEach(([code, response]) => {
-            newOperation.responses[code] = {
-              description: response.description,
-              content: response.schema ? {
-                'application/json': {
-                  schema: response.schema
-                }
-              } : undefined
-            };
-          });
-
-          // 转换请求体
-          if (operation.parameters) {
-            const bodyParam = operation.parameters.find(p => p.in === 'body');
-            if (bodyParam) {
-              newOperation.requestBody = {
-                content: {
-                  'application/json': {
-                    schema: bodyParam.schema
-                  }
-                }
-              };
-            }
-          }
-
-          openapi.paths[path][method] = newOperation;
-        }
-      });
-    });
-
-    return openapi;
-  };
-
-  const generateExampleValue = (schema) => {
-    if (!schema) return null;
-
-    switch (schema.type) {
-      case 'string':
-        if (schema.enum) return schema.enum[0];
-        if (schema.format === 'date-time') return new Date().toISOString();
-        if (schema.format === 'date') return new Date().toISOString().split('T')[0];
-        if (schema.format === 'email') return 'example@email.com';
-        if (schema.format === 'uuid') return '123e4567-e89b-12d3-a456-426614174000';
-        return schema.example || 'string';
-      
-      case 'number':
-      case 'integer':
-        if (schema.format === 'int64') return schema.example || 9223372036854775807;
-        return schema.example || 0;
-      
-      case 'boolean':
-        return schema.example || false;
-      
-      case 'array':
-        const itemExample = generateExampleValue(schema.items);
-        // 对于必需字段，生成至少一个示例值
-        return itemExample ? [itemExample] : [];
-      
-      case 'object':
-        if (!schema.properties) return {};
-        const example = {};
-        // 处理所有属性，不再只处理必需字段
-        Object.entries(schema.properties).forEach(([key, value]) => {
-          example[key] = generateExampleValue(value);
-        });
-        return example;
-      
-      default:
-        return null;
-    }
-  };
-
-  const extractSecuritySchemes = (spec) => {
-    const schemes = {};
-    if (spec.components?.securitySchemes) {
-      Object.entries(spec.components.securitySchemes).forEach(([name, scheme]) => {
-        schemes[name] = {
-          type: scheme.type,
-          name: name,
-          description: scheme.description,
-          in: scheme.in,
-          scheme: scheme.scheme,
-          bearerFormat: scheme.bearerFormat,
-          flows: scheme.flows
-        };
-      });
-    }
-    return schemes;
-  };
-
-  const createAuthHeader = (scheme) => {
-    switch (scheme.type) {
-      case 'http':
-        if (scheme.scheme === 'bearer') {
-          return { key: 'Authorization', value: 'Bearer YOUR_TOKEN' };
-        }
-        if (scheme.scheme === 'basic') {
-          return { key: 'Authorization', value: 'Basic YOUR_CREDENTIALS' };
-        }
-        break;
-      case 'apiKey':
-        return { key: scheme.name, value: 'YOUR_API_KEY' };
-      case 'oauth2':
-        return { key: 'Authorization', value: 'Bearer YOUR_ACCESS_TOKEN' };
-      default:
-        return null;
-    }
-  };
-
   const parseOpenApiContent = (content) => {
     try {
       // 尝试解析为 JSON
       const spec = JSON.parse(content);
       
       // 检查版本
-      if (spec.swagger === '2.0') {
-        return convertSwaggerToOpenAPI(spec);
+      if (!spec.openapi) {
+        throw new Error('Invalid OpenAPI specification: missing openapi version');
       }
       
       return spec;
@@ -1292,8 +1220,8 @@ const ApiTester = () => {
         const spec = parse(content);
         
         // 检查版本
-        if (spec.swagger === '2.0') {
-          return convertSwaggerToOpenAPI(spec);
+        if (!spec.openapi) {
+          throw new Error('Invalid OpenAPI specification: missing openapi version');
         }
         
         return spec;
@@ -1312,7 +1240,10 @@ const ApiTester = () => {
       const contentType = response.headers.get('content-type');
       if (contentType?.includes('application/json')) {
         const spec = await response.json();
-        return spec.swagger === '2.0' ? convertSwaggerToOpenAPI(spec) : spec;
+        if (!spec.openapi) {
+          throw new Error('Invalid OpenAPI specification: missing openapi version');
+        }
+        return spec;
       } else {
         const text = await response.text();
         return parseOpenApiContent(text);
@@ -1339,11 +1270,6 @@ const ApiTester = () => {
           throw new Error('Please enter OpenAPI specification content');
         }
         spec = parseOpenApiContent(importContent);
-      }
-
-      // 验证基本结构
-      if (!spec.openapi && !spec.swagger) {
-        throw new Error('Invalid OpenAPI specification: missing openapi/swagger version');
       }
 
       // 提取 base URL
@@ -1465,7 +1391,7 @@ const ApiTester = () => {
         requests: requests.map(req => req.id),
         description: spec.info?.description || '',
         version: spec.info?.version || '1.0.0',
-        baseUrl: baseUrl // 保存 base URL 到集合中
+        baseUrl: baseUrl
       };
 
       setImportProgress(90);
