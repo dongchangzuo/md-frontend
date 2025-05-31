@@ -314,8 +314,8 @@ const CollapseButton = styled.button`
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 16px;
-  height: 16px;
+  width: 20px;
+  height: 20px;
   transition: transform 0.2s ease;
 
   &:hover {
@@ -323,10 +323,10 @@ const CollapseButton = styled.button`
   }
 
   svg {
-    width: 12px;
-    height: 12px;
+    width: 16px;
+    height: 16px;
     stroke: currentColor;
-    stroke-width: 2;
+    stroke-width: 3;
     stroke-linecap: round;
     stroke-linejoin: round;
   }
