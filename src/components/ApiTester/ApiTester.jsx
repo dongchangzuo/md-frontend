@@ -77,6 +77,33 @@ const RequestSection = styled.div`
   min-height: 0;
 `;
 
+const RequestNameContainer = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+`;
+
+const RequestNameInput = styled.input`
+  padding: 0.75rem;
+  border: 2px solid #b2ebf2;
+  border-radius: 8px;
+  background: white;
+  color: #006064;
+  font-size: 1rem;
+  outline: none;
+  transition: all 0.3s ease;
+  width: 300px;
+
+  &:focus {
+    border-color: #00acc1;
+    box-shadow: 0 0 0 3px rgba(0, 172, 193, 0.1);
+  }
+
+  &::placeholder {
+    color: #80deea;
+  }
+`;
+
 const UrlBar = styled.div`
   display: flex;
   gap: 0.5rem;
@@ -392,6 +419,7 @@ const ContentTypeSelect = styled.select`
 const ApiTester = () => {
   const [method, setMethod] = useState('GET');
   const [url, setUrl] = useState('');
+  const [requestName, setRequestName] = useState('Untitled');
   const [activeTab, setActiveTab] = useState('headers');
   const [requestBody, setRequestBody] = useState('');
   const [contentType, setContentType] = useState('application/json');
@@ -509,6 +537,13 @@ const ApiTester = () => {
           </Title>
         </Header>
         <RequestSection>
+          <RequestNameContainer>
+            <RequestNameInput
+              value={requestName}
+              onChange={(e) => setRequestName(e.target.value)}
+              placeholder="Request Name"
+            />
+          </RequestNameContainer>
           <UrlBar>
             <MethodSelect value={method} onChange={(e) => setMethod(e.target.value)}>
               <option value="GET">GET</option>
