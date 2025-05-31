@@ -1215,6 +1215,15 @@ const ApiTester = () => {
         throw new Error('Invalid OpenAPI specification: missing openapi/swagger version');
       }
 
+      // 提取 base URL
+      let baseUrl = '';
+      if (spec.servers && spec.servers.length > 0) {
+        // 使用第一个服务器 URL 作为 base URL
+        baseUrl = spec.servers[0].url;
+        // 移除末尾的斜杠
+        baseUrl = baseUrl.replace(/\/$/, '');
+      }
+
       // 预处理所有 schema 引用
       if (spec.components?.schemas) {
         Object.entries(spec.components.schemas).forEach(([name, schema]) => {
@@ -1297,11 +1306,14 @@ const ApiTester = () => {
               body = JSON.stringify(exampleValue, null, 2);
             }
 
+            // 构建完整 URL
+            const fullUrl = baseUrl ? `${baseUrl}${path}` : path;
+
             requests.push({
               id: requestId,
               name: requestName,
               method: method.toUpperCase(),
-              url: path,
+              url: fullUrl,
               headers,
               parameters,
               body,
@@ -1321,7 +1333,8 @@ const ApiTester = () => {
         name: collectionName,
         requests: requests.map(req => req.id),
         description: spec.info?.description || '',
-        version: spec.info?.version || '1.0.0'
+        version: spec.info?.version || '1.0.0',
+        baseUrl: baseUrl // 保存 base URL 到集合中
       };
 
       setImportProgress(90);
