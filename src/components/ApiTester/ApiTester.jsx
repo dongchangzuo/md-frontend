@@ -1502,7 +1502,6 @@ const ApiTester = () => {
     <Container>
       <Sidebar>
         <SidebarHeader>
-          <SidebarTitle>Collections</SidebarTitle>
           <div style={{ display: 'flex', gap: '0.5rem' }}>
             <NewCollectionButton onClick={() => setShowImportDialog(true)}>
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
