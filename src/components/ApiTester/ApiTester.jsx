@@ -1,272 +1,296 @@
 import React, { useState } from 'react';
-import styled from 'styled-components';
-import { useTheme } from '../../theme/ThemeContext';
+import styled, { keyframes } from 'styled-components';
+import { Light as SyntaxHighlighter } from 'react-syntax-highlighter';
+import json from 'react-syntax-highlighter/dist/esm/languages/hljs/json';
+import { docco } from 'react-syntax-highlighter/dist/esm/styles/hljs';
+import { lang } from '../../i18n/lang';
 
-const Container = styled.div`
-  padding: 20px;
-  height: 100vh;
-  background: ${({ theme }) => theme.bg};
-  color: ${({ theme }) => theme.text};
+// 注册 JSON 语言
+SyntaxHighlighter.registerLanguage('json', json);
+
+const fadeIn = keyframes`
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 `;
 
-const RequestContainer = styled.div`
+const ApiTesterContainer = styled.div`
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  max-width: 1200px;
-  margin: 0 auto;
+  background: linear-gradient(135deg, #e0f7fa 0%, #b2ebf2 100%);
+  padding: 0.5rem;
+  overflow: hidden;
+`;
+
+const ContentCard = styled.div`
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  animation: ${fadeIn} 0.5s ease-out;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  overflow: hidden;
+`;
+
+const Header = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+`;
+
+const Title = styled.h1`
+  color: #006064;
+  text-align: left;
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  padding: 0.25rem 0;
+`;
+
+const RequestSection = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  flex: 1;
+  min-height: 0;
+`;
+
+const UrlBar = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
 `;
 
 const MethodSelect = styled.select`
-  padding: 8px 12px;
-  border-radius: 4px;
-  border: 1px solid ${({ theme }) => theme.border};
-  background: ${({ theme }) => theme.card};
-  color: ${({ theme }) => theme.text};
-  font-size: 14px;
-  width: 100px;
+  padding: 0.5rem;
+  border: 2px solid #b2ebf2;
+  border-radius: 8px;
+  background: white;
+  color: #006064;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  outline: none;
+  transition: all 0.3s ease;
+
+  &:focus {
+    border-color: #00acc1;
+    box-shadow: 0 0 0 3px rgba(0, 172, 193, 0.1);
+  }
 `;
 
 const UrlInput = styled.input`
-  padding: 8px 12px;
-  border-radius: 4px;
-  border: 1px solid ${({ theme }) => theme.border};
-  background: ${({ theme }) => theme.card};
-  color: ${({ theme }) => theme.text};
-  font-size: 14px;
   flex: 1;
-`;
-
-const RequestHeader = styled.div`
-  display: flex;
-  gap: 12px;
-  align-items: center;
-`;
-
-const Section = styled.div`
-  background: ${({ theme }) => theme.card};
+  padding: 0.5rem;
+  border: 2px solid #b2ebf2;
   border-radius: 8px;
-  padding: 16px;
-  border: 1px solid ${({ theme }) => theme.border};
+  background: white;
+  color: #006064;
+  font-size: 0.9rem;
+  outline: none;
+  transition: all 0.3s ease;
+
+  &:focus {
+    border-color: #00acc1;
+    box-shadow: 0 0 0 3px rgba(0, 172, 193, 0.1);
+  }
 `;
 
-const SectionTitle = styled.h3`
-  margin: 0 0 12px 0;
-  font-size: 16px;
-  color: ${({ theme }) => theme.text};
+const SendButton = styled.button`
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 8px;
+  background: #00acc1;
+  color: white;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    background: #0097a7;
+  }
+
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+  }
 `;
 
-const KeyValueList = styled.div`
+const TabsContainer = styled.div`
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 2px solid #b2ebf2;
+  padding-bottom: 0.5rem;
+`;
+
+const Tab = styled.button`
+  padding: 0.5rem 1rem;
+  border: none;
+  background: ${props => props.$active ? '#00acc1' : 'transparent'};
+  color: ${props => props.$active ? 'white' : '#006064'};
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+
+  &:hover {
+    background: ${props => props.$active ? '#0097a7' : '#e0f7fa'};
+  }
+`;
+
+const EditorContainer = styled.div`
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  flex: 1;
+  min-height: 0;
+
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+`;
+
+const EditorSection = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 0.5rem;
+  height: 100%;
+  overflow: hidden;
 `;
 
-const KeyValueRow = styled.div`
-  display: flex;
-  gap: 8px;
-  align-items: center;
-`;
-
-const Input = styled.input`
-  padding: 8px 12px;
-  border-radius: 4px;
-  border: 1px solid ${({ theme }) => theme.border};
-  background: ${({ theme }) => theme.bg};
-  color: ${({ theme }) => theme.text};
-  font-size: 14px;
-  flex: 1;
+const SectionLabel = styled.label`
+  color: #006064;
+  font-size: 1rem;
+  font-weight: 500;
+  margin: 0;
+  padding: 0 0.25rem;
 `;
 
 const TextArea = styled.textarea`
-  padding: 8px 12px;
-  border-radius: 4px;
-  border: 1px solid ${({ theme }) => theme.border};
-  background: ${({ theme }) => theme.bg};
-  color: ${({ theme }) => theme.text};
+  flex: 1;
+  padding: 1rem;
+  border-radius: 12px;
+  border: 2px solid #b2ebf2;
+  background: white;
+  color: #006064;
+  font-family: 'Fira Code', monospace;
   font-size: 14px;
-  width: 100%;
-  min-height: 150px;
-  resize: vertical;
-`;
+  line-height: 1.6;
+  resize: none;
+  outline: none;
+  transition: all 0.3s ease;
 
-const Button = styled.button`
-  padding: 8px 16px;
-  border-radius: 4px;
-  border: none;
-  background: ${({ theme }) => theme.primary};
-  color: white;
-  font-size: 14px;
-  cursor: pointer;
-  transition: opacity 0.2s;
+  &:focus {
+    border-color: #00acc1;
+    box-shadow: 0 0 0 3px rgba(0, 172, 193, 0.1);
+  }
 
-  &:hover {
-    opacity: 0.9;
+  &::placeholder {
+    color: #80deea;
   }
 `;
 
 const ResponseContainer = styled.div`
-  margin-top: 20px;
-  background: ${({ theme }) => theme.card};
-  border-radius: 8px;
-  padding: 16px;
-  border: 1px solid ${({ theme }) => theme.border};
-`;
+  flex: 1;
+  border-radius: 12px;
+  border: 2px solid #b2ebf2;
+  background: white;
+  overflow: auto;
+  position: relative;
+  padding: 1rem;
 
-const ResponseHeader = styled.div`
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-`;
-
-const StatusBadge = styled.span`
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: bold;
-  background: ${({ status }) => {
-    if (status >= 200 && status < 300) return '#4caf50';
-    if (status >= 400 && status < 500) return '#f44336';
-    if (status >= 500) return '#ff9800';
-    return '#9e9e9e';
-  }};
-  color: white;
-`;
-
-const ResponseBody = styled.pre`
-  background: ${({ theme }) => theme.bg};
-  padding: 12px;
-  border-radius: 4px;
-  overflow-x: auto;
-  margin: 0;
-  font-family: monospace;
-  font-size: 14px;
-  white-space: pre-wrap;
-  word-wrap: break-word;
-`;
-
-const TabContainer = styled.div`
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-`;
-
-const Tab = styled.button`
-  padding: 8px 16px;
-  border-radius: 4px;
-  border: 1px solid ${({ theme, $active }) => $active ? theme.primary : theme.border};
-  background: ${({ theme, $active }) => $active ? theme.primary : theme.card};
-  color: ${({ theme, $active }) => $active ? 'white' : theme.text};
-  font-size: 14px;
-  cursor: pointer;
-  transition: all 0.2s;
-
-  &:hover {
-    border-color: ${({ theme }) => theme.primary};
+  .hljs {
+    background: transparent !important;
+    padding: 0;
+    margin: 0;
+    font-family: 'Fira Code', monospace;
+    font-size: 14px;
+    line-height: 1.6;
   }
 `;
 
-function ApiTester() {
-  const { theme } = useTheme();
+const StatusBar = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #b2ebf2;
+`;
+
+const StatusCode = styled.span`
+  font-size: 0.9rem;
+  font-weight: 500;
+  color: ${props => {
+    const code = parseInt(props.$code);
+    if (code >= 200 && code < 300) return '#4caf50';
+    if (code >= 300 && code < 400) return '#2196f3';
+    if (code >= 400 && code < 500) return '#ff9800';
+    if (code >= 500) return '#f44336';
+    return '#006064';
+  }};
+`;
+
+const ResponseTime = styled.span`
+  font-size: 0.9rem;
+  color: #006064;
+`;
+
+const ApiTester = () => {
   const [method, setMethod] = useState('GET');
   const [url, setUrl] = useState('');
-  const [headers, setHeaders] = useState([{ key: '', value: '' }]);
-  const [body, setBody] = useState('');
-  const [response, setResponse] = useState(null);
   const [activeTab, setActiveTab] = useState('body');
+  const [requestBody, setRequestBody] = useState('');
+  const [headers, setHeaders] = useState('{\n  "Content-Type": "application/json"\n}');
+  const [response, setResponse] = useState(null);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const language = 'zh';
+  const t = lang[language];
 
-  const handleAddHeader = () => {
-    setHeaders([...headers, { key: '', value: '' }]);
-  };
-
-  const handleHeaderChange = (index, field, value) => {
-    const newHeaders = [...headers];
-    newHeaders[index][field] = value;
-    setHeaders(newHeaders);
-  };
-
-  const handleRemoveHeader = (index) => {
-    const newHeaders = headers.filter((_, i) => i !== index);
-    setHeaders(newHeaders);
-  };
-
-  const handleSendRequest = async () => {
-    if (!url) {
-      setError('请输入URL');
-      return;
-    }
+  const handleSend = async () => {
+    if (!url) return;
 
     setLoading(true);
-    setError(null);
-    setResponse(null);
+    const startTime = Date.now();
 
     try {
-      // 确保URL格式正确
-      let requestUrl = url;
-      if (!url.startsWith('http://') && !url.startsWith('https://')) {
-        requestUrl = `https://${url}`;
-      }
-
-      // 构建请求头
-      const headerObj = headers.reduce((acc, { key, value }) => {
-        if (key && value) {
-          acc[key] = value;
-        }
-        return acc;
-      }, {});
-
-      // 添加默认请求头
-      const defaultHeaders = {
-        'Accept': '*/*',
-        'Accept-Language': 'zh-CN,zh;q=0.9,en;q=0.8',
-        'Cache-Control': 'no-cache',
-        'Connection': 'keep-alive',
-        'Pragma': 'no-cache',
-        'User-Agent': navigator.userAgent,
-        'Origin': window.location.origin,
-        'X-Requested-With': 'XMLHttpRequest'
-      };
-
-      // 合并自定义请求头和默认请求头
-      const finalHeaders = {
-        ...defaultHeaders,
-        ...headerObj
-      };
-
-      // 添加CORS代理
-      const proxyUrl = 'https://cors-anywhere.herokuapp.com/';
-      const finalUrl = `${proxyUrl}${requestUrl}`;
-
+      const headersObj = JSON.parse(headers);
       const options = {
         method,
-        headers: finalHeaders,
-        mode: 'cors',
-        credentials: 'omit'
+        headers: headersObj,
       };
 
-      // 如果是POST、PUT或PATCH请求，添加请求体
-      if (['POST', 'PUT', 'PATCH'].includes(method) && body) {
-        try {
-          const parsedBody = JSON.parse(body);
-          options.body = JSON.stringify(parsedBody);
-          finalHeaders['Content-Type'] = 'application/json';
-        } catch (e) {
-          setError('请求体格式错误，请使用有效的JSON格式');
-          setLoading(false);
-          return;
-        }
+      if (method !== 'GET' && requestBody) {
+        options.body = requestBody;
       }
 
-      const response = await fetch(finalUrl, options);
+      const response = await fetch(url, options);
+      const endTime = Date.now();
+      const responseTime = endTime - startTime;
+
       const responseData = await response.text();
-      
-      // 尝试解析响应为JSON
       let formattedResponse;
       try {
-        formattedResponse = JSON.parse(responseData);
+        formattedResponse = JSON.stringify(JSON.parse(responseData), null, 2);
       } catch {
         formattedResponse = responseData;
       }
@@ -275,111 +299,129 @@ function ApiTester() {
         status: response.status,
         statusText: response.statusText,
         headers: Object.fromEntries(response.headers.entries()),
-        data: formattedResponse
+        body: formattedResponse,
+        time: responseTime,
       });
     } catch (error) {
-      console.error('Request failed:', error);
-      setError(error.message || '请求失败');
+      setResponse({
+        status: 0,
+        statusText: 'Error',
+        headers: {},
+        body: error.message,
+        time: Date.now() - startTime,
+      });
     } finally {
       setLoading(false);
     }
   };
 
-  const formatResponse = () => {
-    if (!response) return '';
-    try {
-      return JSON.stringify(JSON.parse(response.data), null, 2);
-    } catch {
-      return response.data;
-    }
-  };
-
   return (
-    <Container>
-      <RequestContainer>
-        <RequestHeader>
-          <MethodSelect value={method} onChange={(e) => setMethod(e.target.value)}>
-            <option value="GET">GET</option>
-            <option value="POST">POST</option>
-            <option value="PUT">PUT</option>
-            <option value="DELETE">DELETE</option>
-            <option value="PATCH">PATCH</option>
-          </MethodSelect>
-          <UrlInput
-            value={url}
-            onChange={(e) => setUrl(e.target.value)}
-            placeholder="Enter request URL"
-          />
-          <Button onClick={handleSendRequest} disabled={loading}>
-            {loading ? 'Sending...' : 'Send'}
-          </Button>
-        </RequestHeader>
+    <ApiTesterContainer>
+      <ContentCard>
+        <Header>
+          <Title>{t.apiTesterTitle}</Title>
+        </Header>
+        <RequestSection>
+          <UrlBar>
+            <MethodSelect value={method} onChange={(e) => setMethod(e.target.value)}>
+              <option value="GET">GET</option>
+              <option value="POST">POST</option>
+              <option value="PUT">PUT</option>
+              <option value="DELETE">DELETE</option>
+              <option value="PATCH">PATCH</option>
+              <option value="HEAD">HEAD</option>
+              <option value="OPTIONS">OPTIONS</option>
+            </MethodSelect>
+            <UrlInput
+              value={url}
+              onChange={(e) => setUrl(e.target.value)}
+              placeholder={t.urlPlaceholder}
+            />
+            <SendButton onClick={handleSend} disabled={loading || !url}>
+              {loading ? t.sending : t.send}
+            </SendButton>
+          </UrlBar>
 
-        <Section>
-          <SectionTitle>Headers</SectionTitle>
-          <KeyValueList>
-            {headers.map((header, index) => (
-              <KeyValueRow key={index}>
-                <Input
-                  value={header.key}
-                  onChange={(e) => handleHeaderChange(index, 'key', e.target.value)}
-                  placeholder="Key"
-                />
-                <Input
-                  value={header.value}
-                  onChange={(e) => handleHeaderChange(index, 'value', e.target.value)}
-                  placeholder="Value"
-                />
-                <Button onClick={() => handleRemoveHeader(index)}>Remove</Button>
-              </KeyValueRow>
-            ))}
-            <Button onClick={handleAddHeader}>Add Header</Button>
-          </KeyValueList>
-        </Section>
-
-        <Section>
-          <TabContainer>
-            <Tab 
-              $active={activeTab === 'body'} 
+          <TabsContainer>
+            <Tab
+              $active={activeTab === 'body'}
               onClick={() => setActiveTab('body')}
             >
-              Body
+              {t.requestBody}
             </Tab>
-            <Tab 
-              $active={activeTab === 'form-data'} 
-              onClick={() => setActiveTab('form-data')}
+            <Tab
+              $active={activeTab === 'headers'}
+              onClick={() => setActiveTab('headers')}
             >
-              Form Data
+              {t.headers}
             </Tab>
-          </TabContainer>
-          {activeTab === 'body' && (
-            <TextArea
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              placeholder="Enter request body (JSON)"
-            />
-          )}
-          {activeTab === 'form-data' && (
-            <KeyValueList>
-              {/* Form data implementation can be added here */}
-              <div>Form data implementation coming soon...</div>
-            </KeyValueList>
-          )}
-        </Section>
+          </TabsContainer>
 
-        {response && (
-          <ResponseContainer>
-            <ResponseHeader>
-              <StatusBadge status={response.status}>
-                {response.status} {response.statusText}
-              </StatusBadge>
-            </ResponseHeader>
-            <ResponseBody>{formatResponse()}</ResponseBody>
-          </ResponseContainer>
-        )}
-      </RequestContainer>
-    </Container>
+          <EditorContainer>
+            <EditorSection>
+              <SectionLabel>
+                {activeTab === 'body' ? t.requestBody : t.headers}
+              </SectionLabel>
+              <TextArea
+                value={activeTab === 'body' ? requestBody : headers}
+                onChange={(e) => {
+                  if (activeTab === 'body') {
+                    setRequestBody(e.target.value);
+                  } else {
+                    setHeaders(e.target.value);
+                  }
+                }}
+                placeholder={
+                  activeTab === 'body'
+                    ? t.requestBodyPlaceholder
+                    : t.headersPlaceholder
+                }
+                style={{
+                  fontFamily: 'monospace',
+                  whiteSpace: 'pre',
+                  tabSize: 2
+                }}
+              />
+            </EditorSection>
+
+            <EditorSection>
+              <SectionLabel>{t.response}</SectionLabel>
+              <ResponseContainer>
+                {response && (
+                  <>
+                    <StatusBar>
+                      <StatusCode $code={response.status}>
+                        {response.status} {response.statusText}
+                      </StatusCode>
+                      <ResponseTime>{response.time}ms</ResponseTime>
+                    </StatusBar>
+                    <SyntaxHighlighter
+                      language="json"
+                      style={docco}
+                      customStyle={{
+                        background: 'transparent',
+                        padding: 0,
+                        margin: 0,
+                        fontSize: '14px',
+                        lineHeight: '1.6',
+                        fontFamily: "'Fira Code', monospace",
+                      }}
+                      wrapLines={true}
+                      wrapLongLines={true}
+                      useInlineStyles={false}
+                      showLineNumbers={true}
+                    >
+                      {response.body}
+                    </SyntaxHighlighter>
+                  </>
+                )}
+              </ResponseContainer>
+            </EditorSection>
+          </EditorContainer>
+        </RequestSection>
+      </ContentCard>
+    </ApiTesterContainer>
   );
-}
+};
 
 export default ApiTester; 

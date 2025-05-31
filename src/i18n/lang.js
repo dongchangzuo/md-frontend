@@ -185,6 +185,25 @@ export const lang = {
     jsonOutputPlaceholder: '格式化后的 JSON 将显示在这里...',
     templatePlaceholder: '在此粘贴 JSON 模板...',
     templateOutputPlaceholder: '生成的 JSON 将显示在这里...',
+    selectTemplate: '选择模板',
+    userTemplate: '用户信息',
+    productTemplate: '商品信息',
+    orderTemplate: '订单信息',
+
+    // API Tester
+    apiTester: {
+      title: 'API 测试工具',
+      description: '测试和调试 API 接口',
+      urlPlaceholder: '输入请求 URL...',
+      requestBody: '请求体',
+      headers: '请求头',
+      response: '响应',
+      send: '发送',
+      sending: '发送中...',
+      requestBodyPlaceholder: '输入请求体 (JSON)...',
+      headersPlaceholder: '输入请求头 (JSON)...',
+      responsePlaceholder: '响应将显示在这里...'
+    }
   },
   en: {
     // Common
@@ -378,5 +397,20 @@ export const lang = {
     jsonIdentifierError: 'Invalid JSON identifier',
     line: 'Line',
     column: 'Column',
+
+    // API Tester
+    apiTester: {
+      title: 'API Tester',
+      description: 'Test and debug API endpoints',
+      urlPlaceholder: 'Enter request URL...',
+      requestBody: 'Request Body',
+      headers: 'Headers',
+      response: 'Response',
+      send: 'Send',
+      sending: 'Sending...',
+      requestBodyPlaceholder: 'Enter request body (JSON)...',
+      headersPlaceholder: 'Enter headers (JSON)...',
+      responsePlaceholder: 'Response will appear here...'
+    }
   }
 }; 
