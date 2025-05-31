@@ -983,10 +983,9 @@ const ApiTester = () => {
   const handleAddRequestToCollection = (collectionId) => {
     // 创建新的请求
     const requestId = `req_${Date.now()}`;
-    const newRequestName = `New Request ${Date.now()}`;
     const newRequest = {
       id: requestId,
-      name: newRequestName,
+      name: 'Untitled',
       method: 'GET',
       url: '',
       headers: [{ key: 'Content-Type', value: 'application/json' }],
@@ -1015,7 +1014,7 @@ const ApiTester = () => {
 
     // 激活新创建的请求
     setActiveRequest(requestId);
-    setRequestName(newRequestName);
+    setRequestName('Untitled');
     setMethod('GET');
     setUrl('');
     setHeaders([{ key: 'Content-Type', value: 'application/json' }]);
