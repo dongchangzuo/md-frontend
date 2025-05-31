@@ -200,9 +200,8 @@ export const lang = {
       response: '响应',
       send: '发送',
       sending: '发送中...',
-      requestBodyPlaceholder: '输入请求体 (JSON)...',
-      headersPlaceholder: '输入请求头 (JSON)...',
-      responsePlaceholder: '响应将显示在这里...'
+      requestBodyPlaceholder: '输入请求体...',
+      headersPlaceholder: '输入请求头...',
     }
   },
   en: {

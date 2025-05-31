@@ -84,16 +84,18 @@ const UrlBar = styled.div`
 `;
 
 const MethodSelect = styled.select`
-  padding: 0.5rem;
+  padding: 0.75rem;
   border: 2px solid #b2ebf2;
   border-radius: 8px;
   background: white;
   color: #006064;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
   outline: none;
   transition: all 0.3s ease;
+  height: 42px;
+  min-width: 120px;
 
   &:focus {
     border-color: #00acc1;
@@ -103,14 +105,15 @@ const MethodSelect = styled.select`
 
 const UrlInput = styled.input`
   flex: 1;
-  padding: 0.5rem;
+  padding: 0.75rem;
   border: 2px solid #b2ebf2;
   border-radius: 8px;
   background: white;
   color: #006064;
-  font-size: 0.9rem;
+  font-size: 1rem;
   outline: none;
   transition: all 0.3s ease;
+  height: 42px;
 
   &:focus {
     border-color: #00acc1;
@@ -119,18 +122,21 @@ const UrlInput = styled.input`
 `;
 
 const SendButton = styled.button`
-  padding: 0.5rem 1rem;
+  padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 8px;
   background: #00acc1;
   color: white;
-  font-size: 0.9rem;
+  font-size: 1rem;
   font-weight: 500;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  min-width: 100px;
+  justify-content: center;
+  height: 42px;
 
   &:hover {
     transform: translateY(-2px);
@@ -356,7 +362,7 @@ const ApiTester = () => {
               placeholder={t.urlPlaceholder}
             />
             <SendButton onClick={handleSend} disabled={loading || !url}>
-              {loading ? t.sending : t.send}
+              {loading ? t.apiTester.sending : t.apiTester.send}
             </SendButton>
           </UrlBar>
 
