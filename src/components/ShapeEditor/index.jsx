@@ -284,53 +284,13 @@ const Canvas = styled.canvas`
 `;
 
 function ShapeEditor({ language, setLanguage }) {
-  const [selectedShape, setSelectedShape] = useState(null);
-  const [shapes, setShapes] = useState([]);
-  const [currentFrame, setCurrentFrame] = useState(0);
+  const [jsonConfig, setJsonConfig] = useState('');
+  const [error, setError] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
-  const [frameDelay, setFrameDelay] = useState(1000);
+  const [currentStep, setCurrentStep] = useState(0);
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const t = lang[language];
-  const [jsonConfig, setJsonConfig] = useState('');
-  const [error, setError] = useState('');
-  const [currentStep, setCurrentStep] = useState(0);
-
-  const handleShapeSelect = (shape) => {
-    setSelectedShape(shape);
-  };
-
-  const handleAddShape = (shape) => {
-    setShapes([...shapes, shape]);
-  };
-
-  const handleRemoveShape = (index) => {
-    const newShapes = [...shapes];
-    newShapes.splice(index, 1);
-    setShapes(newShapes);
-  };
-
-  const handleFrameChange = (frame) => {
-    setCurrentFrame(frame);
-  };
-
-  const handlePlay = () => {
-    if (!validateJson(jsonConfig)) return;
-    setIsPlaying(true);
-  };
-
-  const handlePause = () => {
-    setIsPlaying(false);
-  };
-
-  const handleReplay = () => {
-    setCurrentStep(0);
-    setIsPlaying(true);
-  };
-
-  const handleExportGif = () => {
-    // TODO: Implement GIF export
-  };
 
   const validateJson = (jsonString) => {
     try {
@@ -341,6 +301,12 @@ function ShapeEditor({ language, setLanguage }) {
       if (!Array.isArray(parsed.array.values) || !Array.isArray(parsed.steps)) {
         throw new Error('"array.values" and "steps" must be arrays');
       }
+      // Validate steps format
+      parsed.steps.forEach((step, index) => {
+        if (typeof step.i !== 'number' || typeof step.j !== 'number') {
+          throw new Error(`Step ${index} must contain "i" and "j" numbers`);
+        }
+      });
       return parsed;
     } catch (e) {
       setError(e.message);
@@ -348,7 +314,7 @@ function ShapeEditor({ language, setLanguage }) {
     }
   };
 
-  const drawArray = (ctx, data, highlightIndex = -1) => {
+  const drawArray = (ctx, data, i = -1, j = -1) => {
     const { values, position, cellSize } = data.array;
     const canvas = ctx.canvas;
     
@@ -356,12 +322,22 @@ function ShapeEditor({ language, setLanguage }) {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
     // Draw array elements
-    for (let i = 0; i < values.length; i++) {
-      const x = position[0] + i * cellSize;
+    for (let index = 0; index < values.length; index++) {
+      const x = position[0] + index * cellSize;
       const y = position[1];
       
+      // Determine cell color based on pointer positions
+      let cellColor = '#e0f7fa'; // Default color
+      if (index === i && index === j) {
+        cellColor = '#ffb74d'; // Orange when both pointers are at the same position
+      } else if (index === i) {
+        cellColor = '#ef5350'; // Red for i pointer
+      } else if (index === j) {
+        cellColor = '#42a5f5'; // Blue for j pointer
+      }
+      
       // Draw cell
-      ctx.fillStyle = (i === highlightIndex) ? '#00acc1' : '#e0f7fa';
+      ctx.fillStyle = cellColor;
       ctx.fillRect(x, y, cellSize - 5, 40);
       ctx.strokeStyle = '#006064';
       ctx.strokeRect(x, y, cellSize - 5, 40);
@@ -370,45 +346,34 @@ function ShapeEditor({ language, setLanguage }) {
       ctx.fillStyle = '#006064';
       ctx.font = '20px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText(values[i], x + (cellSize - 5) / 2, y + 25);
+      ctx.fillText(values[index], x + (cellSize - 5) / 2, y + 25);
 
-      if (i === highlightIndex) {
-        // Draw pointer
+      // Draw pointer markers
+      if (index === i) {
         ctx.beginPath();
         ctx.moveTo(x + (cellSize - 5) / 2, y - 20);
         ctx.lineTo(x + (cellSize - 5) / 2, y);
-        ctx.strokeStyle = '#00acc1';
+        ctx.strokeStyle = '#ef5350';
         ctx.stroke();
         
-        // Draw arrow
-        ctx.fillStyle = '#00acc1';
-        ctx.font = '20px sans-serif';
-        ctx.fillText('↑', x + (cellSize - 5) / 2 - 5, y - 25);
+        ctx.fillStyle = '#ef5350';
+        ctx.font = '16px sans-serif';
+        ctx.fillText('i', x + (cellSize - 5) / 2 - 5, y - 25);
+      }
+      
+      if (index === j) {
+        ctx.beginPath();
+        ctx.moveTo(x + (cellSize - 5) / 2, y - 40);
+        ctx.lineTo(x + (cellSize - 5) / 2, y);
+        ctx.strokeStyle = '#42a5f5';
+        ctx.stroke();
+        
+        ctx.fillStyle = '#42a5f5';
+        ctx.font = '16px sans-serif';
+        ctx.fillText('j', x + (cellSize - 5) / 2 - 5, y - 45);
       }
     }
   };
-
-  useEffect(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const resizeObserver = new ResizeObserver(entries => {
-      for (const entry of entries) {
-        const { width, height } = entry.contentRect;
-        canvas.width = width;
-        canvas.height = height;
-        // Redraw current state
-        const data = validateJson(jsonConfig);
-        if (data) {
-          const ctx = canvas.getContext('2d');
-          drawArray(ctx, data, currentStep > 0 ? data.steps[currentStep - 1].highlightIndex : -1);
-        }
-      }
-    });
-
-    resizeObserver.observe(canvas);
-    return () => resizeObserver.disconnect();
-  }, [jsonConfig, currentStep]);
 
   const animate = () => {
     const data = validateJson(jsonConfig);
@@ -424,7 +389,8 @@ function ShapeEditor({ language, setLanguage }) {
       return;
     }
 
-    drawArray(ctx, data, steps[currentStep].highlightIndex);
+    const { i, j } = steps[currentStep];
+    drawArray(ctx, data, i, j);
     setCurrentStep(prev => prev + 1);
   };
 
@@ -438,10 +404,50 @@ function ShapeEditor({ language, setLanguage }) {
     return () => clearInterval(animationRef.current);
   }, [isPlaying, currentStep, jsonConfig]);
 
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const resizeObserver = new ResizeObserver(entries => {
+      for (const entry of entries) {
+        const { width, height } = entry.contentRect;
+        canvas.width = width;
+        canvas.height = height;
+        // Redraw current state
+        const data = validateJson(jsonConfig);
+        if (data && currentStep > 0) {
+          const ctx = canvas.getContext('2d');
+          const { i, j } = data.steps[currentStep - 1];
+          drawArray(ctx, data, i, j);
+        } else if (data) {
+          const ctx = canvas.getContext('2d');
+          drawArray(ctx, data);
+        }
+      }
+    });
+
+    resizeObserver.observe(canvas);
+    return () => resizeObserver.disconnect();
+  }, [jsonConfig, currentStep]);
+
   const handleJsonChange = (e) => {
     setJsonConfig(e.target.value);
     setError('');
     validateJson(e.target.value);
+  };
+
+  const handlePlay = () => {
+    if (!validateJson(jsonConfig)) return;
+    setIsPlaying(true);
+  };
+
+  const handlePause = () => {
+    setIsPlaying(false);
+  };
+
+  const handleReplay = () => {
+    setCurrentStep(0);
+    setIsPlaying(true);
   };
 
   return (
