@@ -3,6 +3,8 @@ import styled, { keyframes } from 'styled-components';
 import { lang } from '../../i18n/lang';
 import { useTheme } from '../../theme/ThemeContext';
 import './OCR.css';
+import { useNavigate } from 'react-router-dom';
+import { tokenManager } from '../../services/api';
 
 const fadeIn = keyframes`
   from {
@@ -216,6 +218,7 @@ const OCR = ({ language, setLanguage }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef(null);
   const t = lang[language];
+  const navigate = useNavigate();
 
   const handleFileSelect = (file) => {
     if (!file) return;
@@ -256,24 +259,45 @@ const OCR = ({ language, setLanguage }) => {
   };
 
   const handleRecognize = async () => {
-    if (!image) return;
+    if (!image) {
+      setError(t.noImageSelected);
+      return;
+    }
 
     setIsProcessing(true);
-    setError('');
+    setError(null);
 
     try {
-      // TODO: 实现实际的 OCR 识别逻辑
-      // 这里需要调用后端 API 进行 OCR 识别
-      // const response = await ocrAPI.recognize(image);
-      // setText(response.text);
-      
-      // 临时模拟识别结果
-      setTimeout(() => {
-        setText('OCR 识别结果将显示在这里...');
-        setIsProcessing(false);
-      }, 1000);
+      const base64Response = await fetch(image);
+      const blob = await base64Response.blob();
+
+      const formData = new FormData();
+      formData.append('image', blob, 'image.jpg');
+
+      const response = await fetch('http://localhost:8080/api/ocr/recognize', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${tokenManager.getToken()}`
+        },
+        body: formData
+      });
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Authentication failed');
+        }
+        throw new Error('Recognition failed');
+      }
+
+      const data = await response.json();
+      setText(data.text || '');
     } catch (error) {
-      setError(t.recognitionFailed);
+      console.error('OCR recognition error:', error);
+      setError(error.message === 'Authentication failed' ? t.authFailed : t.recognitionFailed);
+      if (error.message === 'Authentication failed') {
+        navigate('/login');
+      }
+    } finally {
       setIsProcessing(false);
     }
   };
