@@ -9,6 +9,7 @@ import OCR from './components/OCR/OCR'
 import ShapeEditor from './components/ShapeEditor'
 import JsonFormat from './components/JsonFormat/JsonFormat'
 import ApiTester from './components/ApiTester/ApiTester'
+import Base64Page from './pages/Base64/Base64'
 import { authAPI, tokenManager } from './services/api'
 import { ThemeProvider } from './theme/ThemeContext';
 import { ThemeProvider as StyledThemeProvider } from 'styled-components';
@@ -237,6 +238,11 @@ function AppContent() {
             <Route path="/json" element={
               <ProtectedRoute user={user}>
                 <JsonFormat language={language} />
+              </ProtectedRoute>
+            } />
+            <Route path="/base64" element={
+              <ProtectedRoute user={user}>
+                <Base64Page language={language} />
               </ProtectedRoute>
             } />
             <Route path="/api" element={

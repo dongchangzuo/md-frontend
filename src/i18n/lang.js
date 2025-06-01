@@ -190,6 +190,17 @@ export const lang = {
     productTemplate: '商品信息',
     orderTemplate: '订单信息',
 
+    // Base64
+    base64Title: 'Base64 编解码工具',
+    encode: '编码',
+    decode: '解码',
+    inputPlaceholder: '在此输入要编码/解码的文本...',
+    outputPlaceholder: '编码/解码结果将显示在这里...',
+    invalidInput: '无效的输入',
+    invalidBase64: '无效的 Base64 字符串',
+    copySuccess: '已复制到剪贴板',
+    clearSuccess: '已清空',
+
     // API Tester
     apiTester: {
       title: 'API 测试工具',
@@ -396,6 +407,17 @@ export const lang = {
     jsonIdentifierError: 'Invalid JSON identifier',
     line: 'Line',
     column: 'Column',
+
+    // Base64
+    base64Title: 'Base64 Encoder/Decoder',
+    encode: 'Encode',
+    decode: 'Decode',
+    inputPlaceholder: 'Enter text to encode/decode here...',
+    outputPlaceholder: 'Encoded/decoded result will appear here...',
+    invalidInput: 'Invalid input',
+    invalidBase64: 'Invalid Base64 string',
+    copySuccess: 'Copied to clipboard',
+    clearSuccess: 'Cleared',
 
     // API Tester
     apiTester: {
