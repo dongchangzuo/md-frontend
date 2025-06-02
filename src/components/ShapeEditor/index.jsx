@@ -186,6 +186,43 @@ const Controls = styled.div`
   margin-top: 1rem;
 `;
 
+const SpeedControl = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-left: auto;
+`;
+
+const SpeedLabel = styled.span`
+  color: #006064;
+  font-size: 0.9rem;
+  white-space: nowrap;
+`;
+
+const SpeedSlider = styled.input`
+  width: 100px;
+  -webkit-appearance: none;
+  height: 4px;
+  background: #b2ebf2;
+  border-radius: 2px;
+  outline: none;
+
+  &::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    background: #00acc1;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s ease;
+
+    &:hover {
+      transform: scale(1.2);
+      background: #0097a7;
+    }
+  }
+`;
+
 const ControlButton = styled.button`
   padding: 0.75rem 1.5rem;
   border: none;
@@ -288,6 +325,7 @@ function ShapeEditor({ language, setLanguage }) {
   const [error, setError] = useState('');
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentStep, setCurrentStep] = useState(0);
+  const [animationSpeed, setAnimationSpeed] = useState(1000); // 默认1秒
   const canvasRef = useRef(null);
   const animationRef = useRef(null);
   const t = lang[language];
@@ -396,13 +434,13 @@ function ShapeEditor({ language, setLanguage }) {
 
   useEffect(() => {
     if (isPlaying) {
-      animationRef.current = setInterval(animate, 1000);
+      animationRef.current = setInterval(animate, animationSpeed);
     } else {
       clearInterval(animationRef.current);
     }
 
     return () => clearInterval(animationRef.current);
-  }, [isPlaying, currentStep, jsonConfig]);
+  }, [isPlaying, currentStep, jsonConfig, animationSpeed]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -448,6 +486,11 @@ function ShapeEditor({ language, setLanguage }) {
   const handleReplay = () => {
     setCurrentStep(0);
     setIsPlaying(true);
+  };
+
+  const handleSpeedChange = (e) => {
+    const speed = parseInt(e.target.value);
+    setAnimationSpeed(speed);
   };
 
   return (
@@ -506,6 +549,17 @@ function ShapeEditor({ language, setLanguage }) {
             </svg>
             {t.replay}
           </ControlButton>
+          <SpeedControl>
+            <SpeedLabel>速度: {animationSpeed}ms</SpeedLabel>
+            <SpeedSlider
+              type="range"
+              min="200"
+              max="6000"
+              step="100"
+              value={animationSpeed}
+              onChange={handleSpeedChange}
+            />
+          </SpeedControl>
         </Controls>
       </ContentCard>
     </ShapeEditorContainer>
