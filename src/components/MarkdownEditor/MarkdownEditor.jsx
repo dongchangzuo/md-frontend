@@ -639,11 +639,8 @@ const MarkdownPreview = styled.div`
   }
 `;
 
-function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }) {
+function MarkdownEditor() {
   const { theme, themeMode, toggleTheme } = useTheme();
-  const [internalLanguage, setInternalLanguage] = useState(propLanguage || 'en');
-  const language = propLanguage || internalLanguage;
-  const setLanguage = propSetLanguage || setInternalLanguage;
   const [content, setContent] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
   const [splitMode, setSplitMode] = useState(LAYOUT_TYPES.SPLIT_HORIZONTAL);
@@ -659,7 +656,6 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
   const [newName, setNewName] = useState('');
   const [error, setError] = useState('');
   const fileInputRef = useRef(null);
-  const t = lang[language];
   const navigate = useNavigate();
   const [isResizing, setIsResizing] = useState(false);
   const [sidebarWidth, setSidebarWidth] = useState(280);
@@ -685,14 +681,14 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
   };
 
   const handleNewFile = () => {
-    const fileName = prompt(t.newFile);
+    const fileName = prompt('Enter the file name');
     if (fileName) {
       setFiles([...files, { name: fileName, content: '' }]);
     }
   };
 
   const handleNewFolder = () => {
-    const folderName = prompt(t.newFolder);
+    const folderName = prompt('Enter the folder name');
     if (folderName) {
       setFiles([...files, { name: folderName, type: 'folder', children: [] }]);
     }
@@ -704,7 +700,7 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
   };
 
   const handleFileRename = (file) => {
-    const newName = prompt(t.rename, file.name);
+    const newName = prompt('Enter the new name', file.name);
     if (newName) {
       const newFiles = files.map(f => 
         f === file ? { ...f, name: newName } : f
@@ -714,7 +710,7 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
   };
 
   const handleFileDelete = (file) => {
-    if (confirm(t.deleteConfirm)) {
+    if (confirm('Are you sure you want to delete this file?')) {
       const newFiles = files.filter(f => f !== file);
       setFiles(newFiles);
       if (currentFile === file) {
@@ -908,9 +904,9 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
           marginLeft: 16 
         }}
       >
-        <option value="light">☀️ {t.light}</option>
-        <option value="dark">🌙 {t.dark}</option>
-        <option value="auto">🖥️ {t.auto}</option>
+        <option value="light">☀️ Light</option>
+        <option value="dark">🌙 Dark</option>
+        <option value="auto">🖥️ Auto</option>
       </select>
     </div>
   );
@@ -920,7 +916,7 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
       <MarkdownTextarea
         value={content}
         onChange={handleContentChange}
-        placeholder={t.writeMarkdown}
+        placeholder="Write markdown here..."
       />
     </EditorContainer>
   );
@@ -1112,8 +1108,8 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
   };
 
   const renderExportButton = () => (
-    <ActionButton onClick={handleExportHtml} title={t.exportHtml || 'Export as HTML'}>
-      {showExportSuccess ? (t.exportSuccess || 'Copied!') : (t.exportHtml || 'Export HTML')}
+    <ActionButton onClick={handleExportHtml} title="Export as HTML">
+      {showExportSuccess ? (lang.en.exportSuccess || 'Copied!') : (lang.en.exportHtml || 'Export HTML')}
     </ActionButton>
   );
 
@@ -1125,7 +1121,6 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
             <FileTree 
               onFileSelect={handleFileSelect} 
               isLocalMode={!cloudMode} 
-              language={language}
             />
             {!isCollapsed && (
               <ResizeHandle onMouseDown={handleMouseDown} />
@@ -1135,7 +1130,7 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
             <button 
               className="expand-button"
               onClick={handleExpand}
-              title={t.expandSidebar}
+              title={lang.en.expandSidebar}
             >
               ▶
             </button>
@@ -1147,16 +1142,9 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
                   <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
                   <polyline points="13 2 13 9 20 9" />
                 </svg>
-                {currentFile ? currentFile.name : t.markdownEditorTitle}
+                {currentFile ? currentFile.name : 'Markdown Editor'}
               </HeaderTitle>
               <HeaderActions>
-                <HeaderSelect 
-                  value={language} 
-                  onChange={e => setLanguage(e.target.value)}
-                >
-                  <option value="zh">中文</option>
-                  <option value="en">English</option>
-                </HeaderSelect>
                 <HeaderButton
                   className={cloudMode ? 'active' : ''}
                   onClick={() => handleModeSwitch('cloud')}
@@ -1164,7 +1152,7 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
                   </svg>
-                  {t.cloudMode}
+                  Cloud Mode
                 </HeaderButton>
                 <HeaderButton
                   className={!cloudMode ? 'active' : ''}
@@ -1173,12 +1161,12 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
                   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                     <path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z" />
                   </svg>
-                  {t.localMode}
+                  Local Mode
                 </HeaderButton>
                 {renderLayoutControls()}
                 {renderThemeSwitcher()}
                 {renderExportButton()}
-                <ProfileButton language={language} />
+                <ProfileButton />
               </HeaderActions>
             </EditorHeader>
             <EditorContent>
