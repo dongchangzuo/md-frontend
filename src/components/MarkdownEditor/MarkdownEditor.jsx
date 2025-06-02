@@ -878,39 +878,6 @@ function MarkdownEditor() {
     </EditorHeaderActions>
   );
 
-  const renderThemeSwitcher = () => (
-    <div style={{ display: 'flex', alignItems: 'center' }}>
-      <ThemeSelector
-        value={markdownTheme}
-        onChange={(e) => setMarkdownTheme(e.target.value)}
-      >
-        {Object.entries(markdownThemes).map(([key, theme]) => (
-          <option key={key} value={key}>
-            {theme.name}
-          </option>
-        ))}
-      </ThemeSelector>
-      <select
-        value={themeMode}
-        onChange={e => toggleTheme(e.target.value)}
-        style={{ 
-          fontSize: 15, 
-          padding: '4px 12px', 
-          borderRadius: 6, 
-          border: `1px solid ${theme.border}`, 
-          background: theme.card, 
-          color: theme.text, 
-          outline: 'none', 
-          marginLeft: 16 
-        }}
-      >
-        <option value="light">☀️ Light</option>
-        <option value="dark">🌙 Dark</option>
-        <option value="auto">🖥️ Auto</option>
-      </select>
-    </div>
-  );
-
   const renderEditor = () => (
     <EditorContainer>
       <MarkdownTextarea
@@ -1164,7 +1131,6 @@ function MarkdownEditor() {
                   Local Mode
                 </HeaderButton>
                 {renderLayoutControls()}
-                {renderThemeSwitcher()}
                 {renderExportButton()}
                 <ProfileButton />
               </HeaderActions>
