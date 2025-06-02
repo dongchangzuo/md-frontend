@@ -16,7 +16,6 @@ import './MarkdownEditor.css';
 import { useTheme } from '../../theme/ThemeContext';
 import { marked } from 'marked';
 import emoji from 'emoji-toolkit';
-import ProfileButton from '../ProfileButton/ProfileButton';
 
 // 配置 emoji-toolkit
 emoji.allow_native = true;
@@ -1132,7 +1131,6 @@ function MarkdownEditor() {
                 </HeaderButton>
                 {renderLayoutControls()}
                 {renderExportButton()}
-                <ProfileButton />
               </HeaderActions>
             </EditorHeader>
             <EditorContent>
