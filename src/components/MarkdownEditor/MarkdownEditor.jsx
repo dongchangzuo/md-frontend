@@ -46,9 +46,15 @@ const Container = styled.div`
 
 const EditorLayout = styled.div`
   display: flex;
-  height: calc(100vh - 60px); // 减去头部高度
-  position: relative;
+  width: 100%;
+  height: 100vh;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
   overflow: hidden;
+  background: ${({ theme }) => theme.bg};
 `;
 
 const EditorHeaderActions = styled.div`
