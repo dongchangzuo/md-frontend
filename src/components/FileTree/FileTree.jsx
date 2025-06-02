@@ -15,25 +15,21 @@ const fadeIn = keyframes`
 `;
 
 const FileTreeContainer = styled.div`
-  flex: 1;
+  width: 280px;
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  min-width: 0;
-  overflow: hidden;
+  background: rgba(255, 255, 255, 0.9);
+  backdrop-filter: blur(10px);
+  border-right: 1px solid #b2ebf2;
 `;
 
 const ContentCard = styled.div`
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
-  border-radius: 16px;
-  padding: 1.5rem;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  animation: ${fadeIn} 0.5s ease-out;
   flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
   overflow: hidden;
+  padding: 1rem;
 `;
 
 const Header = styled.div`
@@ -103,7 +99,7 @@ const ActionButton = styled.button`
 
 const TreeContainer = styled.div`
   flex: 1;
-  padding: 1rem;
+  padding: 0.5rem;
   background: white;
   border-radius: 12px;
   border: 2px solid #b2ebf2;
