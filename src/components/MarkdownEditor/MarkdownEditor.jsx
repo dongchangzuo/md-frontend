@@ -13,7 +13,6 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { lang } from '../../i18n/lang';
 import './MarkdownEditor.css';
-import { useTheme } from '../../theme/ThemeContext';
 import { marked } from 'marked';
 import emoji from 'emoji-toolkit';
 
@@ -30,8 +29,8 @@ const LAYOUT_TYPES = {
 };
 
 const EditorWrapper = styled.div`
-  background: ${({ theme }) => theme.card};
-  color: ${({ theme }) => theme.text};
+  background: #f5f5f5;
+  color: #333;
   height: 100vh;
   overflow: hidden;
 `;
@@ -41,6 +40,7 @@ const Container = styled.div`
   flex-direction: column;
   height: 100vh;
   overflow: hidden;
+  background: #f5f5f5;
 `;
 
 const EditorLayout = styled.div`
@@ -53,7 +53,7 @@ const EditorLayout = styled.div`
   right: 0;
   bottom: 0;
   overflow: hidden;
-  background: ${({ theme }) => theme.bg};
+  background: #f5f5f5;
 `;
 
 const EditorHeaderActions = styled.div`
@@ -67,9 +67,9 @@ const FileTreeWrapper = styled.div`
   width: var(--sidebar-width, 280px);
   min-width: 200px;
   max-width: 500px;
-  background: ${({ theme }) => theme.sidebarBg};
-  border-right: 1px solid ${({ theme }) => theme.border};
-  color: ${({ theme }) => theme.text};
+  background: white;
+  border-right: 1px solid #e0e0e0;
+  color: #333;
   transition: width 0.2s ease;
   flex-shrink: 0;
   position: relative;
@@ -108,7 +108,7 @@ const EditorMain = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: ${({ theme }) => theme.card};
+  background: white;
   overflow: hidden;
 `;
 
@@ -117,8 +117,8 @@ const EditorHeader = styled.div`
   align-items: center;
   justify-content: space-between;
   padding: 1rem 1.5rem;
-  background: ${({ theme }) => theme.card};
-  border-bottom: 1px solid ${({ theme }) => theme.border};
+  background: white;
+  border-bottom: 1px solid #e0e0e0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 `;
 
@@ -126,7 +126,7 @@ const HeaderTitle = styled.h2`
   margin: 0;
   font-size: 1.5rem;
   font-weight: 600;
-  color: ${({ theme }) => theme.text};
+  color: #333;
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -134,7 +134,7 @@ const HeaderTitle = styled.h2`
   svg {
     width: 24px;
     height: 24px;
-    color: ${({ theme }) => theme.primary};
+    color: #00acc1;
   }
 `;
 
@@ -151,17 +151,17 @@ const HeaderButton = styled.button`
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s;
-  border: 1px solid ${({ theme }) => theme.border};
-  background: ${({ theme }) => theme.card};
-  color: ${({ theme }) => theme.text};
+  border: 1px solid #e0e0e0;
+  background: white;
+  color: #333;
   display: flex;
   align-items: center;
   gap: 0.5rem;
 
   &:hover {
-    background: ${({ theme }) => theme.primary};
+    background: #00acc1;
     color: white;
-    border-color: ${({ theme }) => theme.primary};
+    border-color: #00acc1;
   }
 
   svg {
@@ -194,7 +194,7 @@ const HeaderSelect = styled.select`
 const EditorContent = styled.div`
   flex: 1;
   display: flex;
-  background: ${({ theme }) => theme.card};
+  background: #f5f5f5;
   overflow: hidden;
 `;
 
@@ -220,8 +220,8 @@ const SplitVertical = styled.div`
     right: 0;
     top: 50%;
     height: 1px;
-    background: ${({ theme }) => theme.border};
-    box-shadow: 0 0 4px ${({ theme }) => theme.border};
+    background: #e0e0e0;
+    box-shadow: 0 0 4px #e0e0e0;
     z-index: 1;
   }
 `;
@@ -230,99 +230,109 @@ const EditorContainer = styled.div`
   flex: 1;
   display: flex;
   flex-direction: column;
-  background: ${({ theme }) => theme.card};
-  border-right: 1px solid ${({ theme }) => theme.border};
+  background: white;
+  border-right: 1px solid #e0e0e0;
   overflow: hidden;
   position: relative;
 
   ${SplitVertical} & {
     border-right: none;
-    border-bottom: 1px solid ${({ theme }) => theme.border};
+    border-bottom: 1px solid #e0e0e0;
   }
 `;
 
 const MarkdownTextarea = styled.textarea`
   width: 100%;
   height: 100%;
-  padding: 16px;
-  font-size: 16px;
+  padding: 1.5rem;
+  font-size: 1rem;
+  line-height: 1.6;
   border: none;
   outline: none;
-  background: ${({ theme }) => theme.bg};
-  color: ${({ theme }) => theme.text};
+  background: #f5f5f5;
+  color: #333;
   resize: none;
-  border-radius: 0 0 8px 8px;
+  font-family: 'Fira Code', 'Menlo', 'Consolas', monospace;
   overflow-y: auto;
 
-  /* 自定义滚动条样式 */
   &::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
 
   &::-webkit-scrollbar-track {
-    background: ${({ theme }) => theme.bg};
+    background: #f5f5f5;
     border-radius: 4px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme.border};
+    background: #e0e0e0;
     border-radius: 4px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: ${({ theme }) => theme.primary};
+    background: #00acc1;
   }
 `;
 
 const PreviewContainer = styled.div`
   flex: 1;
-  background: ${({ theme }) => theme.bg};
-  color: ${({ theme }) => theme.text};
+  background: #f5f5f5;
+  color: #333;
   overflow: auto;
   display: flex;
   flex-direction: column;
   height: 100%;
   position: relative;
+  padding: 1.5rem;
 
   ${SplitVertical} & {
-    border-top: 1px solid ${({ theme }) => theme.border};
+    border-top: 1px solid #e0e0e0;
   }
 
-  /* 自定义滚动条样式 */
   &::-webkit-scrollbar {
     width: 8px;
     height: 8px;
   }
 
   &::-webkit-scrollbar-track {
-    background: ${({ theme }) => theme.bg};
+    background: #f5f5f5;
     border-radius: 4px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme.border};
+    background: #e0e0e0;
     border-radius: 4px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: ${({ theme }) => theme.primary};
+    background: #00acc1;
   }
 `;
 
 const LayoutButton = styled.button`
-  background: ${({ $active, theme }) => $active ? theme.accent : theme.card};
-  color: ${({ $active, theme }) => $active ? '#fff' : theme.text};
-  border: 1px solid ${({ theme }) => theme.border};
-  border-radius: 4px;
-  padding: 4px 10px;
-  margin-right: 6px;
-  font-size: 16px;
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s, color 0.2s;
+  transition: all 0.2s;
+  border: 1px solid #e0e0e0;
+  background: ${({ $active }) => $active ? '#00acc1' : 'white'};
+  color: ${({ $active }) => $active ? 'white' : '#333'};
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
   &:hover {
-    background: ${({ theme }) => theme.accent};
-    color: #fff;
+    background: #00acc1;
+    color: white;
+    border-color: #00acc1;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
   }
 `;
 
@@ -380,120 +390,33 @@ const ModeButton = styled.button`
 `;
 
 const ActionButton = styled.button`
-  padding: 8px 16px;
+  padding: 0.5rem 1rem;
   border-radius: 6px;
-  border: 1px solid ${({ theme }) => theme.border};
-  background: ${({ theme }) => theme.card};
-  color: ${({ theme }) => theme.text};
+  font-size: 0.9rem;
+  font-weight: 500;
   cursor: pointer;
-  font-size: 14px;
   transition: all 0.2s;
+  border: 1px solid #e0e0e0;
+  background: white;
+  color: #333;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
 
   &:hover {
-    background: ${({ theme }) => theme.primary};
+    background: #00acc1;
     color: white;
-    border-color: ${({ theme }) => theme.primary};
+    border-color: #00acc1;
   }
 
   &:disabled {
     opacity: 0.5;
     cursor: not-allowed;
   }
-`;
 
-// Markdown 主题定义
-const markdownThemes = {
-  default: {
-    name: '默认主题',
-    styles: {
-      background: ({ theme }) => theme.markdownBg,
-      text: ({ theme }) => theme.markdownText,
-      codeBg: ({ theme }) => theme.markdownCodeBg,
-      codeText: ({ theme }) => theme.markdownCodeText,
-      blockquoteBg: ({ theme }) => theme.markdownBlockquoteBg,
-      blockquoteBorder: ({ theme }) => theme.markdownBlockquoteBorder,
-      hr: ({ theme }) => theme.markdownHr,
-      link: ({ theme }) => theme.markdownLink,
-      tableBorder: ({ theme }) => theme.markdownTableBorder
-    }
-  },
-  github: {
-    name: 'GitHub',
-    styles: {
-      background: '#ffffff',
-      text: '#24292e',
-      codeBg: '#f6f8fa',
-      codeText: '#24292e',
-      blockquoteBg: '#f6f8fa',
-      blockquoteBorder: '#dfe2e5',
-      hr: '#e1e4e8',
-      link: '#0366d6',
-      tableBorder: '#dfe2e5'
-    }
-  },
-  dark: {
-    name: '暗色主题',
-    styles: {
-      background: '#1a1a1a',
-      text: '#e6e6e6',
-      codeBg: '#2d2d2d',
-      codeText: '#e6e6e6',
-      blockquoteBg: '#2d2d2d',
-      blockquoteBorder: '#404040',
-      hr: '#404040',
-      link: '#58a6ff',
-      tableBorder: '#404040'
-    }
-  },
-  solarized: {
-    name: 'Solarized',
-    styles: {
-      background: '#fdf6e3',
-      text: '#657b83',
-      codeBg: '#eee8d5',
-      codeText: '#657b83',
-      blockquoteBg: '#eee8d5',
-      blockquoteBorder: '#93a1a1',
-      hr: '#93a1a1',
-      link: '#268bd2',
-      tableBorder: '#93a1a1'
-    }
-  },
-  nord: {
-    name: 'Nord',
-    styles: {
-      background: '#2e3440',
-      text: '#eceff4',
-      codeBg: '#3b4252',
-      codeText: '#eceff4',
-      blockquoteBg: '#3b4252',
-      blockquoteBorder: '#4c566a',
-      hr: '#4c566a',
-      link: '#88c0d0',
-      tableBorder: '#4c566a'
-    }
-  }
-};
-
-const ThemeSelector = styled.select`
-  padding: 4px 8px;
-  border-radius: 4px;
-  border: 1px solid ${({ theme }) => theme.border};
-  background: ${({ theme }) => theme.bg};
-  color: ${({ theme }) => theme.text};
-  font-size: 14px;
-  margin-left: 8px;
-  cursor: pointer;
-  outline: none;
-  transition: all 0.2s;
-
-  &:hover {
-    border-color: ${({ theme }) => theme.primary};
-  }
-
-  &:focus {
-    border-color: ${({ theme }) => theme.primary};
-    box-shadow: 0 0 0 2px ${({ theme }) => theme.primary}20;
+  svg {
+    width: 16px;
+    height: 16px;
   }
 `;
 
@@ -639,7 +562,6 @@ const MarkdownPreview = styled.div`
 `;
 
 function MarkdownEditor() {
-  const { theme, themeMode, toggleTheme } = useTheme();
   const [content, setContent] = useState('');
   const [previewMode, setPreviewMode] = useState(false);
   const [splitMode, setSplitMode] = useState(LAYOUT_TYPES.SPLIT_HORIZONTAL);
@@ -660,7 +582,6 @@ function MarkdownEditor() {
   const [sidebarWidth, setSidebarWidth] = useState(280);
   const [isCollapsed, setIsCollapsed] = useState(false);
   const sidebarRef = useRef(null);
-  const [markdownTheme, setMarkdownTheme] = useState('default');
   const [showExportSuccess, setShowExportSuccess] = useState(false);
 
   const handleContentChange = (e) => {
@@ -889,7 +810,7 @@ function MarkdownEditor() {
 
   const renderPreview = () => (
     <PreviewContainer>
-      <MarkdownPreview theme={markdownThemes[markdownTheme].styles}>
+      <MarkdownPreview>
         <ReactMarkdown 
           remarkPlugins={[
             [remarkGfm, {
@@ -948,7 +869,7 @@ function MarkdownEditor() {
                 target="_blank" 
                 rel="noopener noreferrer"
                 style={{ 
-                  color: props.theme?.link || '#0366d6',
+                  color: '#0366d6',
                   textDecoration: 'none'
                 }}
               />
