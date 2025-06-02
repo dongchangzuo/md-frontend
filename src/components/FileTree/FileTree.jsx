@@ -98,29 +98,47 @@ const ActionButton = styled.button`
 `;
 
 const TreeContainer = styled.div`
-  flex: 1;
-  padding: 0.5rem;
-  background: white;
-  border-radius: 12px;
-  border: 2px solid #b2ebf2;
+  padding: 1rem;
   overflow: auto;
+  height: 100%;
 
+  /* 自定义滚动条样式 */
   &::-webkit-scrollbar {
-    width: 6px;
+    width: 8px;
+    height: 8px;
   }
 
   &::-webkit-scrollbar-track {
-    background: #f1f1f1;
-    border-radius: 3px;
+    background: ${({ theme }) => theme.bg};
+    border-radius: 4px;
   }
 
   &::-webkit-scrollbar-thumb {
-    background: #b2ebf2;
-    border-radius: 3px;
+    background: ${({ theme }) => theme.border};
+    border-radius: 4px;
   }
 
   &::-webkit-scrollbar-thumb:hover {
-    background: #00acc1;
+    background: ${({ theme }) => theme.primary};
+  }
+
+  /* 横向滚动条样式 */
+  &::-webkit-scrollbar:horizontal {
+    height: 8px;
+  }
+
+  &::-webkit-scrollbar-track:horizontal {
+    background: ${({ theme }) => theme.bg};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:horizontal {
+    background: ${({ theme }) => theme.border};
+    border-radius: 4px;
+  }
+
+  &::-webkit-scrollbar-thumb:horizontal:hover {
+    background: ${({ theme }) => theme.primary};
   }
 `;
 

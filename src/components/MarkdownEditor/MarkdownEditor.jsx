@@ -74,47 +74,7 @@ const FileTreeWrapper = styled.div`
   transition: width 0.2s ease;
   flex-shrink: 0;
   position: relative;
-  overflow: auto;
   height: 100%;
-
-  /* 自定义滚动条样式 */
-  &::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
-  }
-
-  &::-webkit-scrollbar-track {
-    background: ${({ theme }) => theme.bg};
-    border-radius: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb {
-    background: ${({ theme }) => theme.border};
-    border-radius: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb:hover {
-    background: ${({ theme }) => theme.primary};
-  }
-
-  /* 横向滚动条样式 */
-  &::-webkit-scrollbar:horizontal {
-    height: 8px;
-  }
-
-  &::-webkit-scrollbar-track:horizontal {
-    background: ${({ theme }) => theme.bg};
-    border-radius: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb:horizontal {
-    background: ${({ theme }) => theme.border};
-    border-radius: 4px;
-  }
-
-  &::-webkit-scrollbar-thumb:horizontal:hover {
-    background: ${({ theme }) => theme.primary};
-  }
 `;
 
 const ResizeHandle = styled.div`
