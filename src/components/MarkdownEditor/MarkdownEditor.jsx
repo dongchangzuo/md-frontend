@@ -117,16 +117,79 @@ const EditorHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 16px;
-  border-bottom: 1px solid ${({ theme }) => theme.border};
+  padding: 1rem 1.5rem;
   background: ${({ theme }) => theme.card};
+  border-bottom: 1px solid ${({ theme }) => theme.border};
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+`;
+
+const HeaderTitle = styled.h2`
+  margin: 0;
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.text};
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+
+  svg {
+    width: 24px;
+    height: 24px;
+    color: ${({ theme }) => theme.primary};
+  }
 `;
 
 const HeaderActions = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
-  margin-left: auto;
+  gap: 1rem;
+`;
+
+const HeaderButton = styled.button`
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  border: 1px solid ${({ theme }) => theme.border};
+  background: ${({ theme }) => theme.card};
+  color: ${({ theme }) => theme.text};
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+
+  &:hover {
+    background: ${({ theme }) => theme.primary};
+    color: white;
+    border-color: ${({ theme }) => theme.primary};
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+  }
+`;
+
+const HeaderSelect = styled.select`
+  padding: 0.5rem 1rem;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  border: 1px solid ${({ theme }) => theme.border};
+  background: ${({ theme }) => theme.card};
+  color: ${({ theme }) => theme.text};
+  cursor: pointer;
+  outline: none;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.primary};
+  }
+
+  &:focus {
+    border-color: ${({ theme }) => theme.primary};
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.primary}20;
+  }
 `;
 
 const EditorContent = styled.div`
@@ -1079,37 +1142,39 @@ function MarkdownEditor({ language: propLanguage, setLanguage: propSetLanguage }
           )}
           <EditorMain>
             <EditorHeader>
-              <h2>{currentFile ? currentFile.name : t.markdownEditorTitle}</h2>
+              <HeaderTitle>
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <path d="M13 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V9z" />
+                  <polyline points="13 2 13 9 20 9" />
+                </svg>
+                {currentFile ? currentFile.name : t.markdownEditorTitle}
+              </HeaderTitle>
               <HeaderActions>
-                <select 
+                <HeaderSelect 
                   value={language} 
-                  onChange={e => setLanguage(e.target.value)} 
-                  style={{ 
-                    fontSize: 15, 
-                    padding: '4px 12px', 
-                    borderRadius: 6, 
-                    border: '1px solid #ddd', 
-                    background: '#f5f5f5', 
-                    color: '#222', 
-                    outline: 'none', 
-                    marginRight: 12 
-                  }}
+                  onChange={e => setLanguage(e.target.value)}
                 >
                   <option value="zh">中文</option>
                   <option value="en">English</option>
-                </select>
-                <ModeButton
+                </HeaderSelect>
+                <HeaderButton
                   className={cloudMode ? 'active' : ''}
                   onClick={() => handleModeSwitch('cloud')}
                 >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M18 10h-1.26A8 8 0 1 0 9 20h9a5 5 0 0 0 0-10z" />
+                  </svg>
                   {t.cloudMode}
-                </ModeButton>
-                <ModeButton
+                </HeaderButton>
+                <HeaderButton
                   className={!cloudMode ? 'active' : ''}
                   onClick={() => handleModeSwitch('local')}
                 >
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M3 7v10a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-6l-2-2H5a2 2 0 0 0-2 2z" />
+                  </svg>
                   {t.localMode}
-                </ModeButton>
+                </HeaderButton>
                 {renderLayoutControls()}
                 {renderThemeSwitcher()}
                 {renderExportButton()}
