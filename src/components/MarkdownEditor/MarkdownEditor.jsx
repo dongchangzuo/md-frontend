@@ -15,7 +15,6 @@ import { lang } from '../../i18n/lang';
 import './MarkdownEditor.css';
 import { marked } from 'marked';
 import emoji from 'emoji-toolkit';
-import { handleExportHtml } from './exportHtml';
 
 // 配置 emoji-toolkit
 emoji.allow_native = true;
@@ -908,12 +907,6 @@ function MarkdownEditor() {
     }
   };
 
-  const renderExportButton = () => (
-    <ActionButton onClick={handleExportHtml} title="Export as HTML">
-      {showExportSuccess ? (lang.en.exportSuccess || 'Copied!') : (lang.en.exportHtml || 'Export HTML')}
-    </ActionButton>
-  );
-
   return (
     <EditorWrapper>
       <Container>
@@ -965,7 +958,6 @@ function MarkdownEditor() {
                   Local Mode
                 </HeaderButton>
                 {renderLayoutControls()}
-                {renderExportButton()}
               </HeaderActions>
             </EditorHeader>
             <EditorContent>
