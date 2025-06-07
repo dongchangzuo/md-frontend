@@ -283,4 +283,78 @@
 
 .markdown-theme .hljs-strong {
   font-weight: 600;
+}
+
+/* 脚注样式 */
+.markdown-theme .footnotes {
+  font-size: 0.875em;
+  color: #6a737d;
+  border-top: 1px solid #eaecef;
+  margin-top: 40px;
+  padding-top: 20px;
+}
+
+.markdown-theme .footnotes ol {
+  padding-left: 1em;
+}
+
+.markdown-theme .footnotes li {
+  margin: 0.25em 0;
+}
+
+.markdown-theme .footnotes p {
+  margin: 0.25em 0;
+}
+
+.markdown-theme .footnote-ref {
+  text-decoration: none;
+  font-weight: 600;
+  color: #0366d6;
+}
+
+.markdown-theme .footnote-backref {
+  text-decoration: none;
+  font-weight: 600;
+  color: #0366d6;
+  margin-left: 0.5em;
+}
+
+.markdown-theme .footnote-backref:hover {
+  text-decoration: underline;
+}
+
+.markdown-theme .footnote-ref:hover {
+  text-decoration: underline;
+}
+
+/* 脚注引用标记 */
+.markdown-theme sup[id^="fnref"] {
+  font-size: 0.875em;
+  font-weight: 600;
+  color: #0366d6;
+  text-decoration: none;
+  margin-left: 0.25em;
+}
+
+.markdown-theme sup[id^="fnref"]:hover {
+  text-decoration: underline;
+}
+
+/* 脚注内容 */
+.markdown-theme .footnotes p[id^="fn"] {
+  margin: 0.5em 0;
+  padding-left: 1em;
+  border-left: 2px solid #eaecef;
+}
+
+/* 脚注返回链接 */
+.markdown-theme .footnotes .footnote-backref {
+  font-size: 0.875em;
+  margin-left: 0.5em;
+  color: #0366d6;
+  text-decoration: none;
+}
+
+.markdown-theme .footnotes .footnote-backref:hover {
+  text-decoration: underline;
 } 
