@@ -277,9 +277,6 @@ const PreviewContent = styled.div`
   padding: 1.5rem;
   overflow-y: auto;
   background: white;
-  font-size: 1rem;
-  line-height: 1.6;
-  color: #333;
 `;
 
 const LayoutButton = styled.button`
