@@ -448,15 +448,6 @@ function MarkdownEditor() {
     setContent(file.content || '');
   };
 
-  const handleFileRename = (file) => {
-    const newName = prompt('Enter the new name', file.name);
-    if (newName) {
-      const newFiles = files.map(f => 
-        f === file ? { ...f, name: newName } : f
-      );
-      setFiles(newFiles);
-    }
-  };
 
   const handleFileDelete = (file) => {
     if (confirm('Are you sure you want to delete this file?')) {
@@ -552,47 +543,6 @@ function MarkdownEditor() {
     }
   };
 
-  // 处理拖动开始
-  const handleMouseDown = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsResizing(true);
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-  };
-
-  // 处理拖动
-  const handleMouseMove = (e) => {
-    if (!isResizing) return;
-    
-    const newWidth = e.clientX;
-    if (newWidth < 200) {
-      setIsCollapsed(true);
-      setSidebarWidth(0);
-    } else if (newWidth > 500) {
-      setSidebarWidth(500);
-    } else {
-      setIsCollapsed(false);
-      setSidebarWidth(newWidth);
-    }
-
-    // 更新 CSS 变量
-    document.documentElement.style.setProperty('--sidebar-width', `${sidebarWidth}px`);
-  };
-
-  // 处理拖动结束
-  const handleMouseUp = () => {
-    setIsResizing(false);
-    document.removeEventListener('mousemove', handleMouseMove);
-    document.removeEventListener('mouseup', handleMouseUp);
-  };
-
-  // 展开侧边栏
-  const handleExpand = () => {
-    setIsCollapsed(false);
-    setSidebarWidth(280);
-    document.documentElement.style.setProperty('--sidebar-width', '280px');
-  };
 
   // 初始化时设置侧边栏宽度
   useEffect(() => {
