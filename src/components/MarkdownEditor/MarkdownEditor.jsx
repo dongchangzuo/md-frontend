@@ -6,7 +6,7 @@ import { tokenManager } from '../../services/api';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { lang } from '../../i18n/lang';
-import './styles/markdown-theme.css';
+// import './styles/markdown-theme.css';
 
 // 配置 markdown-it
 const md = new MarkdownIt({
@@ -691,15 +691,6 @@ function MarkdownEditor() {
               <ResizeHandle onMouseDown={handleMouseDown} />
             )}
           </FileTreeWrapper>
-          {isCollapsed && (
-            <button 
-              className="expand-button"
-              onClick={handleExpand}
-              title={lang.en.expandSidebar}
-            >
-              ▶
-            </button>
-          )}
           <EditorMain>
             <EditorHeader>
               <HeaderTitle>
