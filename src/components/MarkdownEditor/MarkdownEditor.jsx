@@ -544,14 +544,6 @@ function MarkdownEditor() {
   };
 
 
-  // 初始化时设置侧边栏宽度
-  useEffect(() => {
-    document.documentElement.style.setProperty('--sidebar-width', '280px');
-    return () => {
-      document.documentElement.style.removeProperty('--sidebar-width');
-    };
-  }, []);
-
   // 导出HTML
   const handleExportHtml = () => {
     const htmlContent = md.render(content);
