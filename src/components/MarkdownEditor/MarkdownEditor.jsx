@@ -1,15 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import MarkdownIt from 'markdown-it';
-import mk from 'markdown-it-katex';
 import emoji from 'emoji-toolkit';
-import 'katex/dist/katex.min.css';
+import markdownItMathjax3 from 'markdown-it-mathjax3';
 import FileTree from '../FileTree/FileTree';
 import { tokenManager } from '../../services/api';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { lang } from '../../i18n/lang';
-import './MarkdownEditor.css';
+// import './MarkdownEditor.css';
 import { marked } from 'marked';
+import katex from 'katex';
 
 // 配置 emoji-toolkit
 emoji.allow_native = true;
@@ -19,9 +19,10 @@ emoji.replace_mode = 'unified';
 const md = new MarkdownIt({
   html: true,
   linkify: true,
-  typographer: true,
-  breaks: true
-}).use(mk);
+  typographer: false,
+  breaks: false
+})
+  .use(markdownItMathjax3);
 
 // 添加 emoji 支持
 md.use((md) => {
@@ -384,6 +385,16 @@ const PreviewContent = styled.div`
     margin: 24px 0;
     background-color: #e1e4e8;
     border: 0;
+  }
+
+  ul, ol {
+    margin-left: 2em;
+    padding-left: 1.5em;
+  }
+
+  ul ul, ol ul, ul ol, ol ol {
+    margin-left: 1.5em;
+    padding-left: 1.5em;
   }
 `;
 
