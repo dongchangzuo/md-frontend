@@ -647,36 +647,12 @@ function MarkdownEditor() {
   );
 
   const renderPreview = () => (
+    
     <PreviewContent 
       className="markdown-theme"
       dangerouslySetInnerHTML={{ __html: md.render(content) }}
     />
   );
-
-  const renderContent = () => {
-    switch (splitMode) {
-      case LAYOUT_TYPES.SPLIT_HORIZONTAL:
-        return (
-          <div className="split-horizontal">
-            {renderEditor()}
-            {renderPreview()}
-          </div>
-        );
-      case LAYOUT_TYPES.SPLIT_VERTICAL:
-        return (
-          <div className="split-vertical">
-            {renderEditor()}
-            {renderPreview()}
-          </div>
-        );
-      case LAYOUT_TYPES.EDITOR_ONLY:
-        return renderEditor();
-      case LAYOUT_TYPES.PREVIEW_ONLY:
-        return renderPreview();
-      default:
-        return null;
-    }
-  };
 
   return (
     <EditorWrapper>
