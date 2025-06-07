@@ -1,11 +1,10 @@
-/* Markdown 主题样式 */
+/* GitHub Markdown 风格 */
 .markdown-theme {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  line-height: 1.6;
-  color: #333;
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 20px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji";
+  font-size: 16px;
+  line-height: 1.5;
+  word-wrap: break-word;
+  color: #24292e;
 }
 
 /* 标题样式 */
@@ -19,19 +18,18 @@
   margin-bottom: 16px;
   font-weight: 600;
   line-height: 1.25;
-  color: #2c3e50;
 }
 
 .markdown-theme h1 {
   font-size: 2em;
-  border-bottom: 2px solid #eaecef;
   padding-bottom: 0.3em;
+  border-bottom: 1px solid #eaecef;
 }
 
 .markdown-theme h2 {
   font-size: 1.5em;
+  padding-bottom: 0.3em;
   border-bottom: 1px solid #eaecef;
-  padding-bottom: 0.2em;
 }
 
 .markdown-theme h3 { font-size: 1.25em; }
@@ -41,18 +39,19 @@
 
 /* 段落和列表 */
 .markdown-theme p {
+  margin-top: 0;
   margin-bottom: 16px;
-  line-height: 1.7;
 }
 
 .markdown-theme ul,
 .markdown-theme ol {
-  margin: 0 0 16px 0;
+  margin-top: 0;
+  margin-bottom: 16px;
   padding-left: 2em;
 }
 
 .markdown-theme li {
-  margin: 0.25em 0;
+  margin-top: 0.25em;
 }
 
 .markdown-theme li + li {
@@ -61,35 +60,41 @@
 
 /* 代码块 */
 .markdown-theme pre {
-  background-color: #f6f8fa;
-  border-radius: 6px;
+  margin-top: 0;
+  margin-bottom: 16px;
   padding: 16px;
   overflow: auto;
   font-size: 85%;
   line-height: 1.45;
-  margin: 16px 0;
+  background-color: #f6f8fa;
+  border-radius: 3px;
 }
 
 .markdown-theme code {
-  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-  background-color: rgba(27,31,35,0.05);
   padding: 0.2em 0.4em;
-  border-radius: 3px;
+  margin: 0;
   font-size: 85%;
+  background-color: rgba(27,31,35,0.05);
+  border-radius: 3px;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
 }
 
 .markdown-theme pre code {
-  background-color: transparent;
   padding: 0;
-  border-radius: 0;
+  margin: 0;
+  font-size: 100%;
+  word-break: normal;
+  white-space: pre;
+  background: transparent;
+  border: 0;
 }
 
 /* 引用块 */
 .markdown-theme blockquote {
-  margin: 0 0 16px 0;
   padding: 0 1em;
   color: #6a737d;
   border-left: 0.25em solid #dfe2e5;
+  margin: 0 0 16px 0;
 }
 
 /* 表格 */
@@ -100,27 +105,26 @@
   width: 100%;
 }
 
-.markdown-theme th,
-.markdown-theme td {
+.markdown-theme table th,
+.markdown-theme table td {
   padding: 6px 13px;
   border: 1px solid #dfe2e5;
 }
 
-.markdown-theme th {
-  background-color: #f6f8fa;
-  font-weight: 600;
+.markdown-theme table tr {
+  background-color: #fff;
+  border-top: 1px solid #c6cbd1;
 }
 
-.markdown-theme tr:nth-child(2n) {
+.markdown-theme table tr:nth-child(2n) {
   background-color: #f6f8fa;
 }
 
 /* 图片 */
 .markdown-theme img {
   max-width: 100%;
-  height: auto;
   box-sizing: border-box;
-  border-radius: 4px;
+  background-color: #fff;
 }
 
 /* 链接 */
@@ -165,36 +169,29 @@
 /* 强调 */
 .markdown-theme strong {
   font-weight: 600;
-  color: #2c3e50;
 }
 
 .markdown-theme em {
   font-style: italic;
-  color: #2c3e50;
 }
 
 .markdown-theme del {
   text-decoration: line-through;
-  color: #6a737d;
 }
 
 /* 行内代码 */
 .markdown-theme :not(pre) > code {
-  color: #476582;
-  background-color: rgba(27,31,35,0.05);
   padding: 0.2em 0.4em;
+  margin: 0;
+  font-size: 85%;
+  background-color: rgba(27,31,35,0.05);
   border-radius: 3px;
-  font-size: 0.9em;
 }
 
 /* 列表样式优化 */
 .markdown-theme ul li::before {
-  content: "•";
-  color: #0366d6;
-  font-weight: bold;
-  display: inline-block;
-  width: 1em;
-  margin-left: -1em;
+  content: "";
+  margin-right: 0.5em;
 }
 
 .markdown-theme ol {
@@ -207,9 +204,83 @@
 
 .markdown-theme ol li::before {
   content: counter(item) ".";
-  color: #0366d6;
-  font-weight: bold;
-  display: inline-block;
-  width: 1.5em;
-  margin-left: -1.5em;
+  margin-right: 0.5em;
+  color: #6a737d;
+}
+
+/* 代码高亮 */
+.markdown-theme .hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 0.5em;
+  color: #24292e;
+  background: #f6f8fa;
+}
+
+.markdown-theme .hljs-comment,
+.markdown-theme .hljs-quote {
+  color: #6a737d;
+  font-style: italic;
+}
+
+.markdown-theme .hljs-keyword,
+.markdown-theme .hljs-selector-tag {
+  color: #d73a49;
+}
+
+.markdown-theme .hljs-string,
+.markdown-theme .hljs-doctag {
+  color: #032f62;
+}
+
+.markdown-theme .hljs-title,
+.markdown-theme .hljs-section,
+.markdown-theme .hljs-selector-id {
+  color: #6f42c1;
+}
+
+.markdown-theme .hljs-type,
+.markdown-theme .hljs-class .hljs-title {
+  color: #005cc5;
+}
+
+.markdown-theme .hljs-tag,
+.markdown-theme .hljs-name,
+.markdown-theme .hljs-attribute {
+  color: #22863a;
+}
+
+.markdown-theme .hljs-regexp,
+.markdown-theme .hljs-link {
+  color: #032f62;
+}
+
+.markdown-theme .hljs-symbol,
+.markdown-theme .hljs-bullet {
+  color: #005cc5;
+}
+
+.markdown-theme .hljs-built_in,
+.markdown-theme .hljs-builtin-name {
+  color: #6f42c1;
+}
+
+.markdown-theme .hljs-meta {
+  color: #6a737d;
+}
+
+.markdown-theme .hljs-deletion {
+  background: #ffeef0;
+}
+
+.markdown-theme .hljs-addition {
+  background: #e6ffed;
+}
+
+.markdown-theme .hljs-emphasis {
+  font-style: italic;
+}
+
+.markdown-theme .hljs-strong {
+  font-weight: 600;
 } 
