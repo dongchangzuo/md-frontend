@@ -510,6 +510,7 @@ function MarkdownEditor() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const sidebarRef = useRef(null);
   const [showExportSuccess, setShowExportSuccess] = useState(false);
+  const [showHtmlExportSuccess, setShowHtmlExportSuccess] = useState(false);
 
   const handleContentChange = (e) => {
     setContent(e.target.value);
@@ -700,6 +701,15 @@ function MarkdownEditor() {
     };
   }, []);
 
+  // 导出HTML
+  const handleExportHtml = () => {
+    const htmlContent = md.render(content);
+    navigator.clipboard.writeText(htmlContent).then(() => {
+      setShowHtmlExportSuccess(true);
+      setTimeout(() => setShowHtmlExportSuccess(false), 2000);
+    });
+  };
+
   const renderLayoutControls = () => (
     <EditorHeaderActions>
       <LayoutButton
@@ -816,6 +826,17 @@ function MarkdownEditor() {
                   </svg>
                   Local Mode
                 </HeaderButton>
+                <HeaderButton onClick={handleExportHtml} title="导出HTML">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M4 7V4h16v3" />
+                    <path d="M9 20h6" />
+                    <path d="M12 4v16" />
+                  </svg>
+                  导出HTML
+                </HeaderButton>
+                {showHtmlExportSuccess && (
+                  <span style={{ color: '#07c160', marginLeft: 8 }}>已复制到剪贴板！</span>
+                )}
                 {renderLayoutControls()}
               </HeaderActions>
             </EditorHeader>
