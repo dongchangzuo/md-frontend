@@ -687,9 +687,6 @@ function MarkdownEditor() {
               onFileSelect={handleFileSelect} 
               isLocalMode={!cloudMode} 
             />
-            {!isCollapsed && (
-              <ResizeHandle onMouseDown={handleMouseDown} />
-            )}
           </FileTreeWrapper>
           <EditorMain>
             <EditorHeader>
