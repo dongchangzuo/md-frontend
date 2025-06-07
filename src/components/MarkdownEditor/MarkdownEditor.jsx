@@ -1,11 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
-import remarkMath from 'remark-math';
-import rehypeKatex from 'rehype-katex';
-import rehypeRaw from 'rehype-raw';
-import remarkEmoji from 'remark-emoji';
-import remarkFrontmatter from 'remark-frontmatter';
+import MarkdownIt from 'markdown-it';
+import mk from 'markdown-it-katex';
+import emoji from 'emoji-toolkit';
 import 'katex/dist/katex.min.css';
 import FileTree from '../FileTree/FileTree';
 import { tokenManager } from '../../services/api';
@@ -14,11 +10,30 @@ import { useNavigate } from 'react-router-dom';
 import { lang } from '../../i18n/lang';
 import './MarkdownEditor.css';
 import { marked } from 'marked';
-import emoji from 'emoji-toolkit';
 
 // 配置 emoji-toolkit
 emoji.allow_native = true;
 emoji.replace_mode = 'unified';
+
+// 配置 markdown-it
+const md = new MarkdownIt({
+  html: true,
+  linkify: true,
+  typographer: true,
+  breaks: true
+}).use(mk);
+
+// 添加 emoji 支持
+md.use((md) => {
+  const defaultRender = md.renderer.rules.text || function(tokens, idx, options, env, self) {
+    return self.renderToken(tokens, idx, options);
+  };
+
+  md.renderer.rules.text = (tokens, idx, options, env, self) => {
+    const content = tokens[idx].content;
+    return emoji.shortnameToUnicode(content);
+  };
+});
 
 // 布局类型
 const LAYOUT_TYPES = {
@@ -275,38 +290,100 @@ const MarkdownTextarea = styled.textarea`
   }
 `;
 
-const PreviewContainer = styled.div`
+const PreviewContent = styled.div`
   flex: 1;
-  background: #f5f5f5;
-  color: #333;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  position: relative;
   padding: 1.5rem;
+  overflow-y: auto;
+  background: white;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #333;
 
-  ${SplitVertical} & {
-    border-top: 1px solid #e0e0e0;
+  h1, h2, h3, h4, h5, h6 {
+    margin-top: 1.5em;
+    margin-bottom: 0.5em;
+    font-weight: 600;
+    line-height: 1.25;
   }
 
-  &::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+  h1 { font-size: 2em; }
+  h2 { font-size: 1.5em; }
+  h3 { font-size: 1.25em; }
+  h4 { font-size: 1em; }
+  h5 { font-size: 0.875em; }
+  h6 { font-size: 0.85em; }
+
+  p {
+    margin: 1em 0;
   }
 
-  &::-webkit-scrollbar-track {
-    background: #f5f5f5;
-    border-radius: 4px;
+  a {
+    color: #0366d6;
+    text-decoration: none;
+    &:hover {
+      text-decoration: underline;
+    }
   }
 
-  &::-webkit-scrollbar-thumb {
-    background: #e0e0e0;
-    border-radius: 4px;
+  code {
+    background: #f6f8fa;
+    padding: 0.2em 0.4em;
+    border-radius: 3px;
+    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+    font-size: 85%;
   }
 
-  &::-webkit-scrollbar-thumb:hover {
-    background: #00acc1;
+  pre {
+    background: #f6f8fa;
+    padding: 16px;
+    border-radius: 6px;
+    overflow: auto;
+    margin: 1em 0;
+
+    code {
+      background: none;
+      padding: 0;
+      font-size: 100%;
+    }
+  }
+
+  blockquote {
+    margin: 1em 0;
+    padding: 0 1em;
+    color: #6a737d;
+    border-left: 0.25em solid #dfe2e5;
+  }
+
+  table {
+    border-collapse: collapse;
+    width: 100%;
+    margin: 1em 0;
+
+    th, td {
+      padding: 6px 13px;
+      border: 1px solid #dfe2e5;
+    }
+
+    tr {
+      background-color: #fff;
+      border-top: 1px solid #c6cbd1;
+      &:nth-child(2n) {
+        background-color: #f6f8fa;
+      }
+    }
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  hr {
+    height: 0.25em;
+    padding: 0;
+    margin: 24px 0;
+    background-color: #e1e4e8;
+    border: 0;
   }
 `;
 
@@ -417,147 +494,6 @@ const ActionButton = styled.button`
   svg {
     width: 16px;
     height: 16px;
-  }
-`;
-
-const MarkdownPreview = styled.div`
-  font-size: 16px;
-  line-height: 1.75;
-  color: ${props => props.theme.text};
-  background: ${props => props.theme.background};
-  border-radius: 8px;
-  padding: 24px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: visible;
-  box-sizing: border-box;
-
-  > *:first-child {
-    margin-top: 0;
-  }
-
-  > *:last-child {
-    margin-bottom: 0;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    color: ${props => props.theme.text};
-    font-weight: 700;
-    margin: 1.5em 0 0.7em 0;
-    line-height: 1.2;
-  }
-  h1 { font-size: 2.2em; border-bottom: 2px solid ${props => props.theme.hr}; padding-bottom: 0.2em; }
-  h2 { font-size: 1.7em; border-bottom: 1px solid ${props => props.theme.hr}; padding-bottom: 0.15em; }
-  h3 { font-size: 1.3em; }
-  h4, h5, h6 { font-size: 1.1em; }
-  p { margin: 1em 0; }
-  ul, ol { margin: 1em 0 1em 2em; }
-  li { margin: 0.3em 0; }
-  pre {
-    background: ${props => props.theme.codeBg};
-    color: ${props => props.theme.codeText};
-    font-family: 'Fira Mono', 'Menlo', 'Consolas', monospace;
-    font-size: 0.97em;
-    border-radius: 6px;
-    padding: 14px 18px;
-    margin: 1.2em 0;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    overflow: visible;
-  }
-  pre code {
-    padding: 0;
-    margin: 0;
-    background-color: transparent;
-    font-family: inherit;
-    font-size: inherit;
-    color: inherit;
-    white-space: pre-wrap;
-    word-wrap: break-word;
-    line-height: 1.5;
-    tab-size: 4;
-    hyphens: none;
-  }
-  code {
-    background: ${props => props.theme.codeBg};
-    color: ${props => props.theme.codeText};
-    font-family: 'Fira Mono', 'Menlo', 'Consolas', monospace;
-    font-size: 0.97em;
-    border-radius: 4px;
-    padding: 2px 6px;
-  }
-  blockquote {
-    background: ${props => props.theme.blockquoteBg};
-    border-left: 4px solid ${props => props.theme.blockquoteBorder};
-    color: ${props => props.theme.text};
-    margin: 1.2em 0;
-    padding: 0.7em 1.2em;
-    border-radius: 4px;
-    font-style: italic;
-  }
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 1.2em 0;
-    background: ${props => props.theme.background};
-  }
-  th, td {
-    border: 1px solid ${props => props.theme.tableBorder};
-    padding: 8px 12px;
-    text-align: left;
-  }
-  th {
-    background: ${props => props.theme.blockquoteBg};
-    color: ${props => props.theme.text};
-  }
-  a {
-    color: ${props => props.theme.link};
-    text-decoration: underline;
-    &:hover { text-decoration: underline wavy; }
-  }
-  hr {
-    border: none;
-    border-top: 1.5px solid ${props => props.theme.hr};
-    margin: 2em 0;
-  }
-  img.emoji {
-    height: 1.2em;
-    width: 1.2em;
-    margin: 0 .05em 0 .1em;
-    vertical-align: -0.1em;
-  }
-  mark {
-    background-color: #ffeb3b;
-    color: #000;
-    padding: 0.2em 0.4em;
-    border-radius: 3px;
-  }
-  del {
-    text-decoration: line-through;
-    color: ${({ theme }) => theme.text};
-    opacity: 0.7;
-  }
-  .math-inline {
-    padding: 0 0.2em;
-  }
-
-  .math-display {
-    margin: 1em 0;
-    overflow-x: auto;
-    overflow-y: hidden;
-  }
-
-  .frontmatter {
-    background: ${({ theme }) => theme.codeBg};
-    padding: 1em;
-    margin-bottom: 1em;
-    border-radius: 4px;
-    font-family: 'Fira Mono', 'Menlo', 'Consolas', monospace;
-    font-size: 0.9em;
-    color: ${({ theme }) => theme.codeText};
-    white-space: pre;
-    overflow-x: auto;
   }
 `;
 
@@ -809,77 +745,9 @@ function MarkdownEditor() {
   );
 
   const renderPreview = () => (
-    <PreviewContainer>
-      <MarkdownPreview>
-        <ReactMarkdown 
-          remarkPlugins={[
-            [remarkGfm, {
-              strikethrough: true,
-              singleTilde: true,
-              autolink: true,
-              taskList: true,
-              table: true
-            }],
-            remarkMath,
-            [remarkEmoji, { padSpaceAfter: true }],
-            [remarkFrontmatter, ['yaml']]
-          ]}
-          rehypePlugins={[rehypeKatex, rehypeRaw]}
-          components={{
-            h1: ({node, ...props}) => <h1 {...props} />,
-            h2: ({node, ...props}) => <h2 {...props} />,
-            h3: ({node, ...props}) => <h3 {...props} />,
-            p: ({node, ...props}) => <p {...props} />,
-            ul: ({node, ...props}) => <ul {...props} />,
-            ol: ({node, ...props}) => <ol {...props} />,
-            li: ({node, ...props}) => <li {...props} />,
-            code: ({node, inline, className, children, ...props}) => {
-              const match = /language-(\w+)/.exec(className || '');
-              return !inline && match ? (
-                <pre>
-                  <code className={className} {...props}>
-                    {String(children).replace(/\n$/, '')}
-                  </code>
-                </pre>
-              ) : (
-                <code className={className} {...props}>
-                  {children}
-                </code>
-              );
-            },
-            blockquote: ({node, ...props}) => <blockquote {...props} />,
-            img: ({node, ...props}) => <img {...props} />,
-            table: ({node, ...props}) => <table {...props} />,
-            thead: ({node, ...props}) => <thead {...props} />,
-            tbody: ({node, ...props}) => <tbody {...props} />,
-            tr: ({node, ...props}) => <tr {...props} />,
-            th: ({node, ...props}) => <th {...props} />,
-            td: ({node, ...props}) => <td {...props} />,
-            del: ({node, ...props}) => <del {...props} />,
-            mark: ({node, ...props}) => <mark {...props} />,
-            math: ({node, inline, ...props}) => (
-              <span className={inline ? 'math-inline' : 'math-display'} {...props} />
-            ),
-            yaml: ({node, ...props}) => (
-              <div className="frontmatter" {...props} />
-            ),
-            a: ({node, ...props}) => (
-              <a 
-                {...props} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                style={{ 
-                  color: '#0366d6',
-                  textDecoration: 'none'
-                }}
-              />
-            )
-          }}
-        >
-          {content}
-        </ReactMarkdown>
-      </MarkdownPreview>
-    </PreviewContainer>
+    <PreviewContent
+      dangerouslySetInnerHTML={{ __html: md.render(content) }}
+    />
   );
 
   const renderContent = () => {
