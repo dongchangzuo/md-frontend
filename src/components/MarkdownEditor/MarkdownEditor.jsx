@@ -1,6 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
 import MarkdownIt from 'markdown-it';
-import emoji from 'emoji-toolkit';
 import markdownItMathjax3 from 'markdown-it-mathjax3';
 import FileTree from '../FileTree/FileTree';
 import { tokenManager } from '../../services/api';
@@ -10,10 +9,6 @@ import { lang } from '../../i18n/lang';
 import { marked } from 'marked';
 import katex from 'katex';
 
-// 配置 emoji-toolkit
-emoji.allow_native = true;
-emoji.replace_mode = 'unified';
-
 // 配置 markdown-it
 const md = new MarkdownIt({
   html: true,
@@ -22,18 +17,6 @@ const md = new MarkdownIt({
   breaks: false
 })
   .use(markdownItMathjax3);
-
-// 添加 emoji 支持
-md.use((md) => {
-  const defaultRender = md.renderer.rules.text || function(tokens, idx, options, env, self) {
-    return self.renderToken(tokens, idx, options);
-  };
-
-  md.renderer.rules.text = (tokens, idx, options, env, self) => {
-    const content = tokens[idx].content;
-    return emoji.shortnameToUnicode(content);
-  };
-});
 
 // 布局类型
 const LAYOUT_TYPES = {
