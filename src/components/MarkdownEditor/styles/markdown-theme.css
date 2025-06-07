@@ -1,0 +1,215 @@
+/* Markdown 主题样式 */
+.markdown-theme {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  line-height: 1.6;
+  color: #333;
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+/* 标题样式 */
+.markdown-theme h1,
+.markdown-theme h2,
+.markdown-theme h3,
+.markdown-theme h4,
+.markdown-theme h5,
+.markdown-theme h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #2c3e50;
+}
+
+.markdown-theme h1 {
+  font-size: 2em;
+  border-bottom: 2px solid #eaecef;
+  padding-bottom: 0.3em;
+}
+
+.markdown-theme h2 {
+  font-size: 1.5em;
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: 0.2em;
+}
+
+.markdown-theme h3 { font-size: 1.25em; }
+.markdown-theme h4 { font-size: 1em; }
+.markdown-theme h5 { font-size: 0.875em; }
+.markdown-theme h6 { font-size: 0.85em; color: #6a737d; }
+
+/* 段落和列表 */
+.markdown-theme p {
+  margin-bottom: 16px;
+  line-height: 1.7;
+}
+
+.markdown-theme ul,
+.markdown-theme ol {
+  margin: 0 0 16px 0;
+  padding-left: 2em;
+}
+
+.markdown-theme li {
+  margin: 0.25em 0;
+}
+
+.markdown-theme li + li {
+  margin-top: 0.25em;
+}
+
+/* 代码块 */
+.markdown-theme pre {
+  background-color: #f6f8fa;
+  border-radius: 6px;
+  padding: 16px;
+  overflow: auto;
+  font-size: 85%;
+  line-height: 1.45;
+  margin: 16px 0;
+}
+
+.markdown-theme code {
+  font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+  background-color: rgba(27,31,35,0.05);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-size: 85%;
+}
+
+.markdown-theme pre code {
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+}
+
+/* 引用块 */
+.markdown-theme blockquote {
+  margin: 0 0 16px 0;
+  padding: 0 1em;
+  color: #6a737d;
+  border-left: 0.25em solid #dfe2e5;
+}
+
+/* 表格 */
+.markdown-theme table {
+  border-spacing: 0;
+  border-collapse: collapse;
+  margin: 16px 0;
+  width: 100%;
+}
+
+.markdown-theme th,
+.markdown-theme td {
+  padding: 6px 13px;
+  border: 1px solid #dfe2e5;
+}
+
+.markdown-theme th {
+  background-color: #f6f8fa;
+  font-weight: 600;
+}
+
+.markdown-theme tr:nth-child(2n) {
+  background-color: #f6f8fa;
+}
+
+/* 图片 */
+.markdown-theme img {
+  max-width: 100%;
+  height: auto;
+  box-sizing: border-box;
+  border-radius: 4px;
+}
+
+/* 链接 */
+.markdown-theme a {
+  color: #0366d6;
+  text-decoration: none;
+}
+
+.markdown-theme a:hover {
+  text-decoration: underline;
+}
+
+/* 水平线 */
+.markdown-theme hr {
+  height: 0.25em;
+  padding: 0;
+  margin: 24px 0;
+  background-color: #e1e4e8;
+  border: 0;
+}
+
+/* 数学公式 */
+.markdown-theme .math-inline {
+  font-size: 1.1em;
+}
+
+.markdown-theme .math-display {
+  margin: 1em 0;
+  text-align: center;
+}
+
+/* 任务列表 */
+.markdown-theme .task-list-item {
+  list-style-type: none;
+}
+
+.markdown-theme .task-list-item-checkbox {
+  margin: 0 0.2em 0.25em -1.4em;
+  vertical-align: middle;
+}
+
+/* 强调 */
+.markdown-theme strong {
+  font-weight: 600;
+  color: #2c3e50;
+}
+
+.markdown-theme em {
+  font-style: italic;
+  color: #2c3e50;
+}
+
+.markdown-theme del {
+  text-decoration: line-through;
+  color: #6a737d;
+}
+
+/* 行内代码 */
+.markdown-theme :not(pre) > code {
+  color: #476582;
+  background-color: rgba(27,31,35,0.05);
+  padding: 0.2em 0.4em;
+  border-radius: 3px;
+  font-size: 0.9em;
+}
+
+/* 列表样式优化 */
+.markdown-theme ul li::before {
+  content: "•";
+  color: #0366d6;
+  font-weight: bold;
+  display: inline-block;
+  width: 1em;
+  margin-left: -1em;
+}
+
+.markdown-theme ol {
+  counter-reset: item;
+}
+
+.markdown-theme ol li {
+  counter-increment: item;
+}
+
+.markdown-theme ol li::before {
+  content: counter(item) ".";
+  color: #0366d6;
+  font-weight: bold;
+  display: inline-block;
+  width: 1.5em;
+  margin-left: -1.5em;
+} 
