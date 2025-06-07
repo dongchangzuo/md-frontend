@@ -7,7 +7,6 @@ import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { lang } from '../../i18n/lang';
 import { marked } from 'marked';
-import katex from 'katex';
 
 // 配置 markdown-it
 const md = new MarkdownIt({
