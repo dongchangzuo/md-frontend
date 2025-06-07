@@ -6,6 +6,7 @@ import { tokenManager } from '../../services/api';
 import styled from 'styled-components';
 import { useNavigate } from 'react-router-dom';
 import { lang } from '../../i18n/lang';
+import './styles/markdown-theme.css';
 
 // 配置 markdown-it
 const md = new MarkdownIt({
@@ -279,103 +280,6 @@ const PreviewContent = styled.div`
   font-size: 1rem;
   line-height: 1.6;
   color: #333;
-
-  h1, h2, h3, h4, h5, h6 {
-    margin-top: 1.5em;
-    margin-bottom: 0.5em;
-    font-weight: 600;
-    line-height: 1.25;
-  }
-
-  h1 { font-size: 2em; }
-  h2 { font-size: 1.5em; }
-  h3 { font-size: 1.25em; }
-  h4 { font-size: 1em; }
-  h5 { font-size: 0.875em; }
-  h6 { font-size: 0.85em; }
-
-  p {
-    margin: 1em 0;
-  }
-
-  a {
-    color: #0366d6;
-    text-decoration: none;
-    &:hover {
-      text-decoration: underline;
-    }
-  }
-
-  code {
-    background: #f6f8fa;
-    padding: 0.2em 0.4em;
-    border-radius: 3px;
-    font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
-    font-size: 85%;
-  }
-
-  pre {
-    background: #f6f8fa;
-    padding: 16px;
-    border-radius: 6px;
-    overflow: auto;
-    margin: 1em 0;
-
-    code {
-      background: none;
-      padding: 0;
-      font-size: 100%;
-    }
-  }
-
-  blockquote {
-    margin: 1em 0;
-    padding: 0 1em;
-    color: #6a737d;
-    border-left: 0.25em solid #dfe2e5;
-  }
-
-  table {
-    border-collapse: collapse;
-    width: 100%;
-    margin: 1em 0;
-
-    th, td {
-      padding: 6px 13px;
-      border: 1px solid #dfe2e5;
-    }
-
-    tr {
-      background-color: #fff;
-      border-top: 1px solid #c6cbd1;
-      &:nth-child(2n) {
-        background-color: #f6f8fa;
-      }
-    }
-  }
-
-  img {
-    max-width: 100%;
-    height: auto;
-  }
-
-  hr {
-    height: 0.25em;
-    padding: 0;
-    margin: 24px 0;
-    background-color: #e1e4e8;
-    border: 0;
-  }
-
-  ul, ol {
-    margin-left: 2em;
-    padding-left: 1.5em;
-  }
-
-  ul ul, ol ul, ul ol, ol ol {
-    margin-left: 1.5em;
-    padding-left: 1.5em;
-  }
 `;
 
 const LayoutButton = styled.button`
@@ -746,7 +650,8 @@ function MarkdownEditor() {
   );
 
   const renderPreview = () => (
-    <PreviewContent
+    <PreviewContent 
+      className="markdown-theme"
       dangerouslySetInnerHTML={{ __html: md.render(content) }}
     />
   );
