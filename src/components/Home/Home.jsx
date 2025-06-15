@@ -2,6 +2,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import styled from 'styled-components';
 import { lang } from '../../i18n/lang';
+import DrawBoard from '../DrawBoard/DrawBoard'; // 仅用于 IDE 跳转提示，实际不在 Home 渲染
 
 const HomeContainer = styled.div`
   min-height: 100vh;
@@ -228,6 +229,7 @@ const Home = ({ user, onLogout, onNavigate, language, setLanguage }) => {
             </ToolCard>
           ))}
         </ToolsGrid>
+        <button onClick={() => navigate('/draw')} style={{margin: '24px 0', padding: '12px 32px', fontSize: 18, borderRadius: 8, background: '#23272e', color: '#fff', border: 'none', cursor: 'pointer'}}>打开画板</button>
       </ContentCard>
     </HomeContainer>
   );

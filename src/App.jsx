@@ -19,6 +19,7 @@ import Profile from './pages/Profile/Profile';
 import Settings from './pages/Settings/Settings';
 import Membership from './pages/Membership/Membership';
 import Admin from './pages/Admin/Admin';
+import DrawBoard from './components/DrawBoard/DrawBoard';
 
 // 安全存储实现
 const secureStorage = {
@@ -262,6 +263,7 @@ function AppContent() {
                 <Admin language={language} />
               </ProtectedRoute>
             } />
+            <Route path="/draw" element={<DrawBoard />} />
           </Routes>
         </div>
       </Router>
