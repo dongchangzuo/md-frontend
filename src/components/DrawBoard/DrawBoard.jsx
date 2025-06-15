@@ -417,7 +417,6 @@ export default function DrawBoard() {
       }
       ctx.stroke();
       ctx.restore();
-      addToHistory();
     }
   };
 
@@ -427,7 +426,6 @@ export default function DrawBoard() {
     if (tool === TOOL_PEN || tool === TOOL_ERASER) {
       const ctx = canvasRef.current.getContext('2d');
       ctx.closePath();
-      addToHistory();
     } else if (tool === TOOL_LINE || tool === TOOL_TRIANGLE) {
       const ctx = canvasRef.current.getContext('2d');
       ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
@@ -451,10 +449,10 @@ export default function DrawBoard() {
       }
       ctx.stroke();
       ctx.restore();
-      addToHistory();
     }
     setIsDrawing(false);
     setLineStart(null);
+    addToHistory();
   };
 
   // Update the line/triangle preview effect
