@@ -1,6 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
 import styled, { keyframes } from 'styled-components';
-import { io } from 'socket.io-client';
 
 const fadeIn = keyframes`
   from { opacity: 0; transform: translateY(20px); }
@@ -294,110 +293,82 @@ function getCanvasPos(e, canvas) {
 export default function DrawBoard() {
   const canvasRef = useRef(null);
   const wrapperRef = useRef(null);
-  const socket = useRef(null);
+  const [tool, setTool] = useState(TOOL_PEN);
   const [color, setColor] = useState('#000000');
   const [size, setSize] = useState(2);
   const [isDrawing, setIsDrawing] = useState(false);
-  const [tool, setTool] = useState(TOOL_PEN);
   const [history, setHistory] = useState([]);
   const [lineStart, setLineStart] = useState(null);
   const [lineEnd, setLineEnd] = useState(null);
-  const [roomId, setRoomId] = useState('');
-  const [joined, setJoined] = useState(false);
+  const [currentHistoryIndex, setCurrentHistoryIndex] = useState(-1);
 
-  // Initialize canvas when component mounts
+  // Remove all socket.io related useEffect hooks
   useEffect(() => {
-    if (wrapperRef.current && canvasRef.current) {
-      const rect = wrapperRef.current.getBoundingClientRect();
-      canvasRef.current.width = rect.width;
-      canvasRef.current.height = rect.height;
-    }
-  }, []); // Empty dependency array means this runs once on mount
+    const canvas = canvasRef.current;
+    const wrapper = canvas.parentElement;
+    canvas.width = wrapper.clientWidth;
+    canvas.height = wrapper.clientHeight;
+    drawGridAndAxes();
 
-  // canvas resize handler
-  useEffect(() => {
-    const resizeCanvas = () => {
-      if (wrapperRef.current && canvasRef.current) {
-        const rect = wrapperRef.current.getBoundingClientRect();
-        canvasRef.current.width = rect.width;
-        canvasRef.current.height = rect.height;
-      }
+    const handleResize = () => {
+      canvas.width = wrapper.clientWidth;
+      canvas.height = wrapper.clientHeight;
+      drawGridAndAxes();
     };
-    window.addEventListener('resize', resizeCanvas);
-    return () => window.removeEventListener('resize', resizeCanvas);
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  // socket.io 连接和事件
-  useEffect(() => {
-    if (!joined || !roomId) return;
-    socket.current = io('http://localhost:3001'); // 生产环境请替换为你的服务器地址
-    socket.current.emit('join', roomId);
-    socket.current.on('draw-op', (op) => {
-      handleRemoteOp(op);
-    });
-    return () => {
-      socket.current && socket.current.disconnect();
-    };
-    // eslint-disable-next-line
-  }, [joined, roomId]);
+  const drawGridAndAxes = () => {
+    const ctx = canvasRef.current.getContext('2d');
+    const rect = wrapperRef.current.getBoundingClientRect();
+    const scaleX = canvasRef.current.width / rect.width;
+    const scaleY = canvasRef.current.height / rect.height;
 
-  function sendOp(op) {
-    if (socket.current && joined && roomId) {
-      socket.current.emit('draw-op', { roomId, op });
+    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+
+    // Draw grid
+    for (let x = 0; x < canvasRef.current.width; x += GRID_SIZE) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvasRef.current.height);
+      ctx.strokeStyle = GRID_COLOR;
+      ctx.lineWidth = 0.5;
+      ctx.stroke();
     }
-  }
 
-  // 处理远程操作
-  function handleRemoteOp(op) {
-    const ctx = getCtx();
-    if (op.type === 'pen' || op.type === 'eraser') {
-      ctx.save();
-      ctx.strokeStyle = op.type === 'eraser' ? '#fff' : op.color;
-      ctx.lineWidth = op.size;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
+    for (let y = 0; y < canvasRef.current.height; y += GRID_SIZE) {
       ctx.beginPath();
-      ctx.moveTo(op.from.x, op.from.y);
-      ctx.lineTo(op.to.x, op.to.y);
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvasRef.current.width, y);
+      ctx.strokeStyle = GRID_COLOR;
+      ctx.lineWidth = 0.5;
       ctx.stroke();
-      ctx.restore();
-    } else if (op.type === 'line') {
-      ctx.save();
-      ctx.strokeStyle = op.color;
-      ctx.lineWidth = op.size;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(op.from.x, op.from.y);
-      ctx.lineTo(op.to.x, op.to.y);
-      ctx.stroke();
-      ctx.restore();
-    } else if (op.type === 'triangle') {
-      ctx.save();
-      ctx.strokeStyle = op.color;
-      ctx.lineWidth = op.size;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(op.points[0].x, op.points[0].y);
-      ctx.lineTo(op.points[1].x, op.points[1].y);
-      ctx.lineTo(op.points[2].x, op.points[2].y);
-      ctx.closePath();
-      ctx.stroke();
-      ctx.restore();
-    } else if (op.type === 'clear') {
-      clearCanvas();
-    } else if (op.type === 'undo') {
-      handleUndo(true);
     }
-  }
 
-  const getCtx = () => canvasRef.current.getContext('2d');
+    // Draw axes
+    ctx.beginPath();
+    ctx.moveTo(0, canvasRef.current.height / 2);
+    ctx.lineTo(canvasRef.current.width, canvasRef.current.height / 2);
+    ctx.strokeStyle = GRID_COLOR;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(canvasRef.current.width / 2, 0);
+    ctx.lineTo(canvasRef.current.width / 2, canvasRef.current.height);
+    ctx.strokeStyle = GRID_COLOR;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+  };
 
   const startDraw = (e) => {
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
     if (tool === TOOL_PEN || tool === TOOL_ERASER) {
       console.log('startDraw', pos);
       setIsDrawing(true);
-      const ctx = getCtx();
+      const ctx = canvasRef.current.getContext('2d');
       ctx.beginPath();
       ctx.moveTo(pos.x, pos.y);
       setLineStart(pos);
@@ -413,7 +384,7 @@ export default function DrawBoard() {
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
     if (tool === TOOL_PEN || tool === TOOL_ERASER) {
       console.log(tool)
-      const ctx = getCtx();
+      const ctx = canvasRef.current.getContext('2d');
       ctx.beginPath();
       ctx.moveTo(lineStart.x, lineStart.y);
       ctx.lineTo(pos.x, pos.y);
@@ -422,14 +393,6 @@ export default function DrawBoard() {
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.stroke();
-      sendOp({
-        type: tool,
-        color,
-        size,
-        from: lineStart,
-        to: pos
-      });
-      console.log("here")
       setLineStart(pos);
     } else if (tool === TOOL_LINE || tool === TOOL_TRIANGLE) {
       setLineEnd(pos);
@@ -439,7 +402,7 @@ export default function DrawBoard() {
   const endDraw = (e) => {
     if (!isDrawing) return;
     setIsDrawing(false);
-    const ctx = getCtx();
+    const ctx = canvasRef.current.getContext('2d');
     if (tool === TOOL_PEN || tool === TOOL_ERASER) {
       ctx.closePath();
       const url = canvasRef.current.toDataURL();
@@ -459,13 +422,6 @@ export default function DrawBoard() {
       setLineEnd(null);
       const url = canvasRef.current.toDataURL();
       setHistory((prev) => [...prev, url]);
-      sendOp({
-        type: 'line',
-        color,
-        size,
-        from: lineStart,
-        to: pos
-      });
     } else if (tool === TOOL_TRIANGLE && lineStart) {
       const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
       // 计算等腰三角形第三个点
@@ -489,23 +445,13 @@ export default function DrawBoard() {
       setLineEnd(null);
       const url = canvasRef.current.toDataURL();
       setHistory((prev) => [...prev, url]);
-      sendOp({
-        type: 'triangle',
-        color,
-        size,
-        points: [
-          { x: x1, y: y1 },
-          { x: x2, y: y2 },
-          { x: x3, y: y3 }
-        ]
-      });
     }
   };
 
   // Update the line/triangle preview effect
   useEffect(() => {
     if ((tool === TOOL_LINE || tool === TOOL_TRIANGLE) && isDrawing && lineStart && lineEnd) {
-      const ctx = getCtx();
+      const ctx = canvasRef.current.getContext('2d');
       ctx.strokeStyle = color;
       ctx.lineWidth = size;
       ctx.lineCap = 'round';
@@ -529,7 +475,7 @@ export default function DrawBoard() {
   }, [lineEnd]);
 
   const clearCanvas = () => {
-    const ctx = getCtx();
+    const ctx = canvasRef.current.getContext('2d');
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
   };
 
@@ -538,7 +484,7 @@ export default function DrawBoard() {
     const prev = [...history];
     prev.pop();
     setHistory(prev);
-    const ctx = getCtx();
+    const ctx = canvasRef.current.getContext('2d');
     clearCanvas();
     if (prev.length > 0) {
       const img = new window.Image();
@@ -546,14 +492,14 @@ export default function DrawBoard() {
       img.onload = () => ctx.drawImage(img, 0, 0);
     }
     if (!isRemote) {
-      sendOp({ type: 'undo' });
+      // sendOp({ type: 'undo' });
     }
   };
 
   const handleClearAll = () => {
     clearCanvas();
     setHistory([]);
-    sendOp({ type: 'clear' });
+    // sendOp({ type: 'clear' });
   };
 
   // 工具切换
@@ -568,50 +514,17 @@ export default function DrawBoard() {
     setTool(TOOL_PEN);
   };
 
-  // 房间号输入页
-  if (!joined) {
-    return (
-      <DrawBoardContainer>
-        <ContentCard>
-          <Header>
-            <Title>
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 3h18v18H3z" />
-                <path d="M3 9h18" />
-                <path d="M9 21V9" />
-              </svg>
-              画板实时协作
-            </Title>
-          </Header>
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '1rem' }}>
-            <RoomInput
-              placeholder="输入房间号或自定义"
-              value={roomId}
-              onChange={e => setRoomId(e.target.value)}
-            />
-            <JoinButton
-              onClick={() => setJoined(true)}
-              disabled={!roomId}
-            >
-              加入房间
-            </JoinButton>
-          </div>
-        </ContentCard>
-      </DrawBoardContainer>
-    );
-  }
-
   return (
     <DrawBoardContainer>
       <ContentCard>
         <Header>
           <Title>
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M3 3h18v18H3z" />
-              <path d="M3 9h18" />
-              <path d="M9 21V9" />
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M21 6.375c0 2.692-4.03 4.875-9 4.875S3 9.067 3 6.375 7.03 1.5 12 1.5s9 2.183 9 4.875z" />
+              <path d="M12 12.75c2.685 0 5.19-.586 7.078-1.609a8.283 8.283 0 001.897-1.384c.016.121.025.244.025.368C21 12.817 16.97 15 12 15s-9-2.183-9-4.875c0-.124.009-.247.025-.368a8.284 8.284 0 001.897 1.384C6.809 12.164 9.315 12.75 12 12.75z" />
+              <path d="M12 16.5c2.685 0 5.19-.586 7.078-1.609a8.282 8.282 0 001.897-1.384c.016.121.025.244.025.368 0 2.692-4.03 4.875-9 4.875s-9-2.183-9-4.875c0-.124.009-.247.025-.368a8.284 8.284 0 001.897 1.384C6.809 15.914 9.315 16.5 12 16.5z" />
             </svg>
-            画板 DrawBoard（房间号：{roomId}）
+            DrawBoard
           </Title>
         </Header>
         <ToolBar>
