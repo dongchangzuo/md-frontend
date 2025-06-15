@@ -7,6 +7,10 @@ const fadeIn = keyframes`
   to { opacity: 1; transform: translateY(0); }
 `;
 
+// Move grid constants to the top
+const GRID_SIZE = 40;
+const GRID_COLOR = '#e0f7fa';
+
 const DrawBoardContainer = styled.div`
   height: 100vh;
   display: flex;
@@ -149,6 +153,10 @@ const Canvas = styled.canvas`
   background: white;
   border-radius: 8px;
   display: block;
+  background-image: 
+    linear-gradient(to right, ${GRID_COLOR} 1px, transparent 1px),
+    linear-gradient(to bottom, ${GRID_COLOR} 1px, transparent 1px);
+  background-size: ${GRID_SIZE}px ${GRID_SIZE}px;
 `;
 
 const RoomInput = styled.input`
@@ -209,103 +217,6 @@ const TOOL_ERASER = 'eraser';
 const TOOL_LINE = 'line';
 const TOOL_TRIANGLE = 'triangle';
 
-// Add grid and coordinate system constants
-const GRID_SIZE = 40; // Increased grid size for better visibility
-const AXIS_COLOR = '#006064'; // Match the theme color
-const GRID_COLOR = '#e0f7fa'; // Lighter theme color for grid
-const AXIS_LINE_WIDTH = 2;
-const GRID_LINE_WIDTH = 0.5;
-const LABEL_FONT = '14px Arial';
-const ORIGIN_RADIUS = 4;
-
-// Function to draw grid and coordinate axes
-const drawGridAndAxes = (ctx, width, height) => {
-  // Clear the canvas first
-  ctx.clearRect(0, 0, width, height);
-
-  // Draw grid
-  ctx.strokeStyle = GRID_COLOR;
-  ctx.lineWidth = GRID_LINE_WIDTH;
-
-  // Draw vertical grid lines
-  for (let x = 0; x <= width; x += GRID_SIZE) {
-    ctx.beginPath();
-    ctx.moveTo(x, 0);
-    ctx.lineTo(x, height);
-    ctx.stroke();
-  }
-
-  // Draw horizontal grid lines
-  for (let y = 0; y <= height; y += GRID_SIZE) {
-    ctx.beginPath();
-    ctx.moveTo(0, y);
-    ctx.lineTo(width, y);
-    ctx.stroke();
-  }
-
-  // Draw coordinate axes
-  ctx.strokeStyle = AXIS_COLOR;
-  ctx.lineWidth = AXIS_LINE_WIDTH;
-
-  // Draw X axis
-  ctx.beginPath();
-  ctx.moveTo(0, height / 2);
-  ctx.lineTo(width, height / 2);
-  ctx.stroke();
-
-  // Draw Y axis
-  ctx.beginPath();
-  ctx.moveTo(width / 2, 0);
-  ctx.lineTo(width / 2, height);
-  ctx.stroke();
-
-  // Draw axis labels
-  ctx.fillStyle = AXIS_COLOR;
-  ctx.font = LABEL_FONT;
-  ctx.textAlign = 'center';
-
-  // X axis labels
-  for (let x = -Math.floor(width / (2 * GRID_SIZE)); x <= Math.floor(width / (2 * GRID_SIZE)); x++) {
-    if (x === 0) continue;
-    const screenX = x * GRID_SIZE + width / 2;
-    ctx.fillText(x.toString(), screenX, height / 2 + 20);
-  }
-
-  // Y axis labels
-  for (let y = -Math.floor(height / (2 * GRID_SIZE)); y <= Math.floor(height / (2 * GRID_SIZE)); y++) {
-    if (y === 0) continue;
-    const screenY = height / 2 - y * GRID_SIZE;
-    ctx.fillText(y.toString(), width / 2 - 20, screenY);
-  }
-
-  // Draw origin point
-  ctx.fillStyle = AXIS_COLOR;
-  ctx.beginPath();
-  ctx.arc(width / 2, height / 2, ORIGIN_RADIUS, 0, Math.PI * 2);
-  ctx.fill();
-
-  // Draw axis arrows
-  const arrowSize = 10;
-  
-  // X axis arrow
-  ctx.beginPath();
-  ctx.moveTo(width - arrowSize, height / 2 - arrowSize);
-  ctx.lineTo(width, height / 2);
-  ctx.lineTo(width - arrowSize, height / 2 + arrowSize);
-  ctx.stroke();
-
-  // Y axis arrow
-  ctx.beginPath();
-  ctx.moveTo(width / 2 - arrowSize, arrowSize);
-  ctx.lineTo(width / 2, 0);
-  ctx.lineTo(width / 2 + arrowSize, arrowSize);
-  ctx.stroke();
-
-  // Add axis labels
-  ctx.fillText('x', width - 15, height / 2 - 15);
-  ctx.fillText('y', width / 2 + 15, 15);
-};
-
 // 获取 canvas 上的真实坐标（考虑缩放比）
 function getCanvasPos(e, canvas) {
   const rect = canvas.getBoundingClientRect();
@@ -331,20 +242,24 @@ export default function DrawBoard() {
   const [roomId, setRoomId] = useState('');
   const [joined, setJoined] = useState(false);
 
-  // canvas 自适应
+  // Initialize canvas when component mounts
+  useEffect(() => {
+    if (wrapperRef.current && canvasRef.current) {
+      const rect = wrapperRef.current.getBoundingClientRect();
+      canvasRef.current.width = rect.width;
+      canvasRef.current.height = rect.height;
+    }
+  }, []); // Empty dependency array means this runs once on mount
+
+  // canvas resize handler
   useEffect(() => {
     const resizeCanvas = () => {
       if (wrapperRef.current && canvasRef.current) {
         const rect = wrapperRef.current.getBoundingClientRect();
         canvasRef.current.width = rect.width;
         canvasRef.current.height = rect.height;
-        
-        // Draw grid and axes after resizing
-        const ctx = canvasRef.current.getContext('2d');
-        drawGridAndAxes(ctx, rect.width, rect.height);
       }
     };
-    resizeCanvas();
     window.addEventListener('resize', resizeCanvas);
     return () => window.removeEventListener('resize', resizeCanvas);
   }, []);
@@ -435,11 +350,6 @@ export default function DrawBoard() {
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
     if (tool === TOOL_PEN || tool === TOOL_ERASER) {
       const ctx = getCtx();
-      // Save the current state
-      ctx.save();
-      // Draw the grid and axes first
-      drawGridAndAxes(ctx, canvasRef.current.width, canvasRef.current.height);
-      // Then draw the line
       ctx.beginPath();
       ctx.moveTo(lineStart.x, lineStart.y);
       ctx.lineTo(pos.x, pos.y);
@@ -448,8 +358,6 @@ export default function DrawBoard() {
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
       ctx.stroke();
-      // Restore the state
-      ctx.restore();
       sendOp({
         type: tool,
         color,
@@ -529,15 +437,10 @@ export default function DrawBoard() {
     }
   };
 
-  // 直线/三角形预览
+  // Update the line/triangle preview effect
   useEffect(() => {
     if ((tool === TOOL_LINE || tool === TOOL_TRIANGLE) && drawing && lineStart && lineEnd) {
       const ctx = getCtx();
-      // Save the current state
-      ctx.save();
-      // Clear and redraw grid and axes
-      drawGridAndAxes(ctx, canvasRef.current.width, canvasRef.current.height);
-      // Draw the preview
       ctx.strokeStyle = color;
       ctx.lineWidth = size;
       ctx.lineCap = 'round';
@@ -556,8 +459,6 @@ export default function DrawBoard() {
         ctx.closePath();
       }
       ctx.stroke();
-      // Restore the state
-      ctx.restore();
     }
     // eslint-disable-next-line
   }, [lineEnd]);
@@ -565,7 +466,6 @@ export default function DrawBoard() {
   const clearCanvas = () => {
     const ctx = getCtx();
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    drawGridAndAxes(ctx, canvasRef.current.width, canvasRef.current.height);
   };
 
   const handleUndo = (isRemote) => {
