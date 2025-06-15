@@ -477,7 +477,7 @@ export default function DrawBoard() {
     // 辅助线预览
     if (tool === TOOL_AUXLINE && auxLinePoints.length === 1) {
       ctx.save();
-      ctx.strokeStyle = '#ff9800';
+      ctx.strokeStyle = color;
       ctx.lineWidth = 2;
       ctx.setLineDash([6, 4]);
       ctx.beginPath();
@@ -575,7 +575,7 @@ export default function DrawBoard() {
       } else if (auxLinePoints.length === 1) {
         setShapes(prev => [...prev, {
           type: 'auxline',
-          color: '#ff9800',
+          color,
           size: 2,
           points: [auxLinePoints[0], usePos]
         }]);
