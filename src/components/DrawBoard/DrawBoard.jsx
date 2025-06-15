@@ -369,7 +369,7 @@ export default function DrawBoard() {
     ctx.stroke();
   };
 
-  // 检查鼠标是否在所有图形端点附近，命中则返回精确点坐标和索引
+  // 检查鼠标是否在所有图形端点附近，命中则返回精确点坐标和索引（并区分 start/end）
   const getHitPoint = (x, y) => {
     const radius = 10;
     for (let i = 0; i < shapes.length; i++) {
@@ -377,25 +377,25 @@ export default function DrawBoard() {
       if (shape.type === 'line') {
         for (let j = 0; j < 2; j++) {
           if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < radius) {
-            return { point: shape.points[j], shapeIndex: i, pointIndex: j, type: 'line' };
+            return { shapeIndex: i, pointIndex: j, type: 'line', point: j === 0 ? 'start' : 'end' };
           }
         }
       } else if (shape.type === 'triangle') {
         for (let j = 0; j < 3; j++) {
           if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < radius) {
-            return { point: shape.points[j], shapeIndex: i, pointIndex: j, type: 'triangle' };
+            return { shapeIndex: i, pointIndex: j, type: 'triangle' };
           }
         }
       } else if (shape.type === 'angle') {
         for (let j = 0; j < 3; j++) {
           if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < radius) {
-            return { point: shape.points[j], shapeIndex: i, pointIndex: j, type: 'angle' };
+            return { shapeIndex: i, pointIndex: j, type: 'angle' };
           }
         }
       } else if (shape.type === 'auxline') {
         for (let j = 0; j < 2; j++) {
           if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < radius) {
-            return { point: shape.points[j], shapeIndex: i, pointIndex: j, type: 'auxline' };
+            return { shapeIndex: i, pointIndex: j, type: 'auxline' };
           }
         }
       }
@@ -552,9 +552,9 @@ export default function DrawBoard() {
   // 鼠标按下
   const startDraw = (e) => {
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
-    // 拖动直线或三角形顶点
+    // 拖动直线或三角形端点
     const hit = getHitPoint(pos.x, pos.y);
-    if (tool === TOOL_LINE && hit && hit.point) {
+    if (tool === TOOL_LINE && hit && (hit.point === 'start' || hit.point === 'end')) {
       setDragging(hit);
       return;
     }
@@ -612,11 +612,22 @@ export default function DrawBoard() {
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
     // 拖动直线端点
     if (dragging && tool === TOOL_LINE && dragging.point) {
-      const hit = getHitPoint(pos.x, pos.y);
       let newX = pos.x, newY = pos.y;
-      if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === (dragging.point === 'start' ? 0 : 1))) {
-        newX = hit.point.x;
-        newY = hit.point.y;
+      if (e.shiftKey) {
+        // Shift: 斜率锁定
+        const shape = shapes[dragging.shapeIndex];
+        const other = dragging.point === 'start' ? shape.points[1] : shape.points[0];
+        const vx = shape.points[0].x - shape.points[1].x;
+        const vy = shape.points[0].y - shape.points[1].y;
+        const dx = pos.x - other.x;
+        const dy = pos.y - other.y;
+        const len2 = vx * vx + vy * vy;
+        if (len2 !== 0) {
+          const dot = dx * vx + dy * vy;
+          const t = dot / len2;
+          newX = other.x + vx * t;
+          newY = other.y + vy * t;
+        }
       }
       setShapes(prev => prev.map((shape, idx) => {
         if (idx !== dragging.shapeIndex) return shape;
