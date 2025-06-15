@@ -369,22 +369,33 @@ export default function DrawBoard() {
     ctx.stroke();
   };
 
-  // 检查鼠标是否在直线或三角形端点附近
+  // 检查鼠标是否在所有图形端点附近，命中则返回精确点坐标和索引
   const getHitPoint = (x, y) => {
     const radius = 10;
     for (let i = 0; i < shapes.length; i++) {
       const shape = shapes[i];
       if (shape.type === 'line') {
-        if (Math.hypot(x - shape.points[0].x, y - shape.points[0].y) < radius) {
-          return { shapeIndex: i, point: 'start' };
-        }
-        if (Math.hypot(x - shape.points[1].x, y - shape.points[1].y) < radius) {
-          return { shapeIndex: i, point: 'end' };
+        for (let j = 0; j < 2; j++) {
+          if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < radius) {
+            return { point: shape.points[j], shapeIndex: i, pointIndex: j, type: 'line' };
+          }
         }
       } else if (shape.type === 'triangle') {
         for (let j = 0; j < 3; j++) {
           if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < radius) {
-            return { shapeIndex: i, pointIndex: j };
+            return { point: shape.points[j], shapeIndex: i, pointIndex: j, type: 'triangle' };
+          }
+        }
+      } else if (shape.type === 'angle') {
+        for (let j = 0; j < 3; j++) {
+          if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < radius) {
+            return { point: shape.points[j], shapeIndex: i, pointIndex: j, type: 'angle' };
+          }
+        }
+      } else if (shape.type === 'auxline') {
+        for (let j = 0; j < 2; j++) {
+          if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < radius) {
+            return { point: shape.points[j], shapeIndex: i, pointIndex: j, type: 'auxline' };
           }
         }
       }
@@ -552,15 +563,21 @@ export default function DrawBoard() {
       return;
     }
     if (tool === TOOL_AUXLINE) {
+      // 检查是否点中已存在的点或端点
+      const hit = getHitPoint(pos.x, pos.y);
+      if (hit && hit.type === 'auxline') {
+        setDragging({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex, type: 'auxline' });
+        return;
+      }
+      const usePos = hit ? hit.point : pos;
       if (auxLinePoints.length === 0) {
-        setAuxLinePoints([pos]);
+        setAuxLinePoints([usePos]);
       } else if (auxLinePoints.length === 1) {
-        // 生成辅助线 shape
         setShapes(prev => [...prev, {
           type: 'auxline',
           color: '#ff9800',
           size: 2,
-          points: [auxLinePoints[0], pos]
+          points: [auxLinePoints[0], usePos]
         }]);
         setAuxLinePoints([]);
       }
@@ -625,6 +642,17 @@ export default function DrawBoard() {
     }
     // 拖动三角形顶点
     if (dragging && tool === TOOL_TRIANGLE && typeof dragging.pointIndex === 'number') {
+      setShapes(prev => prev.map((shape, idx) => {
+        if (idx !== dragging.shapeIndex) return shape;
+        const newPoints = shape.points.map((pt, j) =>
+          j === dragging.pointIndex ? { x: pos.x, y: pos.y } : pt
+        );
+        return { ...shape, points: newPoints };
+      }));
+      return;
+    }
+    // 拖动辅助线端点
+    if (dragging && dragging.type === 'auxline') {
       setShapes(prev => prev.map((shape, idx) => {
         if (idx !== dragging.shapeIndex) return shape;
         const newPoints = shape.points.map((pt, j) =>
