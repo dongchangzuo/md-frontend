@@ -612,26 +612,14 @@ export default function DrawBoard() {
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
     // 拖动直线端点
     if (dragging && tool === TOOL_LINE && dragging.point) {
+      const hit = getHitPoint(pos.x, pos.y);
+      let newX = pos.x, newY = pos.y;
+      if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === (dragging.point === 'start' ? 0 : 1))) {
+        newX = hit.point.x;
+        newY = hit.point.y;
+      }
       setShapes(prev => prev.map((shape, idx) => {
         if (idx !== dragging.shapeIndex) return shape;
-        const other = dragging.point === 'start'
-          ? shape.points[1]
-          : shape.points[0];
-        let newX = pos.x, newY = pos.y;
-        if (e.nativeEvent.shiftKey) {
-          // 斜率保持不变：投影到原有直线
-          const vx = shape.points[0].x - shape.points[1].x;
-          const vy = shape.points[0].y - shape.points[1].y;
-          const dx = pos.x - other.x;
-          const dy = pos.y - other.y;
-          const len2 = vx * vx + vy * vy;
-          if (len2 !== 0) {
-            const dot = dx * vx + dy * vy;
-            const t = dot / len2;
-            newX = other.x + vx * t;
-            newY = other.y + vy * t;
-          }
-        }
         if (dragging.point === 'start') {
           return { ...shape, points: [{ x: newX, y: newY }, shape.points[1]] };
         } else {
@@ -640,23 +628,52 @@ export default function DrawBoard() {
       }));
       return;
     }
-    // 拖动三角形顶点
-    if (dragging && tool === TOOL_TRIANGLE && typeof dragging.pointIndex === 'number') {
+    // 拖动辅助线端点
+    if (dragging && dragging.type === 'auxline') {
+      const hit = getHitPoint(pos.x, pos.y);
+      let newX = pos.x, newY = pos.y;
+      if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
+        newX = hit.point.x;
+        newY = hit.point.y;
+      }
       setShapes(prev => prev.map((shape, idx) => {
         if (idx !== dragging.shapeIndex) return shape;
         const newPoints = shape.points.map((pt, j) =>
-          j === dragging.pointIndex ? { x: pos.x, y: pos.y } : pt
+          j === dragging.pointIndex ? { x: newX, y: newY } : pt
         );
         return { ...shape, points: newPoints };
       }));
       return;
     }
-    // 拖动辅助线端点
-    if (dragging && dragging.type === 'auxline') {
+    // 拖动三角形顶点
+    if (dragging && tool === TOOL_TRIANGLE && typeof dragging.pointIndex === 'number') {
+      const hit = getHitPoint(pos.x, pos.y);
+      let newX = pos.x, newY = pos.y;
+      if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
+        newX = hit.point.x;
+        newY = hit.point.y;
+      }
       setShapes(prev => prev.map((shape, idx) => {
         if (idx !== dragging.shapeIndex) return shape;
         const newPoints = shape.points.map((pt, j) =>
-          j === dragging.pointIndex ? { x: pos.x, y: pos.y } : pt
+          j === dragging.pointIndex ? { x: newX, y: newY } : pt
+        );
+        return { ...shape, points: newPoints };
+      }));
+      return;
+    }
+    // 拖动角度端点
+    if (dragging && dragging.type === 'angle') {
+      const hit = getHitPoint(pos.x, pos.y);
+      let newX = pos.x, newY = pos.y;
+      if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
+        newX = hit.point.x;
+        newY = hit.point.y;
+      }
+      setShapes(prev => prev.map((shape, idx) => {
+        if (idx !== dragging.shapeIndex) return shape;
+        const newPoints = shape.points.map((pt, j) =>
+          j === dragging.pointIndex ? { x: newX, y: newY } : pt
         );
         return { ...shape, points: newPoints };
       }));
