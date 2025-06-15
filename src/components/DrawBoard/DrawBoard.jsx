@@ -101,20 +101,65 @@ const ToolButton = styled.button`
   }
 `;
 
-const ColorButton = styled.button`
+const ColorPickerIcon = styled.div`
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 2px solid ${props => props.$active ? '#00acc1' : '#b2ebf2'};
   background: ${props => props.color};
+  position: relative;
   cursor: pointer;
   transition: all 0.3s ease;
-  padding: 0;
+  border: 2px solid ${props => props.$active ? '#00acc1' : '#b2ebf2'};
+  box-shadow: ${props => props.$active 
+    ? '0 0 0 3px #00acc1, 0 0 0 6px rgba(0, 172, 193, 0.2)' 
+    : 'none'};
+  transform: ${props => props.$active ? 'scale(1.1)' : 'scale(1)'};
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px) ${props => props.$active ? 'scale(1.1)' : 'scale(1)'};
+    box-shadow: ${props => props.$active 
+      ? '0 0 0 3px #00acc1, 0 0 0 6px rgba(0, 172, 193, 0.2), 0 4px 12px rgba(0, 0, 0, 0.1)' 
+      : '0 4px 12px rgba(0, 0, 0, 0.1)'};
   }
+
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: ${props => props.color};
+    border: 2px solid white;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-radius: 50%;
+    background: linear-gradient(45deg, transparent 50%, rgba(255, 255, 255, 0.3) 50%);
+  }
+
+  ${props => props.$active && `
+    &::before {
+      content: '✓';
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 16px;
+      font-weight: bold;
+      background: rgba(0, 172, 193, 0.8);
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+    }
+  `}
 `;
 
 const SizeButton = styled.button`
@@ -577,7 +622,7 @@ export default function DrawBoard() {
           </ToolButton>
           <span style={{ color: '#006064', fontWeight: 500, marginLeft: '1rem' }}>颜色：</span>
           {COLORS.map(c => (
-            <ColorButton
+            <ColorPickerIcon
               key={c}
               color={c}
               $active={color === c && tool === TOOL_PEN}
