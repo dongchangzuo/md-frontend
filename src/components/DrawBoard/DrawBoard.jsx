@@ -367,11 +367,14 @@ export default function DrawBoard() {
   const startDraw = (e) => {
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
     if (tool === TOOL_PEN || tool === TOOL_ERASER) {
-      console.log('startDraw', pos);
       setIsDrawing(true);
       const ctx = canvasRef.current.getContext('2d');
       ctx.beginPath();
       ctx.moveTo(pos.x, pos.y);
+      ctx.strokeStyle = (tool === TOOL_ERASER) ? '#fff' : color;
+      ctx.lineWidth = size;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       setLineStart(pos);
     } else if (tool === TOOL_LINE || tool === TOOL_TRIANGLE) {
       setLineStart(pos);
@@ -385,6 +388,10 @@ export default function DrawBoard() {
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
     if (tool === TOOL_PEN || tool === TOOL_ERASER) {
       const ctx = canvasRef.current.getContext('2d');
+      ctx.strokeStyle = (tool === TOOL_ERASER) ? '#fff' : color;
+      ctx.lineWidth = size;
+      ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       ctx.lineTo(pos.x, pos.y);
       ctx.stroke();
     } else if (tool === TOOL_LINE || tool === TOOL_TRIANGLE) {
@@ -410,6 +417,7 @@ export default function DrawBoard() {
       }
       ctx.stroke();
       ctx.restore();
+      addToHistory();
     }
   };
 
