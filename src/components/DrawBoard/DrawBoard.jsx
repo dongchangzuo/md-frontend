@@ -278,6 +278,7 @@ const TOOL_PEN = 'pen';
 const TOOL_ERASER = 'eraser';
 const TOOL_LINE = 'line';
 const TOOL_TRIANGLE = 'triangle';
+const TOOL_AUXLINE = 'auxline';
 
 // 获取 canvas 上的真实坐标（考虑缩放比）
 function getCanvasPos(e, canvas) {
@@ -305,6 +306,7 @@ export default function DrawBoard() {
   const [shapes, setShapes] = useState([]);
   const [dragging, setDragging] = useState(null);
   const [drawingShape, setDrawingShape] = useState(null);
+  const [auxLinePoints, setAuxLinePoints] = useState([]);
 
   // Remove all socket.io related useEffect hooks
   useEffect(() => {
@@ -448,8 +450,32 @@ export default function DrawBoard() {
           ctx.fill();
         }
         ctx.restore();
+      } else if (shape.type === 'auxline') {
+        ctx.save();
+        ctx.strokeStyle = shape.color;
+        ctx.lineWidth = shape.size;
+        ctx.setLineDash([6, 4]);
+        ctx.beginPath();
+        ctx.moveTo(shape.points[0].x, shape.points[0].y);
+        ctx.lineTo(shape.points[1].x, shape.points[1].y);
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.restore();
       }
     });
+    // 辅助线预览
+    if (tool === TOOL_AUXLINE && auxLinePoints.length === 1) {
+      ctx.save();
+      ctx.strokeStyle = '#ff9800';
+      ctx.lineWidth = 2;
+      ctx.setLineDash([6, 4]);
+      ctx.beginPath();
+      ctx.moveTo(auxLinePoints[0].x, auxLinePoints[0].y);
+      ctx.lineTo(auxLinePoints[0].x, auxLinePoints[0].y); // 先画一个点
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
     // 绘制当前正在绘制的 shape（预览）
     if (drawingShape) {
       if (drawingShape.type === 'pen' || drawingShape.type === 'eraser') {
@@ -510,7 +536,7 @@ export default function DrawBoard() {
   useEffect(() => {
     drawAllShapes();
     // eslint-disable-next-line
-  }, [shapes, drawingShape]);
+  }, [shapes, drawingShape, tool, auxLinePoints]);
 
   // 鼠标按下
   const startDraw = (e) => {
@@ -523,6 +549,21 @@ export default function DrawBoard() {
     }
     if (tool === TOOL_TRIANGLE && hit && typeof hit.pointIndex === 'number') {
       setDragging(hit);
+      return;
+    }
+    if (tool === TOOL_AUXLINE) {
+      if (auxLinePoints.length === 0) {
+        setAuxLinePoints([pos]);
+      } else if (auxLinePoints.length === 1) {
+        // 生成辅助线 shape
+        setShapes(prev => [...prev, {
+          type: 'auxline',
+          color: '#ff9800',
+          size: 2,
+          points: [auxLinePoints[0], pos]
+        }]);
+        setAuxLinePoints([]);
+      }
       return;
     }
     if (tool === TOOL_PEN || tool === TOOL_ERASER) {
@@ -634,11 +675,13 @@ export default function DrawBoard() {
   // 撤销
   const handleUndo = () => {
     setShapes(prev => prev.slice(0, -1));
+    setAuxLinePoints([]);
   };
 
   // 删除全部
   const handleClearAll = () => {
     setShapes([]);
+    setAuxLinePoints([]);
   };
 
   // 工具切换
@@ -646,6 +689,10 @@ export default function DrawBoard() {
   const handleEraser = () => setTool(TOOL_ERASER);
   const handleLine = () => setTool(TOOL_LINE);
   const handleTriangle = () => setTool(TOOL_TRIANGLE);
+  const handleAuxLine = () => {
+    setTool(TOOL_AUXLINE);
+    setAuxLinePoints([]);
+  };
 
   // 颜色切换
   const handleColor = (c) => {
@@ -695,6 +742,12 @@ export default function DrawBoard() {
             $active={tool === TOOL_TRIANGLE}
           >
             三角形
+          </ToolButton>
+          <ToolButton
+            onClick={handleAuxLine}
+            $active={tool === TOOL_AUXLINE}
+          >
+            辅助线
           </ToolButton>
           <span style={{ color: '#006064', fontWeight: 500, marginLeft: '1rem' }}>颜色：</span>
           {COLORS.map(c => (
