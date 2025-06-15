@@ -367,7 +367,7 @@ export default function DrawBoard() {
     ctx.stroke();
   };
 
-  // 检查鼠标是否在端点附近
+  // 检查鼠标是否在直线或三角形端点附近
   const getHitPoint = (x, y) => {
     const radius = 10;
     for (let i = 0; i < shapes.length; i++) {
@@ -378,6 +378,12 @@ export default function DrawBoard() {
         }
         if (Math.hypot(x - shape.points[1].x, y - shape.points[1].y) < radius) {
           return { shapeIndex: i, point: 'end' };
+        }
+      } else if (shape.type === 'triangle') {
+        for (let j = 0; j < 3; j++) {
+          if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < radius) {
+            return { shapeIndex: i, pointIndex: j };
+          }
         }
       }
     }
@@ -434,6 +440,13 @@ export default function DrawBoard() {
         ctx.lineTo(shape.points[2].x, shape.points[2].y);
         ctx.closePath();
         ctx.stroke();
+        // 画三个顶点
+        ctx.fillStyle = '#2196f3';
+        for (let j = 0; j < 3; j++) {
+          ctx.beginPath();
+          ctx.arc(shape.points[j].x, shape.points[j].y, 6, 0, 2 * Math.PI);
+          ctx.fill();
+        }
         ctx.restore();
       }
     });
@@ -482,6 +495,13 @@ export default function DrawBoard() {
         ctx.lineTo(drawingShape.points[2].x, drawingShape.points[2].y);
         ctx.closePath();
         ctx.stroke();
+        // 画三个顶点
+        ctx.fillStyle = '#2196f3';
+        for (let j = 0; j < 3; j++) {
+          ctx.beginPath();
+          ctx.arc(drawingShape.points[j].x, drawingShape.points[j].y, 6, 0, 2 * Math.PI);
+          ctx.fill();
+        }
         ctx.restore();
       }
     }
@@ -495,25 +515,29 @@ export default function DrawBoard() {
   // 鼠标按下
   const startDraw = (e) => {
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
-    if (tool === TOOL_LINE) {
-      // 检查是否点中端点
-      const hit = getHitPoint(pos.x, pos.y);
-      if (hit) {
-        setDragging(hit);
-        return;
-      }
-      setDrawingShape({
-        type: 'line',
-        color,
-        size,
-        points: [pos, pos]
-      });
-    } else if (tool === TOOL_PEN || tool === TOOL_ERASER) {
+    // 拖动直线或三角形顶点
+    const hit = getHitPoint(pos.x, pos.y);
+    if (tool === TOOL_LINE && hit && hit.point) {
+      setDragging(hit);
+      return;
+    }
+    if (tool === TOOL_TRIANGLE && hit && typeof hit.pointIndex === 'number') {
+      setDragging(hit);
+      return;
+    }
+    if (tool === TOOL_PEN || tool === TOOL_ERASER) {
       setDrawingShape({
         type: tool === TOOL_PEN ? 'pen' : 'eraser',
         color,
         size,
         points: [pos]
+      });
+    } else if (tool === TOOL_LINE) {
+      setDrawingShape({
+        type: 'line',
+        color,
+        size,
+        points: [pos, pos]
       });
     } else if (tool === TOOL_TRIANGLE) {
       setDrawingShape({
@@ -528,7 +552,8 @@ export default function DrawBoard() {
   // 鼠标移动
   const draw = (e) => {
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
-    if (dragging && tool === TOOL_LINE) {
+    // 拖动直线端点
+    if (dragging && tool === TOOL_LINE && dragging.point) {
       setShapes(prev => prev.map((shape, idx) => {
         if (idx !== dragging.shapeIndex) return shape;
         const other = dragging.point === 'start'
@@ -554,6 +579,17 @@ export default function DrawBoard() {
         } else {
           return { ...shape, points: [shape.points[0], { x: newX, y: newY }] };
         }
+      }));
+      return;
+    }
+    // 拖动三角形顶点
+    if (dragging && tool === TOOL_TRIANGLE && typeof dragging.pointIndex === 'number') {
+      setShapes(prev => prev.map((shape, idx) => {
+        if (idx !== dragging.shapeIndex) return shape;
+        const newPoints = shape.points.map((pt, j) =>
+          j === dragging.pointIndex ? { x: pos.x, y: pos.y } : pt
+        );
+        return { ...shape, points: newPoints };
       }));
       return;
     }
@@ -586,7 +622,7 @@ export default function DrawBoard() {
 
   // 鼠标松开
   const endDraw = (e) => {
-    if (dragging && tool === TOOL_LINE) {
+    if (dragging) {
       setDragging(null);
       return;
     }
