@@ -301,6 +301,7 @@ export default function DrawBoard() {
   const [lineStart, setLineStart] = useState(null);
   const [lineEnd, setLineEnd] = useState(null);
   const [currentHistoryIndex, setCurrentHistoryIndex] = useState(-1);
+  const [historyImage, setHistoryImage] = useState(null);
 
   // Remove all socket.io related useEffect hooks
   useEffect(() => {
@@ -383,69 +384,69 @@ export default function DrawBoard() {
     if (!isDrawing) return;
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
     if (tool === TOOL_PEN || tool === TOOL_ERASER) {
-      console.log(tool)
       const ctx = canvasRef.current.getContext('2d');
-      ctx.beginPath();
-      ctx.moveTo(lineStart.x, lineStart.y);
       ctx.lineTo(pos.x, pos.y);
-      ctx.strokeStyle = tool === TOOL_ERASER ? '#fff' : color;
+      ctx.stroke();
+    } else if (tool === TOOL_LINE || tool === TOOL_TRIANGLE) {
+      const ctx = canvasRef.current.getContext('2d');
+      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      drawGridAndAxes();
+      if (historyImage) {
+        ctx.drawImage(historyImage, 0, 0);
+      }
+      ctx.save();
+      ctx.strokeStyle = color;
       ctx.lineWidth = size;
       ctx.lineCap = 'round';
       ctx.lineJoin = 'round';
+      ctx.beginPath();
+      ctx.moveTo(lineStart.x, lineStart.y);
+      if (tool === TOOL_LINE) {
+        ctx.lineTo(pos.x, pos.y);
+      } else {
+        ctx.lineTo(pos.x, lineStart.y);
+        ctx.lineTo(lineStart.x + (pos.x - lineStart.x) / 2, pos.y);
+        ctx.closePath();
+      }
       ctx.stroke();
-      setLineStart(pos);
-    } else if (tool === TOOL_LINE || tool === TOOL_TRIANGLE) {
-      setLineEnd(pos);
+      ctx.restore();
     }
   };
 
   const endDraw = (e) => {
     if (!isDrawing) return;
-    setIsDrawing(false);
-    const ctx = canvasRef.current.getContext('2d');
+    const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
     if (tool === TOOL_PEN || tool === TOOL_ERASER) {
+      const ctx = canvasRef.current.getContext('2d');
       ctx.closePath();
-      const url = canvasRef.current.toDataURL();
-      setHistory((prev) => [...prev, url]);
-    } else if (tool === TOOL_LINE && lineStart) {
-      const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
+      addToHistory();
+    } else if (tool === TOOL_LINE || tool === TOOL_TRIANGLE) {
+      const ctx = canvasRef.current.getContext('2d');
+      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+      drawGridAndAxes();
+      if (historyImage) {
+        ctx.drawImage(historyImage, 0, 0);
+      }
       ctx.save();
       ctx.strokeStyle = color;
       ctx.lineWidth = size;
       ctx.lineCap = 'round';
+      ctx.lineJoin = 'round';
       ctx.beginPath();
       ctx.moveTo(lineStart.x, lineStart.y);
-      ctx.lineTo(pos.x, pos.y);
+      if (tool === TOOL_LINE) {
+        ctx.lineTo(pos.x, pos.y);
+      } else {
+        ctx.lineTo(pos.x, lineStart.y);
+        ctx.lineTo(lineStart.x + (pos.x - lineStart.x) / 2, pos.y);
+        ctx.closePath();
+      }
       ctx.stroke();
       ctx.restore();
-      setLineStart(null);
-      setLineEnd(null);
-      const url = canvasRef.current.toDataURL();
-      setHistory((prev) => [...prev, url]);
-    } else if (tool === TOOL_TRIANGLE && lineStart) {
-      const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
-      // 计算等腰三角形第三个点
-      const x1 = lineStart.x, y1 = lineStart.y;
-      const x2 = pos.x, y2 = pos.y;
-      // 第三个点横坐标为两点中点，纵坐标为 y1 - (y2 - y1)
-      const x3 = x1 - (x2 - x1);
-      const y3 = y2;
-      ctx.save();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = size;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.lineTo(x2, y2);
-      ctx.lineTo(x3, y3);
-      ctx.closePath();
-      ctx.stroke();
-      ctx.restore();
-      setLineStart(null);
-      setLineEnd(null);
-      const url = canvasRef.current.toDataURL();
-      setHistory((prev) => [...prev, url]);
+      addToHistory();
     }
+    setIsDrawing(false);
+    setLineStart(null);
   };
 
   // Update the line/triangle preview effect
@@ -479,27 +480,33 @@ export default function DrawBoard() {
     ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
   };
 
-  const handleUndo = (isRemote) => {
+  const handleUndo = () => {
     if (history.length === 0) return;
-    const prev = [...history];
-    prev.pop();
-    setHistory(prev);
-    const ctx = canvasRef.current.getContext('2d');
-    clearCanvas();
-    if (prev.length > 0) {
-      const img = new window.Image();
-      img.src = prev[prev.length - 1];
-      img.onload = () => ctx.drawImage(img, 0, 0);
+    const newHistory = history.slice(0, -1);
+    setHistory(newHistory);
+    let img = null;
+    if (newHistory.length > 0) {
+      img = new window.Image();
+      img.src = newHistory[newHistory.length - 1];
+      setHistoryImage(img);
+    } else {
+      setHistoryImage(null);
     }
-    if (!isRemote) {
-      // sendOp({ type: 'undo' });
+    // 清空画布并重绘
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    drawGridAndAxes();
+    if (img) {
+      img.onload = () => ctx.drawImage(img, 0, 0);
     }
   };
 
   const handleClearAll = () => {
-    clearCanvas();
     setHistory([]);
-    // sendOp({ type: 'clear' });
+    setHistoryImage(null);
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    drawGridAndAxes();
   };
 
   // 工具切换
@@ -512,6 +519,14 @@ export default function DrawBoard() {
   const handleColor = (c) => {
     setColor(c);
     setTool(TOOL_PEN);
+  };
+
+  const addToHistory = () => {
+    const url = canvasRef.current.toDataURL();
+    setHistory((prev) => [...prev, url]);
+    const img = new window.Image();
+    img.src = url;
+    setHistoryImage(img);
   };
 
   return (
@@ -573,7 +588,7 @@ export default function DrawBoard() {
             />
           ))}
           <ToolButton
-            onClick={() => handleUndo(false)}
+            onClick={handleUndo}
             style={{ marginLeft: '1rem' }}
           >
             撤销
