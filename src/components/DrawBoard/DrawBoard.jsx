@@ -295,10 +295,10 @@ export default function DrawBoard() {
   const canvasRef = useRef(null);
   const wrapperRef = useRef(null);
   const socket = useRef(null);
-  const [color, setColor] = useState('#222');
-  const [size, setSize] = useState(4);
-  const [drawing, setDrawing] = useState(false);
-  const [tool, setTool] = useState(TOOL_PEN); // pen/eraser/line/triangle
+  const [color, setColor] = useState('#000000');
+  const [size, setSize] = useState(2);
+  const [isDrawing, setIsDrawing] = useState(false);
+  const [tool, setTool] = useState(TOOL_PEN);
   const [history, setHistory] = useState([]);
   const [lineStart, setLineStart] = useState(null);
   const [lineEnd, setLineEnd] = useState(null);
@@ -396,7 +396,7 @@ export default function DrawBoard() {
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
     if (tool === TOOL_PEN || tool === TOOL_ERASER) {
       console.log('startDraw', pos);
-      setDrawing(true);
+      setIsDrawing(true);
       const ctx = getCtx();
       ctx.beginPath();
       ctx.moveTo(pos.x, pos.y);
@@ -404,14 +404,15 @@ export default function DrawBoard() {
     } else if (tool === TOOL_LINE || tool === TOOL_TRIANGLE) {
       setLineStart(pos);
       setLineEnd(null);
-      setDrawing(true);
+      setIsDrawing(true);
     }
   };
 
   const draw = (e) => {
-    if (!drawing) return;
+    if (!isDrawing) return;
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
     if (tool === TOOL_PEN || tool === TOOL_ERASER) {
+      console.log(tool)
       const ctx = getCtx();
       ctx.beginPath();
       ctx.moveTo(lineStart.x, lineStart.y);
@@ -428,6 +429,7 @@ export default function DrawBoard() {
         from: lineStart,
         to: pos
       });
+      console.log("here")
       setLineStart(pos);
     } else if (tool === TOOL_LINE || tool === TOOL_TRIANGLE) {
       setLineEnd(pos);
@@ -435,8 +437,8 @@ export default function DrawBoard() {
   };
 
   const endDraw = (e) => {
-    if (!drawing) return;
-    setDrawing(false);
+    if (!isDrawing) return;
+    setIsDrawing(false);
     const ctx = getCtx();
     if (tool === TOOL_PEN || tool === TOOL_ERASER) {
       ctx.closePath();
@@ -502,7 +504,7 @@ export default function DrawBoard() {
 
   // Update the line/triangle preview effect
   useEffect(() => {
-    if ((tool === TOOL_LINE || tool === TOOL_TRIANGLE) && drawing && lineStart && lineEnd) {
+    if ((tool === TOOL_LINE || tool === TOOL_TRIANGLE) && isDrawing && lineStart && lineEnd) {
       const ctx = getCtx();
       ctx.strokeStyle = color;
       ctx.lineWidth = size;
