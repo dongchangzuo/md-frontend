@@ -302,6 +302,9 @@ export default function DrawBoard() {
   const [lineEnd, setLineEnd] = useState(null);
   const [currentHistoryIndex, setCurrentHistoryIndex] = useState(-1);
   const [historyImage, setHistoryImage] = useState(null);
+  const [shapes, setShapes] = useState([]);
+  const [dragging, setDragging] = useState(null);
+  const [drawingShape, setDrawingShape] = useState(null);
 
   // Remove all socket.io related useEffect hooks
   useEffect(() => {
@@ -364,155 +367,242 @@ export default function DrawBoard() {
     ctx.stroke();
   };
 
+  // 检查鼠标是否在端点附近
+  const getHitPoint = (x, y) => {
+    const radius = 10;
+    for (let i = 0; i < shapes.length; i++) {
+      const shape = shapes[i];
+      if (shape.type === 'line') {
+        if (Math.hypot(x - shape.points[0].x, y - shape.points[0].y) < radius) {
+          return { shapeIndex: i, point: 'start' };
+        }
+        if (Math.hypot(x - shape.points[1].x, y - shape.points[1].y) < radius) {
+          return { shapeIndex: i, point: 'end' };
+        }
+      }
+    }
+    return null;
+  };
+
+  // 重绘所有图形
+  const drawAllShapes = () => {
+    const ctx = canvasRef.current.getContext('2d');
+    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
+    drawGridAndAxes();
+    shapes.forEach((shape, idx) => {
+      if (shape.type === 'pen' || shape.type === 'eraser') {
+        ctx.save();
+        ctx.strokeStyle = shape.type === 'eraser' ? '#fff' : shape.color;
+        ctx.lineWidth = shape.size;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        shape.points.forEach((pt, i) => {
+          if (i === 0) ctx.moveTo(pt.x, pt.y);
+          else ctx.lineTo(pt.x, pt.y);
+        });
+        ctx.stroke();
+        ctx.restore();
+      } else if (shape.type === 'line') {
+        ctx.save();
+        ctx.strokeStyle = shape.color;
+        ctx.lineWidth = shape.size;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(shape.points[0].x, shape.points[0].y);
+        ctx.lineTo(shape.points[1].x, shape.points[1].y);
+        ctx.stroke();
+        // 画端点
+        ctx.save();
+        ctx.fillStyle = '#2196f3';
+        ctx.beginPath();
+        ctx.arc(shape.points[0].x, shape.points[0].y, 6, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(shape.points[1].x, shape.points[1].y, 6, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.restore();
+      } else if (shape.type === 'triangle') {
+        ctx.save();
+        ctx.strokeStyle = shape.color;
+        ctx.lineWidth = shape.size;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(shape.points[0].x, shape.points[0].y);
+        ctx.lineTo(shape.points[1].x, shape.points[1].y);
+        ctx.lineTo(shape.points[2].x, shape.points[2].y);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.restore();
+      }
+    });
+    // 绘制当前正在绘制的 shape（预览）
+    if (drawingShape) {
+      if (drawingShape.type === 'pen' || drawingShape.type === 'eraser') {
+        ctx.save();
+        ctx.strokeStyle = drawingShape.type === 'eraser' ? '#fff' : drawingShape.color;
+        ctx.lineWidth = drawingShape.size;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        drawingShape.points.forEach((pt, i) => {
+          if (i === 0) ctx.moveTo(pt.x, pt.y);
+          else ctx.lineTo(pt.x, pt.y);
+        });
+        ctx.stroke();
+        ctx.restore();
+      } else if (drawingShape.type === 'line') {
+        ctx.save();
+        ctx.strokeStyle = drawingShape.color;
+        ctx.lineWidth = drawingShape.size;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(drawingShape.points[0].x, drawingShape.points[0].y);
+        ctx.lineTo(drawingShape.points[1].x, drawingShape.points[1].y);
+        ctx.stroke();
+        // 画端点
+        ctx.fillStyle = '#2196f3';
+        ctx.beginPath();
+        ctx.arc(drawingShape.points[0].x, drawingShape.points[0].y, 6, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.beginPath();
+        ctx.arc(drawingShape.points[1].x, drawingShape.points[1].y, 6, 0, 2 * Math.PI);
+        ctx.fill();
+        ctx.restore();
+      } else if (drawingShape.type === 'triangle') {
+        ctx.save();
+        ctx.strokeStyle = drawingShape.color;
+        ctx.lineWidth = drawingShape.size;
+        ctx.lineCap = 'round';
+        ctx.lineJoin = 'round';
+        ctx.beginPath();
+        ctx.moveTo(drawingShape.points[0].x, drawingShape.points[0].y);
+        ctx.lineTo(drawingShape.points[1].x, drawingShape.points[1].y);
+        ctx.lineTo(drawingShape.points[2].x, drawingShape.points[2].y);
+        ctx.closePath();
+        ctx.stroke();
+        ctx.restore();
+      }
+    }
+  };
+
+  useEffect(() => {
+    drawAllShapes();
+    // eslint-disable-next-line
+  }, [shapes, drawingShape]);
+
+  // 鼠标按下
   const startDraw = (e) => {
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
-    if (tool === TOOL_PEN || tool === TOOL_ERASER) {
-      setIsDrawing(true);
-      const ctx = canvasRef.current.getContext('2d');
-      ctx.beginPath();
-      ctx.moveTo(pos.x, pos.y);
-      ctx.strokeStyle = (tool === TOOL_ERASER) ? '#fff' : color;
-      ctx.lineWidth = size;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      setLineStart(pos);
-    } else if (tool === TOOL_LINE || tool === TOOL_TRIANGLE) {
-      setLineStart(pos);
-      setLineEnd(null);
-      setIsDrawing(true);
+    if (tool === TOOL_LINE) {
+      // 检查是否点中端点
+      const hit = getHitPoint(pos.x, pos.y);
+      if (hit) {
+        setDragging(hit);
+        return;
+      }
+      setDrawingShape({
+        type: 'line',
+        color,
+        size,
+        points: [pos, pos]
+      });
+    } else if (tool === TOOL_PEN || tool === TOOL_ERASER) {
+      setDrawingShape({
+        type: tool === TOOL_PEN ? 'pen' : 'eraser',
+        color,
+        size,
+        points: [pos]
+      });
+    } else if (tool === TOOL_TRIANGLE) {
+      setDrawingShape({
+        type: 'triangle',
+        color,
+        size,
+        points: [pos, pos, pos]
+      });
     }
   };
 
+  // 鼠标移动
   const draw = (e) => {
-    if (!isDrawing) return;
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
-    if (tool === TOOL_PEN || tool === TOOL_ERASER) {
-      const ctx = canvasRef.current.getContext('2d');
-      ctx.strokeStyle = (tool === TOOL_ERASER) ? '#fff' : color;
-      ctx.lineWidth = size;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.lineTo(pos.x, pos.y);
-      ctx.stroke();
-    } else if (tool === TOOL_LINE || tool === TOOL_TRIANGLE) {
-      const ctx = canvasRef.current.getContext('2d');
-      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-      drawGridAndAxes();
-      if (historyImage) {
-        ctx.drawImage(historyImage, 0, 0);
-      }
-      ctx.save();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = size;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.beginPath();
-      ctx.moveTo(lineStart.x, lineStart.y);
-      if (tool === TOOL_LINE) {
-        ctx.lineTo(pos.x, pos.y);
-      } else {
-        ctx.lineTo(pos.x, lineStart.y);
-        ctx.lineTo(lineStart.x + (pos.x - lineStart.x) / 2, pos.y);
-        ctx.closePath();
-      }
-      ctx.stroke();
-      ctx.restore();
+    if (dragging && tool === TOOL_LINE) {
+      setShapes(prev => prev.map((shape, idx) => {
+        if (idx !== dragging.shapeIndex) return shape;
+        const other = dragging.point === 'start'
+          ? shape.points[1]
+          : shape.points[0];
+        let newX = pos.x, newY = pos.y;
+        if (e.nativeEvent.shiftKey) {
+          // 斜率保持不变：投影到原有直线
+          const vx = shape.points[0].x - shape.points[1].x;
+          const vy = shape.points[0].y - shape.points[1].y;
+          const dx = pos.x - other.x;
+          const dy = pos.y - other.y;
+          const len2 = vx * vx + vy * vy;
+          if (len2 !== 0) {
+            const dot = dx * vx + dy * vy;
+            const t = dot / len2;
+            newX = other.x + vx * t;
+            newY = other.y + vy * t;
+          }
+        }
+        if (dragging.point === 'start') {
+          return { ...shape, points: [{ x: newX, y: newY }, shape.points[1]] };
+        } else {
+          return { ...shape, points: [shape.points[0], { x: newX, y: newY }] };
+        }
+      }));
+      return;
+    }
+    if (!drawingShape) return;
+    if (drawingShape.type === 'pen' || drawingShape.type === 'eraser') {
+      setDrawingShape({
+        ...drawingShape,
+        points: [...drawingShape.points, pos]
+      });
+    } else if (drawingShape.type === 'line') {
+      setDrawingShape({
+        ...drawingShape,
+        points: [drawingShape.points[0], pos]
+      });
+    } else if (drawingShape.type === 'triangle') {
+      // 三角形：第一个点为底边左端，第二个点为底边右端，第三个点为顶点
+      const x1 = drawingShape.points[0].x, y1 = drawingShape.points[0].y;
+      const x2 = pos.x, y2 = drawingShape.points[0].y;
+      const x3 = x1 + (x2 - x1) / 2, y3 = pos.y;
+      setDrawingShape({
+        ...drawingShape,
+        points: [
+          { x: x1, y: y1 },
+          { x: x2, y: y2 },
+          { x: x3, y: y3 }
+        ]
+      });
     }
   };
 
+  // 鼠标松开
   const endDraw = (e) => {
-    if (!isDrawing) return;
-    const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
-    if (tool === TOOL_PEN || tool === TOOL_ERASER) {
-      const ctx = canvasRef.current.getContext('2d');
-      ctx.closePath();
-    } else if (tool === TOOL_LINE || tool === TOOL_TRIANGLE) {
-      const ctx = canvasRef.current.getContext('2d');
-      ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-      drawGridAndAxes();
-      if (historyImage) {
-        ctx.drawImage(historyImage, 0, 0);
-      }
-      ctx.save();
-      ctx.strokeStyle = color;
-      ctx.lineWidth = size;
-      ctx.lineCap = 'round';
-      ctx.lineJoin = 'round';
-      ctx.beginPath();
-      ctx.moveTo(lineStart.x, lineStart.y);
-      if (tool === TOOL_LINE) {
-        ctx.lineTo(pos.x, pos.y);
-      } else {
-        ctx.lineTo(pos.x, lineStart.y);
-        ctx.lineTo(lineStart.x + (pos.x - lineStart.x) / 2, pos.y);
-        ctx.closePath();
-      }
-      ctx.stroke();
-      ctx.restore();
+    if (dragging && tool === TOOL_LINE) {
+      setDragging(null);
+      return;
     }
-    setIsDrawing(false);
-    setLineStart(null);
-    addToHistory();
+    if (!drawingShape) return;
+    setShapes(prev => [...prev, drawingShape]);
+    setDrawingShape(null);
   };
 
-  // Update the line/triangle preview effect
-  useEffect(() => {
-    if ((tool === TOOL_LINE || tool === TOOL_TRIANGLE) && isDrawing && lineStart && lineEnd) {
-      const ctx = canvasRef.current.getContext('2d');
-      ctx.strokeStyle = color;
-      ctx.lineWidth = size;
-      ctx.lineCap = 'round';
-      ctx.beginPath();
-      if (tool === TOOL_LINE) {
-        ctx.moveTo(lineStart.x, lineStart.y);
-        ctx.lineTo(lineEnd.x, lineEnd.y);
-      } else if (tool === TOOL_TRIANGLE) {
-        const x1 = lineStart.x, y1 = lineStart.y;
-        const x2 = lineEnd.x, y2 = lineEnd.y;
-        const x3 = x1 - (x2 - x1);
-        const y3 = y2;
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
-        ctx.lineTo(x3, y3);
-        ctx.closePath();
-      }
-      ctx.stroke();
-    }
-    // eslint-disable-next-line
-  }, [lineEnd]);
-
-  const clearCanvas = () => {
-    const ctx = canvasRef.current.getContext('2d');
-    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-  };
-
+  // 撤销
   const handleUndo = () => {
-    if (history.length === 0) return;
-    const newHistory = history.slice(0, -1);
-    setHistory(newHistory);
-    let img = null;
-    if (newHistory.length > 0) {
-      img = new window.Image();
-      img.src = newHistory[newHistory.length - 1];
-      setHistoryImage(img);
-    } else {
-      setHistoryImage(null);
-    }
-    // 清空画布并重绘
-    const ctx = canvasRef.current.getContext('2d');
-    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    drawGridAndAxes();
-    if (img) {
-      img.onload = () => ctx.drawImage(img, 0, 0);
-    }
+    setShapes(prev => prev.slice(0, -1));
   };
 
+  // 删除全部
   const handleClearAll = () => {
-    setHistory([]);
-    setHistoryImage(null);
-    const ctx = canvasRef.current.getContext('2d');
-    ctx.clearRect(0, 0, canvasRef.current.width, canvasRef.current.height);
-    drawGridAndAxes();
+    setShapes([]);
   };
 
   // 工具切换
@@ -529,14 +619,6 @@ export default function DrawBoard() {
   // 粗细切换
   const handleSize = (s) => {
     setSize(s);
-  };
-
-  const addToHistory = () => {
-    const url = canvasRef.current.toDataURL();
-    setHistory((prev) => [...prev, url]);
-    const img = new window.Image();
-    img.src = url;
-    setHistoryImage(img);
   };
 
   return (
