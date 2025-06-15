@@ -369,7 +369,7 @@ export default function DrawBoard() {
     ctx.stroke();
   };
 
-  // 检查鼠标是否在所有图形端点附近，命中则返回精确点坐标和索引（并区分 start/end）
+  // 检查鼠标是否在所有图形端点附近，命中则返回精确点坐标和索引（pointIndex: 0|1）
   const getHitPoint = (x, y) => {
     const radius = 10;
     for (let i = 0; i < shapes.length; i++) {
@@ -377,7 +377,7 @@ export default function DrawBoard() {
       if (shape.type === 'line') {
         for (let j = 0; j < 2; j++) {
           if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < radius) {
-            return { shapeIndex: i, pointIndex: j, type: 'line', point: j === 0 ? 'start' : 'end' };
+            return { shapeIndex: i, pointIndex: j, type: 'line' };
           }
         }
       } else if (shape.type === 'triangle') {
@@ -554,7 +554,7 @@ export default function DrawBoard() {
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
     // 拖动直线或三角形端点
     const hit = getHitPoint(pos.x, pos.y);
-    if (tool === TOOL_LINE && hit && (hit.point === 'start' || hit.point === 'end')) {
+    if (tool === TOOL_LINE && hit && typeof hit.pointIndex === 'number') {
       setDragging(hit);
       return;
     }
@@ -611,12 +611,12 @@ export default function DrawBoard() {
   const draw = (e) => {
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
     // 拖动直线端点
-    if (dragging && tool === TOOL_LINE && dragging.point) {
+    if (dragging && tool === TOOL_LINE && typeof dragging.pointIndex === 'number') {
       let newX = pos.x, newY = pos.y;
       if (e.shiftKey) {
         // Shift: 斜率锁定
         const shape = shapes[dragging.shapeIndex];
-        const other = dragging.point === 'start' ? shape.points[1] : shape.points[0];
+        const other = shape.points[1 - dragging.pointIndex];
         const vx = shape.points[0].x - shape.points[1].x;
         const vy = shape.points[0].y - shape.points[1].y;
         const dx = pos.x - other.x;
@@ -631,11 +631,10 @@ export default function DrawBoard() {
       }
       setShapes(prev => prev.map((shape, idx) => {
         if (idx !== dragging.shapeIndex) return shape;
-        if (dragging.point === 'start') {
-          return { ...shape, points: [{ x: newX, y: newY }, shape.points[1]] };
-        } else {
-          return { ...shape, points: [shape.points[0], { x: newX, y: newY }] };
-        }
+        const newPoints = shape.points.map((pt, j) =>
+          j === dragging.pointIndex ? { x: newX, y: newY } : pt
+        );
+        return { ...shape, points: newPoints };
       }));
       return;
     }
