@@ -220,10 +220,6 @@ const Canvas = styled.canvas`
   background: white;
   border-radius: 8px;
   display: block;
-  background-image: 
-    linear-gradient(to right, ${GRID_COLOR} 1px, transparent 1px),
-    linear-gradient(to bottom, ${GRID_COLOR} 1px, transparent 1px);
-  background-size: ${GRID_SIZE}px ${GRID_SIZE}px;
 `;
 
 const RoomInput = styled.input`
