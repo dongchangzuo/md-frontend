@@ -523,10 +523,14 @@ export default function DrawBoard() {
   const handleLine = () => setTool(TOOL_LINE);
   const handleTriangle = () => setTool(TOOL_TRIANGLE);
 
-  // 切换颜色时自动切回画笔
+  // 颜色切换
   const handleColor = (c) => {
     setColor(c);
-    setTool(TOOL_PEN);
+  };
+
+  // 粗细切换
+  const handleSize = (s) => {
+    setSize(s);
   };
 
   const addToHistory = () => {
@@ -581,7 +585,7 @@ export default function DrawBoard() {
             <ColorPickerIcon
               key={c}
               color={c}
-              $active={color === c && tool === TOOL_PEN}
+              $active={color === c}
               onClick={() => handleColor(c)}
               style={{ opacity: tool === TOOL_ERASER ? 0.5 : 1 }}
             />
@@ -592,7 +596,7 @@ export default function DrawBoard() {
               key={s}
               size={s}
               $active={size === s}
-              onClick={() => setSize(s)}
+              onClick={() => handleSize(s)}
             />
           ))}
           <ToolButton
