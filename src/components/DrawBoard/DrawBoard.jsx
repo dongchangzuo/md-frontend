@@ -70,6 +70,8 @@ const ToolBar = styled.div`
   border-radius: 12px;
   border: 2px solid #b2ebf2;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
+  min-height: 64px;
 `;
 
 const ToolButton = styled.button`
@@ -86,7 +88,10 @@ const ToolButton = styled.button`
   align-items: center;
   gap: 0.5rem;
   min-width: 100px;
+  width: 100px;
   justify-content: center;
+  white-space: nowrap;
+  flex-shrink: 0;
 
   &:hover {
     transform: translateY(-2px);
@@ -162,21 +167,38 @@ const ColorPickerIcon = styled.div`
   `}
 `;
 
-const SizeButton = styled.button`
+const SizePickerIcon = styled.div`
   width: 32px;
   height: 32px;
   border-radius: 50%;
-  border: 2px solid ${props => props.$active ? '#00acc1' : '#b2ebf2'};
   background: white;
+  position: relative;
   cursor: pointer;
   transition: all 0.3s ease;
+  border: 2px solid ${props => props.$active ? '#00acc1' : '#b2ebf2'};
+  box-shadow: ${props => props.$active 
+    ? '0 0 0 3px #00acc1, 0 0 0 6px rgba(0, 172, 193, 0.2)' 
+    : 'none'};
+  transform: ${props => props.$active ? 'scale(1.1)' : 'scale(1)'};
   display: flex;
   align-items: center;
   justify-content: center;
 
   &:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px) ${props => props.$active ? 'scale(1.1)' : 'scale(1)'};
+    box-shadow: ${props => props.$active 
+      ? '0 0 0 3px #00acc1, 0 0 0 6px rgba(0, 172, 193, 0.2), 0 4px 12px rgba(0, 0, 0, 0.1)' 
+      : '0 4px 12px rgba(0, 0, 0, 0.1)'};
+  }
+
+  &::before {
+    content: '';
+    width: ${props => props.size}px;
+    height: ${props => props.size}px;
+    border-radius: 50%;
+    background: #006064;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
   }
 `;
 
@@ -632,18 +654,12 @@ export default function DrawBoard() {
           ))}
           <span style={{ color: '#006064', fontWeight: 500, marginLeft: '1rem' }}>粗细：</span>
           {SIZES.map(s => (
-            <SizeButton
+            <SizePickerIcon
               key={s}
+              size={s}
               $active={size === s}
               onClick={() => setSize(s)}
-            >
-              <div style={{
-                width: s,
-                height: s,
-                borderRadius: '50%',
-                background: '#006064'
-              }} />
-            </SizeButton>
+            />
           ))}
           <ToolButton
             onClick={() => handleUndo(false)}
