@@ -582,19 +582,16 @@ export default function DrawBoard() {
   // 鼠标按下
   const startDraw = (e) => {
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
-    // 拖动直线或三角形端点
+    
+    // 检查是否点击到任何形状的端点，如果点击到则开始拖动
     const hit = getHitPoint(pos.x, pos.y);
-    if (tool === TOOL_LINE && hit && typeof hit.pointIndex === 'number') {
+    if (hit && typeof hit.pointIndex === 'number') {
       setDragging(hit);
       return;
     }
-    if (tool === TOOL_TRIANGLE && hit && typeof hit.pointIndex === 'number') {
-      setDragging(hit);
-      return;
-    }
+    
     if (tool === TOOL_AUXLINE) {
       // 检查是否点中已存在的点或端点
-      const hit = getHitPoint(pos.x, pos.y);
       if (hit && hit.type === 'auxline') {
         setDragging({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex, type: 'auxline' });
         return;
@@ -613,6 +610,7 @@ export default function DrawBoard() {
       }
       return;
     }
+    
     if (tool === TOOL_PEN || tool === TOOL_ERASER) {
       setDrawingShape({
         type: tool === TOOL_PEN ? 'pen' : 'eraser',
@@ -640,108 +638,86 @@ export default function DrawBoard() {
   // 鼠标移动
   const draw = (e) => {
     const pos = getCanvasPos(e.nativeEvent, canvasRef.current);
-    // 拖动直线端点
-    if (dragging && tool === TOOL_LINE && typeof dragging.pointIndex === 'number') {
+    
+    // 拖动端点 - 根据被拖动形状的实际类型执行相应操作
+    if (dragging && typeof dragging.pointIndex === 'number') {
+      const shape = shapes[dragging.shapeIndex];
       let newX = pos.x, newY = pos.y;
-      if (e.shiftKey) {
-        // Shift: 斜率锁定
-        const shape = shapes[dragging.shapeIndex];
-        const other = shape.points[1 - dragging.pointIndex];
-        const vx = shape.points[0].x - shape.points[1].x;
-        const vy = shape.points[0].y - shape.points[1].y;
-        const dx = pos.x - other.x;
-        const dy = pos.y - other.y;
-        const len2 = vx * vx + vy * vy;
-        if (len2 !== 0) {
-          const dot = dx * vx + dy * vy;
-          const t = dot / len2;
-          newX = other.x + vx * t;
-          newY = other.y + vy * t;
+      
+      if (shape.type === 'line') {
+        // 直线端点拖动逻辑
+        if (e.shiftKey) {
+          // Shift: 斜率锁定
+          const other = shape.points[1 - dragging.pointIndex];
+          const vx = shape.points[0].x - shape.points[1].x;
+          const vy = shape.points[0].y - shape.points[1].y;
+          const dx = pos.x - other.x;
+          const dy = pos.y - other.y;
+          const len2 = vx * vx + vy * vy;
+          if (len2 !== 0) {
+            const dot = dx * vx + dy * vy;
+            const t = dot / len2;
+            newX = other.x + vx * t;
+            newY = other.y + vy * t;
+          }
+          setHoveredSnapPoint(null);
+        } else {
+          // 端点吸附
+          const hit = getHitPoint(pos.x, pos.y);
+          if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
+            newX = shapes[hit.shapeIndex].points[hit.pointIndex].x;
+            newY = shapes[hit.shapeIndex].points[hit.pointIndex].y;
+            setHoveredSnapPoint({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex });
+          } else {
+            setHoveredSnapPoint(null);
+          }
         }
-        setHoveredSnapPoint(null);
-      } else {
-        // 端点吸附
-        const hit = getHitPoint(pos.x, pos.y);
-        if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
-          newX = shapes[hit.shapeIndex].points[hit.pointIndex].x;
-          newY = shapes[hit.shapeIndex].points[hit.pointIndex].y;
-          setHoveredSnapPoint({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex });
+      } else if (shape.type === 'triangle') {
+        // 三角形顶点拖动逻辑
+        if (!e.shiftKey) {
+          // 端点吸附
+          const hit = getHitPoint(pos.x, pos.y);
+          if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
+            newX = shapes[hit.shapeIndex].points[hit.pointIndex].x;
+            newY = shapes[hit.shapeIndex].points[hit.pointIndex].y;
+            setHoveredSnapPoint({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex });
+          } else {
+            setHoveredSnapPoint(null);
+          }
+        } else {
+          setHoveredSnapPoint(null);
+        }
+      } else if (shape.type === 'auxline') {
+        // 辅助线端点拖动逻辑
+        if (!e.shiftKey) {
+          const hit = getHitPoint(pos.x, pos.y);
+          if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
+            newX = shapes[hit.shapeIndex].points[hit.pointIndex].x;
+            newY = shapes[hit.shapeIndex].points[hit.pointIndex].y;
+            setHoveredSnapPoint({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex });
+          } else {
+            setHoveredSnapPoint(null);
+          }
+        } else {
+          setHoveredSnapPoint(null);
+        }
+      } else if (shape.type === 'angle') {
+        // 角度端点拖动逻辑
+        if (!e.shiftKey) {
+          const hit = getHitPoint(pos.x, pos.y);
+          if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
+            newX = shapes[hit.shapeIndex].points[hit.pointIndex].x;
+            newY = shapes[hit.shapeIndex].points[hit.pointIndex].y;
+            setHoveredSnapPoint({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex });
+          } else {
+            setHoveredSnapPoint(null);
+          }
         } else {
           setHoveredSnapPoint(null);
         }
       }
-      setShapes(prev => prev.map((shape, idx) => {
-        if (idx !== dragging.shapeIndex) return shape;
-        const newPoints = shape.points.map((pt, j) =>
-          j === dragging.pointIndex ? { x: newX, y: newY } : pt
-        );
-        return { ...shape, points: newPoints };
-      }));
-      return;
-    }
-    // 拖动辅助线端点
-    if (dragging && dragging.type === 'auxline') {
-      let newX = pos.x, newY = pos.y;
-      if (!e.shiftKey) {
-        const hit = getHitPoint(pos.x, pos.y);
-        if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
-          newX = shapes[hit.shapeIndex].points[hit.pointIndex].x;
-          newY = shapes[hit.shapeIndex].points[hit.pointIndex].y;
-          setHoveredSnapPoint({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex });
-        } else {
-          setHoveredSnapPoint(null);
-        }
-      } else {
-        setHoveredSnapPoint(null);
-      }
-      setShapes(prev => prev.map((shape, idx) => {
-        if (idx !== dragging.shapeIndex) return shape;
-        const newPoints = shape.points.map((pt, j) =>
-          j === dragging.pointIndex ? { x: newX, y: newY } : pt
-        );
-        return { ...shape, points: newPoints };
-      }));
-      return;
-    }
-    // 拖动三角形顶点
-    if (dragging && tool === TOOL_TRIANGLE && typeof dragging.pointIndex === 'number') {
-      let newX = pos.x, newY = pos.y;
-      if (!e.shiftKey) {
-        const hit = getHitPoint(pos.x, pos.y);
-        if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
-          newX = shapes[hit.shapeIndex].points[hit.pointIndex].x;
-          newY = shapes[hit.shapeIndex].points[hit.pointIndex].y;
-          setHoveredSnapPoint({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex });
-        } else {
-          setHoveredSnapPoint(null);
-        }
-      } else {
-        setHoveredSnapPoint(null);
-      }
-      setShapes(prev => prev.map((shape, idx) => {
-        if (idx !== dragging.shapeIndex) return shape;
-        const newPoints = shape.points.map((pt, j) =>
-          j === dragging.pointIndex ? { x: newX, y: newY } : pt
-        );
-        return { ...shape, points: newPoints };
-      }));
-      return;
-    }
-    // 拖动角度端点
-    if (dragging && dragging.type === 'angle') {
-      let newX = pos.x, newY = pos.y;
-      if (!e.shiftKey) {
-        const hit = getHitPoint(pos.x, pos.y);
-        if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
-          newX = shapes[hit.shapeIndex].points[hit.pointIndex].x;
-          newY = shapes[hit.shapeIndex].points[hit.pointIndex].y;
-          setHoveredSnapPoint({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex });
-        } else {
-          setHoveredSnapPoint(null);
-        }
-      } else {
-        setHoveredSnapPoint(null);
-      }
+      
+      // 更新形状
       setShapes(prev => prev.map((shape, idx) => {
         if (idx !== dragging.shapeIndex) return shape;
         const newPoints = shape.points.map((pt, j) =>
