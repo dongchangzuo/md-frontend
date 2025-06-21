@@ -61,7 +61,7 @@ export const lang = {
     emailAlreadyInUse: '该邮箱已被注册',
 
     // 主页
-    welcome: username => `欢迎，${username || '用户'}！`,
+    welcome: (name) => `欢迎，${name}`,
     markdownEditor: 'Markdown编辑器',
     ocr: 'OCR识别',
     shapeEditor: '图形编辑器',
@@ -282,7 +282,7 @@ export const lang = {
     emailAlreadyInUse: 'Email is already in use',
 
     // Home
-    welcome: username => `Welcome, ${username || 'User'}!`,
+    welcome: (name) => `Welcome, ${name}`,
     markdownEditor: 'Markdown Editor',
     ocr: 'OCR',
     shapeEditor: 'Shape Editor',

@@ -222,7 +222,7 @@ const Home = ({ user, onLogout, onNavigate, language, setLanguage }) => {
     <HomeContainer>
       <ContentCard>
         <Header>
-          <WelcomeText>{t.welcome}, {user.username}</WelcomeText>
+          <WelcomeText>{t.welcome(user.username)}</WelcomeText>
           <LanguageSelect value={language} onChange={(e) => setLanguage(e.target.value)}>
             <option value="en">English</option>
             <option value="zh">中文</option>
