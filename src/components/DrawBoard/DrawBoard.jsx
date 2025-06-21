@@ -307,6 +307,7 @@ export default function DrawBoard() {
   const [dragging, setDragging] = useState(null);
   const [drawingShape, setDrawingShape] = useState(null);
   const [auxLinePoints, setAuxLinePoints] = useState([]);
+  const [hoveredSnapPoint, setHoveredSnapPoint] = useState(null);
 
   // Remove all socket.io related useEffect hooks
   useEffect(() => {
@@ -433,13 +434,14 @@ export default function DrawBoard() {
         ctx.stroke();
         // 画端点
         ctx.save();
-        ctx.fillStyle = '#2196f3';
-        ctx.beginPath();
-        ctx.arc(shape.points[0].x, shape.points[0].y, 6, 0, 2 * Math.PI);
-        ctx.fill();
-        ctx.beginPath();
-        ctx.arc(shape.points[1].x, shape.points[1].y, 6, 0, 2 * Math.PI);
-        ctx.fill();
+        for (let j = 0; j < 2; j++) {
+          const isSnapHovered = hoveredSnapPoint && hoveredSnapPoint.shapeIndex === idx && hoveredSnapPoint.pointIndex === j;
+          ctx.fillStyle = isSnapHovered ? '#ff9800' : '#2196f3';
+          ctx.beginPath();
+          ctx.arc(shape.points[j].x, shape.points[j].y, isSnapHovered ? 12 : 6, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+        ctx.restore();
         ctx.restore();
       } else if (shape.type === 'triangle') {
         ctx.save();
@@ -454,10 +456,11 @@ export default function DrawBoard() {
         ctx.closePath();
         ctx.stroke();
         // 画三个顶点
-        ctx.fillStyle = '#2196f3';
         for (let j = 0; j < 3; j++) {
+          const isSnapHovered = hoveredSnapPoint && hoveredSnapPoint.shapeIndex === idx && hoveredSnapPoint.pointIndex === j;
+          ctx.fillStyle = isSnapHovered ? '#ff9800' : '#2196f3';
           ctx.beginPath();
-          ctx.arc(shape.points[j].x, shape.points[j].y, 6, 0, 2 * Math.PI);
+          ctx.arc(shape.points[j].x, shape.points[j].y, isSnapHovered ? 12 : 6, 0, 2 * Math.PI);
           ctx.fill();
         }
         ctx.restore();
@@ -471,6 +474,25 @@ export default function DrawBoard() {
         ctx.lineTo(shape.points[1].x, shape.points[1].y);
         ctx.stroke();
         ctx.setLineDash([]);
+        // 画端点
+        for (let j = 0; j < 2; j++) {
+          const isSnapHovered = hoveredSnapPoint && hoveredSnapPoint.shapeIndex === idx && hoveredSnapPoint.pointIndex === j;
+          ctx.fillStyle = isSnapHovered ? '#ff9800' : '#2196f3';
+          ctx.beginPath();
+          ctx.arc(shape.points[j].x, shape.points[j].y, isSnapHovered ? 12 : 6, 0, 2 * Math.PI);
+          ctx.fill();
+        }
+        ctx.restore();
+        ctx.restore();
+      } else if (shape.type === 'angle') {
+        // 画三个端点高亮
+        for (let j = 0; j < 3; j++) {
+          const isSnapHovered = hoveredSnapPoint && hoveredSnapPoint.shapeIndex === idx && hoveredSnapPoint.pointIndex === j;
+          ctx.fillStyle = isSnapHovered ? '#ff9800' : '#2196f3';
+          ctx.beginPath();
+          ctx.arc(shape.points[j].x, shape.points[j].y, isSnapHovered ? 12 : 6, 0, 2 * Math.PI);
+          ctx.fill();
+        }
         ctx.restore();
       }
     });
@@ -628,6 +650,17 @@ export default function DrawBoard() {
           newX = other.x + vx * t;
           newY = other.y + vy * t;
         }
+        setHoveredSnapPoint(null);
+      } else {
+        // 端点吸附
+        const hit = getHitPoint(pos.x, pos.y);
+        if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
+          newX = shapes[hit.shapeIndex].points[hit.pointIndex].x;
+          newY = shapes[hit.shapeIndex].points[hit.pointIndex].y;
+          setHoveredSnapPoint({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex });
+        } else {
+          setHoveredSnapPoint(null);
+        }
       }
       setShapes(prev => prev.map((shape, idx) => {
         if (idx !== dragging.shapeIndex) return shape;
@@ -640,11 +673,18 @@ export default function DrawBoard() {
     }
     // 拖动辅助线端点
     if (dragging && dragging.type === 'auxline') {
-      const hit = getHitPoint(pos.x, pos.y);
       let newX = pos.x, newY = pos.y;
-      if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
-        newX = hit.point.x;
-        newY = hit.point.y;
+      if (!e.shiftKey) {
+        const hit = getHitPoint(pos.x, pos.y);
+        if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
+          newX = shapes[hit.shapeIndex].points[hit.pointIndex].x;
+          newY = shapes[hit.shapeIndex].points[hit.pointIndex].y;
+          setHoveredSnapPoint({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex });
+        } else {
+          setHoveredSnapPoint(null);
+        }
+      } else {
+        setHoveredSnapPoint(null);
       }
       setShapes(prev => prev.map((shape, idx) => {
         if (idx !== dragging.shapeIndex) return shape;
@@ -657,11 +697,18 @@ export default function DrawBoard() {
     }
     // 拖动三角形顶点
     if (dragging && tool === TOOL_TRIANGLE && typeof dragging.pointIndex === 'number') {
-      const hit = getHitPoint(pos.x, pos.y);
       let newX = pos.x, newY = pos.y;
-      if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
-        newX = hit.point.x;
-        newY = hit.point.y;
+      if (!e.shiftKey) {
+        const hit = getHitPoint(pos.x, pos.y);
+        if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
+          newX = shapes[hit.shapeIndex].points[hit.pointIndex].x;
+          newY = shapes[hit.shapeIndex].points[hit.pointIndex].y;
+          setHoveredSnapPoint({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex });
+        } else {
+          setHoveredSnapPoint(null);
+        }
+      } else {
+        setHoveredSnapPoint(null);
       }
       setShapes(prev => prev.map((shape, idx) => {
         if (idx !== dragging.shapeIndex) return shape;
@@ -674,11 +721,18 @@ export default function DrawBoard() {
     }
     // 拖动角度端点
     if (dragging && dragging.type === 'angle') {
-      const hit = getHitPoint(pos.x, pos.y);
       let newX = pos.x, newY = pos.y;
-      if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
-        newX = hit.point.x;
-        newY = hit.point.y;
+      if (!e.shiftKey) {
+        const hit = getHitPoint(pos.x, pos.y);
+        if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
+          newX = shapes[hit.shapeIndex].points[hit.pointIndex].x;
+          newY = shapes[hit.shapeIndex].points[hit.pointIndex].y;
+          setHoveredSnapPoint({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex });
+        } else {
+          setHoveredSnapPoint(null);
+        }
+      } else {
+        setHoveredSnapPoint(null);
       }
       setShapes(prev => prev.map((shape, idx) => {
         if (idx !== dragging.shapeIndex) return shape;
@@ -720,6 +774,7 @@ export default function DrawBoard() {
   const endDraw = (e) => {
     if (dragging) {
       setDragging(null);
+      setHoveredSnapPoint(null);
       return;
     }
     if (!drawingShape) return;
