@@ -407,6 +407,44 @@ export default function DrawBoard() {
     return null;
   };
 
+  // 专门的吸附检测函数，用于拖动时的端点吸附
+  const getSnapPoint = (x, y, excludeShapeIndex, excludePointIndex) => {
+    const snapRadius = 15; // 统一的吸附检测半径
+    for (let i = 0; i < shapes.length; i++) {
+      const shape = shapes[i];
+      if (shape.type === 'line') {
+        for (let j = 0; j < 2; j++) {
+          if (i === excludeShapeIndex && j === excludePointIndex) continue;
+          if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < snapRadius) {
+            return { shapeIndex: i, pointIndex: j, type: 'line', point: shape.points[j] };
+          }
+        }
+      } else if (shape.type === 'triangle') {
+        for (let j = 0; j < 3; j++) {
+          if (i === excludeShapeIndex && j === excludePointIndex) continue;
+          if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < snapRadius) {
+            return { shapeIndex: i, pointIndex: j, type: 'triangle', point: shape.points[j] };
+          }
+        }
+      } else if (shape.type === 'angle') {
+        for (let j = 0; j < 3; j++) {
+          if (i === excludeShapeIndex && j === excludePointIndex) continue;
+          if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < snapRadius) {
+            return { shapeIndex: i, pointIndex: j, type: 'angle', point: shape.points[j] };
+          }
+        }
+      } else if (shape.type === 'auxline') {
+        for (let j = 0; j < 2; j++) {
+          if (i === excludeShapeIndex && j === excludePointIndex) continue;
+          if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < snapRadius) {
+            return { shapeIndex: i, pointIndex: j, type: 'auxline', point: shape.points[j] };
+          }
+        }
+      }
+    }
+    return null;
+  };
+
   // 重绘所有图形
   const drawAllShapes = () => {
     const ctx = canvasRef.current.getContext('2d');
@@ -596,7 +634,9 @@ export default function DrawBoard() {
         setDragging({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex, type: 'auxline' });
         return;
       }
-      const usePos = hit ? hit.point : pos;
+      // 使用新的吸附检测函数来获取吸附点
+      const snapHit = getSnapPoint(pos.x, pos.y, -1, -1);
+      const usePos = snapHit ? snapHit.point : pos;
       if (auxLinePoints.length === 0) {
         setAuxLinePoints([usePos]);
       } else if (auxLinePoints.length === 1) {
@@ -663,11 +703,11 @@ export default function DrawBoard() {
           setHoveredSnapPoint(null);
         } else {
           // 端点吸附
-          const hit = getHitPoint(pos.x, pos.y);
+          const hit = getSnapPoint(pos.x, pos.y, dragging.shapeIndex, dragging.pointIndex);
           if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
-            newX = shapes[hit.shapeIndex].points[hit.pointIndex].x;
-            newY = shapes[hit.shapeIndex].points[hit.pointIndex].y;
-            setHoveredSnapPoint({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex });
+            newX = hit.point.x;
+            newY = hit.point.y;
+            setHoveredSnapPoint(hit);
           } else {
             setHoveredSnapPoint(null);
           }
@@ -676,11 +716,11 @@ export default function DrawBoard() {
         // 三角形顶点拖动逻辑
         if (!e.shiftKey) {
           // 端点吸附
-          const hit = getHitPoint(pos.x, pos.y);
+          const hit = getSnapPoint(pos.x, pos.y, dragging.shapeIndex, dragging.pointIndex);
           if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
-            newX = shapes[hit.shapeIndex].points[hit.pointIndex].x;
-            newY = shapes[hit.shapeIndex].points[hit.pointIndex].y;
-            setHoveredSnapPoint({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex });
+            newX = hit.point.x;
+            newY = hit.point.y;
+            setHoveredSnapPoint(hit);
           } else {
             setHoveredSnapPoint(null);
           }
@@ -690,11 +730,11 @@ export default function DrawBoard() {
       } else if (shape.type === 'auxline') {
         // 辅助线端点拖动逻辑
         if (!e.shiftKey) {
-          const hit = getHitPoint(pos.x, pos.y);
+          const hit = getSnapPoint(pos.x, pos.y, dragging.shapeIndex, dragging.pointIndex);
           if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
-            newX = shapes[hit.shapeIndex].points[hit.pointIndex].x;
-            newY = shapes[hit.shapeIndex].points[hit.pointIndex].y;
-            setHoveredSnapPoint({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex });
+            newX = hit.point.x;
+            newY = hit.point.y;
+            setHoveredSnapPoint(hit);
           } else {
             setHoveredSnapPoint(null);
           }
@@ -704,11 +744,11 @@ export default function DrawBoard() {
       } else if (shape.type === 'angle') {
         // 角度端点拖动逻辑
         if (!e.shiftKey) {
-          const hit = getHitPoint(pos.x, pos.y);
+          const hit = getSnapPoint(pos.x, pos.y, dragging.shapeIndex, dragging.pointIndex);
           if (hit && !(hit.shapeIndex === dragging.shapeIndex && hit.pointIndex === dragging.pointIndex)) {
-            newX = shapes[hit.shapeIndex].points[hit.pointIndex].x;
-            newY = shapes[hit.shapeIndex].points[hit.pointIndex].y;
-            setHoveredSnapPoint({ shapeIndex: hit.shapeIndex, pointIndex: hit.pointIndex });
+            newX = hit.point.x;
+            newY = hit.point.y;
+            setHoveredSnapPoint(hit);
           } else {
             setHoveredSnapPoint(null);
           }
