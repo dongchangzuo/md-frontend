@@ -91,7 +91,6 @@ function AppContent() {
   const [user, setUser] = useState(null);
   const [showSignup, setShowSignup] = useState(false);
   const [authToken, setAuthToken] = useState(null);
-  const [currentPage, setCurrentPage] = useState('home');
   const [isLoading, setIsLoading] = useState(true);
   const [language, setLanguage] = useState('zh');
   
@@ -153,16 +152,10 @@ function AppContent() {
     setAuthToken(null);
     tokenManager.clearToken();
     secureStorage.removeItem('user');
-    setCurrentPage('home');
   };
 
   const toggleAuthMode = () => {
     setShowSignup(!showSignup);
-  };
-
-  const navigateTo = (page) => {
-    console.log('Navigating to:', page);
-    setCurrentPage(page);
   };
 
   if (isLoading) {
@@ -194,7 +187,6 @@ function AppContent() {
                 <Home 
                   user={user} 
                   onLogout={handleLogout} 
-                  onNavigate={navigateTo}
                   language={language}
                   setLanguage={setLanguage}
                 />
@@ -205,7 +197,6 @@ function AppContent() {
                 <Home 
                   user={user} 
                   onLogout={handleLogout} 
-                  onNavigate={navigateTo}
                   language={language}
                   setLanguage={setLanguage}
                 />

@@ -231,7 +231,7 @@ const Home = ({ user, onLogout, onNavigate, language, setLanguage }) => {
         </Header>
         <ToolsGrid>
           {tools.map(tool => (
-            <ToolCard key={tool.path} onClick={() => onNavigate(tool.path)}>
+            <ToolCard key={tool.path} onClick={() => navigate(tool.path)}>
               <ToolIcon>{tool.icon}</ToolIcon>
               <ToolTitle>{tool.title}</ToolTitle>
               <ToolDescription>{tool.description}</ToolDescription>
