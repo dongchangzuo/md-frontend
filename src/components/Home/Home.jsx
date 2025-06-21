@@ -200,7 +200,21 @@ const Home = ({ user, onLogout, onNavigate, language, setLanguage }) => {
           <line x1="12" y1="22.08" x2="12" y2="12" />
         </svg>
       ),
-      path: '/api'
+      path: '/api-tester'
+    },
+    {
+      title: t.drawBoard.title,
+      description: t.drawBoard.description,
+      icon: (
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2z"></path>
+          <path d="M15.28 15.28A5.001 5.001 0 0012 13a5 5 0 00-3.28 2.28"></path>
+          <path d="M12 13a2.5 2.5 0 100-5 2.5 2.5 0 000 5z"></path>
+          <path d="M12 8c-2.28 0-4.46.9-6.08 2.48"></path>
+          <path d="M12 8c2.28 0 4.46.9 6.08 2.48"></path>
+        </svg>
+      ),
+      path: '/draw'
     }
   ];
 
@@ -208,28 +222,22 @@ const Home = ({ user, onLogout, onNavigate, language, setLanguage }) => {
     <HomeContainer>
       <ContentCard>
         <Header>
-          <WelcomeText>{t.welcome(user?.username)}</WelcomeText>
-          <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-            <LanguageSelect value={language} onChange={e => setLanguage(e.target.value)}>
-              <option value="zh">中文</option>
-              <option value="en">English</option>
-            </LanguageSelect>
-            <LogoutButton onClick={handleLogout}>
-              {t.logout}
-            </LogoutButton>
-          </div>
+          <WelcomeText>{t.welcome}, {user.username}</WelcomeText>
+          <LanguageSelect value={language} onChange={(e) => setLanguage(e.target.value)}>
+            <option value="en">English</option>
+            <option value="zh">中文</option>
+          </LanguageSelect>
+          <LogoutButton onClick={handleLogout}>{t.logout}</LogoutButton>
         </Header>
-
         <ToolsGrid>
-          {tools.map((tool, index) => (
-            <ToolCard key={index} onClick={() => navigate(tool.path)}>
+          {tools.map(tool => (
+            <ToolCard key={tool.path} onClick={() => onNavigate(tool.path)}>
               <ToolIcon>{tool.icon}</ToolIcon>
               <ToolTitle>{tool.title}</ToolTitle>
               <ToolDescription>{tool.description}</ToolDescription>
             </ToolCard>
           ))}
         </ToolsGrid>
-        <button onClick={() => navigate('/draw')} style={{margin: '24px 0', padding: '12px 32px', fontSize: 18, borderRadius: 8, background: '#23272e', color: '#fff', border: 'none', cursor: 'pointer'}}>打开画板</button>
       </ContentCard>
     </HomeContainer>
   );

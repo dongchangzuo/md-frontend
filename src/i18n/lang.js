@@ -72,8 +72,13 @@ export const lang = {
     roles: '角色',
     createAndEditMarkdown: '创建和编辑Markdown文档',
     extractTextFromImages: '从图片中提取文字',
-    createAndEditShapes: '创建和编辑图形',
-    formatAndValidateJson: '格式化和验证JSON数据',
+    createAndEditShapes: '创建和编辑形状',
+    formatAndValidateJson: '格式化和验证 JSON',
+    jsonFormat: 'JSON 格式化',
+    drawBoard: {
+      title: '画板',
+      description: '一个用于几何和协作的交互式画板。'
+    },
 
     // Markdown编辑器
     markdownEditorTitle: 'Markdown编辑器',
@@ -289,7 +294,12 @@ export const lang = {
     createAndEditMarkdown: 'Create and edit markdown documents',
     extractTextFromImages: 'Extract text from images',
     createAndEditShapes: 'Create and edit shapes',
-    formatAndValidateJson: 'Format and validate JSON data',
+    formatAndValidateJson: 'Format and validate JSON',
+    jsonFormat: 'JSON Format',
+    drawBoard: {
+      title: 'Draw Board',
+      description: 'An interactive drawing board for geometry and collaboration.'
+    },
 
     // Markdown Editor
     markdownEditorTitle: 'Markdown Editor',
