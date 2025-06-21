@@ -372,30 +372,33 @@ export default function DrawBoard() {
 
   // 检查鼠标是否在所有图形端点附近，命中则返回精确点坐标和索引（pointIndex: 0|1）
   const getHitPoint = (x, y) => {
-    const radius = 10;
     for (let i = 0; i < shapes.length; i++) {
       const shape = shapes[i];
       if (shape.type === 'line') {
+        const hitRadius = Math.max(10, shape.size * 2); // 检测半径至少10像素，最大为线条粗细的2倍
         for (let j = 0; j < 2; j++) {
-          if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < radius) {
+          if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < hitRadius) {
             return { shapeIndex: i, pointIndex: j, type: 'line' };
           }
         }
       } else if (shape.type === 'triangle') {
+        const hitRadius = Math.max(10, shape.size * 2); // 检测半径至少10像素，最大为线条粗细的2倍
         for (let j = 0; j < 3; j++) {
-          if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < radius) {
+          if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < hitRadius) {
             return { shapeIndex: i, pointIndex: j, type: 'triangle' };
           }
         }
       } else if (shape.type === 'angle') {
+        const hitRadius = Math.max(10, shape.size * 2); // 检测半径至少10像素，最大为线条粗细的2倍
         for (let j = 0; j < 3; j++) {
-          if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < radius) {
+          if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < hitRadius) {
             return { shapeIndex: i, pointIndex: j, type: 'angle' };
           }
         }
       } else if (shape.type === 'auxline') {
+        const hitRadius = Math.max(10, shape.size * 2); // 检测半径至少10像素，最大为线条粗细的2倍
         for (let j = 0; j < 2; j++) {
-          if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < radius) {
+          if (Math.hypot(x - shape.points[j].x, y - shape.points[j].y) < hitRadius) {
             return { shapeIndex: i, pointIndex: j, type: 'auxline' };
           }
         }
@@ -432,13 +435,14 @@ export default function DrawBoard() {
         ctx.moveTo(shape.points[0].x, shape.points[0].y);
         ctx.lineTo(shape.points[1].x, shape.points[1].y);
         ctx.stroke();
-        // 画端点
+        // 画端点 - 端点大小与线条粗细成比例
         ctx.save();
+        const endpointRadius = Math.max(6, shape.size * 1.5); // 最小6像素，最大为线条粗细的1.5倍
         for (let j = 0; j < 2; j++) {
           const isSnapHovered = hoveredSnapPoint && hoveredSnapPoint.shapeIndex === idx && hoveredSnapPoint.pointIndex === j;
           ctx.fillStyle = isSnapHovered ? '#ff9800' : '#2196f3';
           ctx.beginPath();
-          ctx.arc(shape.points[j].x, shape.points[j].y, isSnapHovered ? 12 : 6, 0, 2 * Math.PI);
+          ctx.arc(shape.points[j].x, shape.points[j].y, isSnapHovered ? endpointRadius * 1.5 : endpointRadius, 0, 2 * Math.PI);
           ctx.fill();
         }
         ctx.restore();
@@ -455,12 +459,13 @@ export default function DrawBoard() {
         ctx.lineTo(shape.points[2].x, shape.points[2].y);
         ctx.closePath();
         ctx.stroke();
-        // 画三个顶点
+        // 画三个顶点 - 顶点大小与线条粗细成比例
+        const vertexRadius = Math.max(6, shape.size * 1.5); // 最小6像素，最大为线条粗细的1.5倍
         for (let j = 0; j < 3; j++) {
           const isSnapHovered = hoveredSnapPoint && hoveredSnapPoint.shapeIndex === idx && hoveredSnapPoint.pointIndex === j;
           ctx.fillStyle = isSnapHovered ? '#ff9800' : '#2196f3';
           ctx.beginPath();
-          ctx.arc(shape.points[j].x, shape.points[j].y, isSnapHovered ? 12 : 6, 0, 2 * Math.PI);
+          ctx.arc(shape.points[j].x, shape.points[j].y, isSnapHovered ? vertexRadius * 1.5 : vertexRadius, 0, 2 * Math.PI);
           ctx.fill();
         }
         ctx.restore();
@@ -474,12 +479,13 @@ export default function DrawBoard() {
         ctx.lineTo(shape.points[1].x, shape.points[1].y);
         ctx.stroke();
         ctx.setLineDash([]);
-        // 画端点
+        // 画端点 - 端点大小与线条粗细成比例
+        const auxEndpointRadius = Math.max(6, shape.size * 1.5);
         for (let j = 0; j < 2; j++) {
           const isSnapHovered = hoveredSnapPoint && hoveredSnapPoint.shapeIndex === idx && hoveredSnapPoint.pointIndex === j;
           ctx.fillStyle = isSnapHovered ? '#ff9800' : '#2196f3';
           ctx.beginPath();
-          ctx.arc(shape.points[j].x, shape.points[j].y, isSnapHovered ? 12 : 6, 0, 2 * Math.PI);
+          ctx.arc(shape.points[j].x, shape.points[j].y, isSnapHovered ? auxEndpointRadius * 1.5 : auxEndpointRadius, 0, 2 * Math.PI);
           ctx.fill();
         }
         ctx.restore();
@@ -533,13 +539,14 @@ export default function DrawBoard() {
         ctx.moveTo(drawingShape.points[0].x, drawingShape.points[0].y);
         ctx.lineTo(drawingShape.points[1].x, drawingShape.points[1].y);
         ctx.stroke();
-        // 画端点
+        // 画端点 - 端点大小与线条粗细成比例
+        const previewEndpointRadius = Math.max(6, drawingShape.size * 1.5);
         ctx.fillStyle = '#2196f3';
         ctx.beginPath();
-        ctx.arc(drawingShape.points[0].x, drawingShape.points[0].y, 6, 0, 2 * Math.PI);
+        ctx.arc(drawingShape.points[0].x, drawingShape.points[0].y, previewEndpointRadius, 0, 2 * Math.PI);
         ctx.fill();
         ctx.beginPath();
-        ctx.arc(drawingShape.points[1].x, drawingShape.points[1].y, 6, 0, 2 * Math.PI);
+        ctx.arc(drawingShape.points[1].x, drawingShape.points[1].y, previewEndpointRadius, 0, 2 * Math.PI);
         ctx.fill();
         ctx.restore();
       } else if (drawingShape.type === 'triangle') {
@@ -554,11 +561,12 @@ export default function DrawBoard() {
         ctx.lineTo(drawingShape.points[2].x, drawingShape.points[2].y);
         ctx.closePath();
         ctx.stroke();
-        // 画三个顶点
+        // 画三个顶点 - 顶点大小与线条粗细成比例
+        const previewVertexRadius = Math.max(6, drawingShape.size * 1.5);
         ctx.fillStyle = '#2196f3';
         for (let j = 0; j < 3; j++) {
           ctx.beginPath();
-          ctx.arc(drawingShape.points[j].x, drawingShape.points[j].y, 6, 0, 2 * Math.PI);
+          ctx.arc(drawingShape.points[j].x, drawingShape.points[j].y, previewVertexRadius, 0, 2 * Math.PI);
           ctx.fill();
         }
         ctx.restore();
