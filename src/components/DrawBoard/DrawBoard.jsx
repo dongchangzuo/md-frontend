@@ -1078,13 +1078,35 @@ export default function DrawBoard() {
         }
       }
       
-      // 更新形状
+      // 获取当前拖动点的原始位置
+      const originalPoint = shape.points[dragging.pointIndex];
+      
+      // 更新形状 - 同时更新所有与该点位置相同的端点
       setShapes(prev => prev.map((shape, idx) => {
-        if (idx !== dragging.shapeIndex) return shape;
-        const newPoints = shape.points.map((pt, j) =>
-          j === dragging.pointIndex ? { x: newX, y: newY } : pt
-        );
-        return { ...shape, points: newPoints };
+        if (idx !== dragging.shapeIndex) {
+          // 检查其他形状是否有端点与当前拖动点位置相同
+          const points = shape.type === 'triangle' ? 3 : 2;
+          let hasMatchingPoint = false;
+          let newPoints = [...shape.points];
+          
+          for (let j = 0; j < points; j++) {
+            // 检查是否与原始拖动点位置相同（允许小的误差）
+            const point = shape.points[j];
+            const distance = Math.hypot(point.x - originalPoint.x, point.y - originalPoint.y);
+            if (distance < 1) { // 1像素的误差范围
+              newPoints[j] = { x: newX, y: newY };
+              hasMatchingPoint = true;
+            }
+          }
+          
+          return hasMatchingPoint ? { ...shape, points: newPoints } : shape;
+        } else {
+          // 更新当前拖动的形状
+          const newPoints = shape.points.map((pt, j) =>
+            j === dragging.pointIndex ? { x: newX, y: newY } : pt
+          );
+          return { ...shape, points: newPoints };
+        }
       }));
       return;
     }
