@@ -6,6 +6,62 @@ const fadeIn = keyframes`
   to { opacity: 1; transform: translateY(0); }
 `;
 
+// 电流效果动画
+const electricArc = keyframes`
+  0% { 
+    stroke-dasharray: 0, 1000;
+    stroke-dashoffset: 0;
+    opacity: 0;
+  }
+  10% { 
+    stroke-dasharray: 50, 1000;
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  50% { 
+    stroke-dasharray: 200, 1000;
+    stroke-dashoffset: -100;
+    opacity: 0.8;
+  }
+  90% { 
+    stroke-dasharray: 50, 1000;
+    stroke-dashoffset: -200;
+    opacity: 1;
+  }
+  100% { 
+    stroke-dasharray: 0, 1000;
+    stroke-dashoffset: -300;
+    opacity: 0;
+  }
+`;
+
+const electricPulse = keyframes`
+  0% { 
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% { 
+    transform: scale(1.2);
+    opacity: 1;
+  }
+  100% { 
+    transform: scale(1);
+    opacity: 0.8;
+  }
+`;
+
+const electricGlow = keyframes`
+  0% { 
+    box-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 15px #00ffff;
+  }
+  50% { 
+    box-shadow: 0 0 10px #00ffff, 0 0 20px #00ffff, 0 0 30px #00ffff;
+  }
+  100% { 
+    box-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 15px #00ffff;
+  }
+`;
+
 // Move grid constants to the top
 const GRID_SIZE = 40;
 const GRID_COLOR = '#e0f7fa';
@@ -295,7 +351,7 @@ export default function DrawBoard() {
   const canvasRef = useRef(null);
   const wrapperRef = useRef(null);
   const [tool, setTool] = useState(TOOL_PEN);
-  const [color, setColor] = useState('#000000');
+  const [color, setColor] = useState('#006064');
   const [size, setSize] = useState(2);
   const [isDrawing, setIsDrawing] = useState(false);
   const [history, setHistory] = useState([]);
@@ -308,23 +364,30 @@ export default function DrawBoard() {
   const [drawingShape, setDrawingShape] = useState(null);
   const [auxLinePoints, setAuxLinePoints] = useState([]);
   const [hoveredSnapPoint, setHoveredSnapPoint] = useState(null);
+  const [electricConnections, setElectricConnections] = useState([]); // 电流连接状态
+  const [electricTimer, setElectricTimer] = useState(null); // 电流效果定时器
 
   // Remove all socket.io related useEffect hooks
   useEffect(() => {
     const canvas = canvasRef.current;
-    const wrapper = canvas.parentElement;
-    canvas.width = wrapper.clientWidth;
-    canvas.height = wrapper.clientHeight;
-    drawGridAndAxes();
-
+    const ctx = canvas.getContext('2d');
+    
     const handleResize = () => {
-      canvas.width = wrapper.clientWidth;
-      canvas.height = wrapper.clientHeight;
-      drawGridAndAxes();
+      canvas.width = canvas.offsetWidth;
+      canvas.height = canvas.offsetHeight;
+      drawAllShapes();
     };
-
+    
+    handleResize();
     window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+      // 清理电流效果定时器
+      if (electricTimer) {
+        clearInterval(electricTimer);
+      }
+    };
   }, []);
 
   const drawGridAndAxes = () => {
@@ -443,6 +506,192 @@ export default function DrawBoard() {
       }
     }
     return null;
+  };
+
+  // 检测所有端点之间的电流连接
+  const detectElectricConnections = () => {
+    const connections = [];
+    const connectionRadius = 50; // 增加电流连接检测半径，让效果更容易触发
+    
+    // 遍历所有形状的端点
+    for (let i = 0; i < shapes.length; i++) {
+      const shape1 = shapes[i];
+      const points1 = shape1.type === 'triangle' ? 3 : 2;
+      
+      for (let j = 0; j < points1; j++) {
+        const point1 = shape1.points[j];
+        
+        // 与其他形状的端点比较
+        for (let k = i; k < shapes.length; k++) {
+          const shape2 = shapes[k];
+          const points2 = shape2.type === 'triangle' ? 3 : 2;
+          const startJ = k === i ? j + 1 : 0; // 避免重复检测
+          
+          for (let l = startJ; l < points2; l++) {
+            const point2 = shape2.points[l];
+            const distance = Math.hypot(point1.x - point2.x, point1.y - point2.y);
+            
+            if (distance <= connectionRadius) {
+              connections.push({
+                from: { shapeIndex: i, pointIndex: j, point: point1 },
+                to: { shapeIndex: k, pointIndex: l, point: point2 },
+                distance: distance,
+                strength: Math.max(0.3, 1 - (distance / connectionRadius)) // 最小强度0.3，确保可见性
+              });
+            }
+          }
+        }
+      }
+    }
+    
+    return connections;
+  };
+
+  // 绘制电流连接效果
+  const drawElectricConnection = (ctx, connection) => {
+    const { from, to, strength } = connection;
+    
+    // 创建锯齿状的电流路径
+    const dx = to.point.x - from.point.x;
+    const dy = to.point.y - from.point.y;
+    const distance = Math.hypot(dx, dy);
+    
+    if (distance < 5) return;
+    
+    const segments = Math.max(3, Math.floor(distance / 15));
+    const path = [];
+    
+    // 起点
+    path.push({ x: from.point.x, y: from.point.y });
+    
+    // 生成锯齿状路径
+    for (let i = 1; i < segments; i++) {
+      const t = i / segments;
+      const baseX = from.point.x + dx * t;
+      const baseY = from.point.y + dy * t;
+      
+      // 添加随机偏移，模拟电流的锯齿状
+      const offset = (Math.random() - 0.5) * 12 * strength;
+      const perpX = -dy / distance * offset;
+      const perpY = dx / distance * offset;
+      
+      path.push({
+        x: baseX + perpX,
+        y: baseY + perpY
+      });
+    }
+    
+    // 终点
+    path.push({ x: to.point.x, y: to.point.y });
+    
+    // 绘制电流路径 - 增强版本
+    ctx.save();
+    
+    // 外层发光效果
+    ctx.strokeStyle = '#00ffff';
+    ctx.lineWidth = 6 * strength;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.shadowColor = '#00ffff';
+    ctx.shadowBlur = 20 * strength;
+    ctx.globalAlpha = 0.3 * strength;
+    
+    ctx.beginPath();
+    ctx.moveTo(path[0].x, path[0].y);
+    for (let i = 1; i < path.length; i++) {
+      ctx.lineTo(path[i].x, path[i].y);
+    }
+    ctx.stroke();
+    
+    // 中层电流
+    ctx.strokeStyle = '#00ffff';
+    ctx.lineWidth = 4 * strength;
+    ctx.shadowBlur = 15 * strength;
+    ctx.globalAlpha = 0.8 * strength;
+    
+    ctx.beginPath();
+    ctx.moveTo(path[0].x, path[0].y);
+    for (let i = 1; i < path.length; i++) {
+      ctx.lineTo(path[i].x, path[i].y);
+    }
+    ctx.stroke();
+    
+    // 内层亮电流
+    ctx.strokeStyle = '#ffffff';
+    ctx.lineWidth = 2 * strength;
+    ctx.shadowBlur = 10 * strength;
+    ctx.globalAlpha = 1 * strength;
+    
+    ctx.beginPath();
+    ctx.moveTo(path[0].x, path[0].y);
+    for (let i = 1; i < path.length; i++) {
+      ctx.lineTo(path[i].x, path[i].y);
+    }
+    ctx.stroke();
+    
+    // 电流分支效果 - 增强版本
+    ctx.globalAlpha = 0.6 * strength;
+    ctx.lineWidth = 2 * strength;
+    ctx.strokeStyle = '#00ffff';
+    ctx.shadowBlur = 12 * strength;
+    
+    for (let i = 0; i < 3; i++) {
+      const branchPath = [];
+      branchPath.push({ x: from.point.x, y: from.point.y });
+      
+      for (let j = 1; j < segments; j++) {
+        const t = j / segments;
+        const baseX = from.point.x + dx * t;
+        const baseY = from.point.y + dy * t;
+        
+        const offset = (Math.random() - 0.5) * 18 * strength;
+        const perpX = -dy / distance * offset;
+        const perpY = dx / distance * offset;
+        
+        branchPath.push({
+          x: baseX + perpX,
+          y: baseY + perpY
+        });
+      }
+      
+      branchPath.push({ x: to.point.x, y: to.point.y });
+      
+      ctx.beginPath();
+      ctx.moveTo(branchPath[0].x, branchPath[0].y);
+      for (let k = 1; k < branchPath.length; k++) {
+        ctx.lineTo(branchPath[k].x, branchPath[k].y);
+      }
+      ctx.stroke();
+    }
+    
+    // 端点脉冲效果
+    const pulseRadius = 8 * strength;
+    
+    // 从端点
+    ctx.fillStyle = '#00ffff';
+    ctx.shadowBlur = 15 * strength;
+    ctx.globalAlpha = 0.8 * strength;
+    ctx.beginPath();
+    ctx.arc(from.point.x, from.point.y, pulseRadius, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // 到端点
+    ctx.beginPath();
+    ctx.arc(to.point.x, to.point.y, pulseRadius, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    // 中心亮点
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowBlur = 8 * strength;
+    ctx.globalAlpha = 1 * strength;
+    ctx.beginPath();
+    ctx.arc(from.point.x, from.point.y, pulseRadius * 0.4, 0, 2 * Math.PI);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(to.point.x, to.point.y, pulseRadius * 0.4, 0, 2 * Math.PI);
+    ctx.fill();
+    
+    ctx.restore();
   };
 
   // 重绘所有图形
@@ -610,12 +859,40 @@ export default function DrawBoard() {
         ctx.restore();
       }
     }
+    
+    // 绘制电流连接效果
+    electricConnections.forEach(connection => {
+      drawElectricConnection(ctx, connection);
+    });
   };
 
   useEffect(() => {
     drawAllShapes();
     // eslint-disable-next-line
-  }, [shapes, drawingShape, tool, auxLinePoints]);
+  }, [shapes, drawingShape, tool, auxLinePoints, electricConnections]);
+
+  // 电流效果定时器
+  useEffect(() => {
+    // 清除之前的定时器
+    if (electricTimer) {
+      clearInterval(electricTimer);
+    }
+    
+    // 创建新的定时器，每100ms更新一次电流连接
+    const timer = setInterval(() => {
+      const connections = detectElectricConnections();
+      setElectricConnections(connections);
+    }, 100);
+    
+    setElectricTimer(timer);
+    
+    // 清理函数
+    return () => {
+      if (electricTimer) {
+        clearInterval(electricTimer);
+      }
+    };
+  }, [shapes]); // 当形状变化时重新启动定时器
 
   // 鼠标按下
   const startDraw = (e) => {
