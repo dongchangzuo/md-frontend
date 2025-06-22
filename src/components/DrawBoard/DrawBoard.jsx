@@ -871,20 +871,27 @@ export default function DrawBoard() {
     // eslint-disable-next-line
   }, [shapes, drawingShape, tool, auxLinePoints, electricConnections]);
 
-  // 电流效果定时器
+  // 拖动时的电流效果定时器
   useEffect(() => {
-    // 清除之前的定时器
-    if (electricTimer) {
-      clearInterval(electricTimer);
+    if (dragging && electricConnections.length > 0) {
+      // 清除之前的定时器
+      if (electricTimer) {
+        clearInterval(electricTimer);
+      }
+      
+      // 创建新的定时器，每50ms重新绘制一次电流效果
+      const timer = setInterval(() => {
+        drawAllShapes();
+      }, 50);
+      
+      setElectricTimer(timer);
+    } else {
+      // 清除定时器
+      if (electricTimer) {
+        clearInterval(electricTimer);
+        setElectricTimer(null);
+      }
     }
-    
-    // 创建新的定时器，每100ms更新一次电流连接
-    const timer = setInterval(() => {
-      const connections = detectElectricConnections();
-      setElectricConnections(connections);
-    }, 100);
-    
-    setElectricTimer(timer);
     
     // 清理函数
     return () => {
@@ -892,7 +899,40 @@ export default function DrawBoard() {
         clearInterval(electricTimer);
       }
     };
-  }, [shapes]); // 当形状变化时重新启动定时器
+  }, [dragging, electricConnections]);
+
+  // 检测拖动时的电流连接
+  const detectDragElectricConnections = (dragPoint, excludeShapeIndex, excludePointIndex) => {
+    const connections = [];
+    const connectionRadius = 30; // 拖动时的电流连接检测半径
+    
+    if (!dragPoint) return connections;
+    
+    // 遍历所有形状的端点
+    for (let i = 0; i < shapes.length; i++) {
+      const shape = shapes[i];
+      const points = shape.type === 'triangle' ? 3 : 2;
+      
+      for (let j = 0; j < points; j++) {
+        // 排除当前正在拖动的端点
+        if (i === excludeShapeIndex && j === excludePointIndex) continue;
+        
+        const point = shape.points[j];
+        const distance = Math.hypot(dragPoint.x - point.x, dragPoint.y - point.y);
+        
+        if (distance <= connectionRadius) {
+          connections.push({
+            from: { point: dragPoint },
+            to: { shapeIndex: i, pointIndex: j, point: point },
+            distance: distance,
+            strength: Math.max(0.3, 1 - (distance / connectionRadius))
+          });
+        }
+      }
+    }
+    
+    return connections;
+  };
 
   // 鼠标按下
   const startDraw = (e) => {
@@ -960,6 +1000,10 @@ export default function DrawBoard() {
     if (dragging && typeof dragging.pointIndex === 'number') {
       const shape = shapes[dragging.shapeIndex];
       let newX = pos.x, newY = pos.y;
+      
+      // 检测拖动时的电流连接
+      const dragConnections = detectDragElectricConnections(pos, dragging.shapeIndex, dragging.pointIndex);
+      setElectricConnections(dragConnections);
       
       if (shape.type === 'line') {
         // 直线端点拖动逻辑
@@ -1076,6 +1120,7 @@ export default function DrawBoard() {
     if (dragging) {
       setDragging(null);
       setHoveredSnapPoint(null);
+      setElectricConnections([]); // 清除电流连接
       return;
     }
     if (!drawingShape) return;
